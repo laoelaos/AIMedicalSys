@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: aimedical-sys
+  profiles:
+    active: phase0,dev
+
+server:
+  port: 8080

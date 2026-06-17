@@ -1,0 +1,18 @@
+{
+  "name": "aimedical-frontend",
+  "private": true,
+  "scripts": {
+    "dev:patient": "npm run dev -w @aimedical/app-patient",
+    "dev:doctor": "npm run dev -w @aimedical/app-doctor",
+    "dev:admin": "npm run dev -w @aimedical/app-admin",
+    "dev": "concurrently \"npm run dev:patient\" \"npm run dev:doctor\" \"npm run dev:admin\"",
+    "build:all": "npm run build --workspaces --if-present"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

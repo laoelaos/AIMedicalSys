@@ -84,3 +84,4 @@ uploads/
 files/
 temp/
 cache/
+.cache/
