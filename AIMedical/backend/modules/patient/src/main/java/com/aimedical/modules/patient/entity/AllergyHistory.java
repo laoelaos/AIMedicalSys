@@ -24,7 +24,8 @@ public class AllergyHistory extends BaseEntity {
     @Column(length = 20)
     private String severity;
 
-    private LocalDate firstOccurredAt;
+    @Column(name = "occurred_at")
+    private LocalDate occurredAt;
 
     @Column(length = 500)
     private String note;

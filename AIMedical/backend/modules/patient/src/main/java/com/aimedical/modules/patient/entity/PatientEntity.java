@@ -41,7 +41,7 @@ public class PatientEntity extends BaseEntity {
     @Column(length = 255)
     private String address;
 
-    @Column(length = 255)
+    @Column(length = 500)
     private String avatarUrl;
 
     @Column(length = 500)

@@ -15,7 +15,7 @@ public class TokenStore extends BaseEntity {
 
     private Long userId;
 
-    @Column(unique = true, nullable = false, length = 2048)
+    @Column(unique = true, nullable = false, length = 768)
     private String token;
 
     @Column(length = 2048)

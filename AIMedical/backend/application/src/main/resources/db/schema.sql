@@ -277,6 +277,7 @@ CREATE TABLE `allergy_history` (
   `reaction_type`     VARCHAR(255)  DEFAULT NULL            COMMENT '反应类型',
   `severity`          VARCHAR(20)   DEFAULT NULL            COMMENT '严重程度',
   `occurred_at`       DATE          DEFAULT NULL            COMMENT '发生时间',
+  `note`              VARCHAR(500)  DEFAULT NULL            COMMENT '说明',
   `remark`            VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
   `created_at`        DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`        DATETIME      DEFAULT NULL            COMMENT '更新时间',
@@ -412,7 +413,7 @@ DROP TABLE IF EXISTS `sys_token`;
 CREATE TABLE `sys_token` (
   `id`            BIGINT        NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `user_id`       BIGINT        DEFAULT NULL            COMMENT '用户ID',
-  `token`         VARCHAR(2048) NOT NULL                COMMENT '令牌',
+  `token`         VARCHAR(768)  NOT NULL                COMMENT '令牌',
   `refresh_token` VARCHAR(2048) DEFAULT NULL            COMMENT '刷新令牌',
   `token_type`    VARCHAR(20)   DEFAULT NULL            COMMENT '令牌类型',
   `expires_at`    DATETIME      DEFAULT NULL            COMMENT '过期时间',

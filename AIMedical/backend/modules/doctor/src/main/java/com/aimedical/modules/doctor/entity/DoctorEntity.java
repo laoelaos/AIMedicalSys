@@ -39,6 +39,7 @@ public class DoctorEntity extends BaseEntity {
 
     private Integer practiceYears;
 
+    @Column(precision = 10, scale = 2)
     private BigDecimal consultationFee;
 
     @Column(length = 500)

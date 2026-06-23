@@ -19,13 +19,13 @@ public class HealthProfile extends BaseEntity {
     @Column(length = 20)
     private String bloodType;
 
-    @Column(precision = 5, scale = 2)
+    @Column(precision = 5, scale = 1)
     private BigDecimal heightCm;
 
-    @Column(precision = 5, scale = 2)
+    @Column(precision = 5, scale = 1)
     private BigDecimal weightKg;
 
-    @Column(precision = 5, scale = 2)
+    @Column(precision = 4, scale = 1)
     private BigDecimal bmi;
 
     @Column(length = 32)
