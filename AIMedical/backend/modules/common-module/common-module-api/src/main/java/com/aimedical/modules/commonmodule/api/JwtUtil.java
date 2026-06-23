@@ -17,6 +17,7 @@ import javax.crypto.SecretKey;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 /**
  * JWT工具类
@@ -26,26 +27,15 @@ import org.slf4j.LoggerFactory;
  * @author AIMedical Team
  * @version 1.0.0
  */
-public final class JwtUtil {
+@Component
+public class JwtUtil {
 
     private static final Logger log = LoggerFactory.getLogger(JwtUtil.class);
 
-    /**
-     * JWT签名密钥（Phase1使用固定密钥，生产环境应从配置读取）
-     */
-    private static final String SECRET_KEY = "AIMedicalSysPhase1JwtSecretKeyForDevelopment2026";
+    private final JwtConfig jwtConfig;
 
-    /**
-     * 令牌过期时间（秒）
-     */
-    private static final long EXPIRATION_TIME = 86400L;
-
-    /**
-     * 令牌类型
-     */
-    private static final String TOKEN_TYPE = "Bearer";
-
-    private JwtUtil() {
+    public JwtUtil(JwtConfig jwtConfig) {
+        this.jwtConfig = jwtConfig;
     }
 
     /**
@@ -57,7 +47,7 @@ public final class JwtUtil {
      * @param position 岗位类型（可为空）
      * @return JWT令牌字符串
      */
-    public static String generateToken(Long userId, String username, String role, String position) {
+    public String generateToken(Long userId, String username, String role, String position) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("username", username);
@@ -66,9 +56,9 @@ public final class JwtUtil {
             claims.put("position", position);
         }
 
-        SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+        SecretKey key = Keys.hmacShaKeyFor(jwtConfig.getSecret().getBytes(StandardCharsets.UTF_8));
         Date now = new Date();
-        Date expiration = new Date(now.getTime() + EXPIRATION_TIME * 1000);
+        Date expiration = new Date(now.getTime() + jwtConfig.getExpiration() * 1000);
 
         return Jwts.builder()
                 .claims(claims)
@@ -90,8 +80,8 @@ public final class JwtUtil {
      * @throws SignatureException       签名验证失败
      * @throws IllegalArgumentException 令牌为空或无效
      */
-    public static Claims parseToken(String token) {
-        SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+    public Claims parseToken(String token) {
+        SecretKey key = Keys.hmacShaKeyFor(jwtConfig.getSecret().getBytes(StandardCharsets.UTF_8));
         return Jwts.parser()
                 .verifyWith(key)
                 .build()
@@ -105,7 +95,10 @@ public final class JwtUtil {
      * @param token JWT令牌
      * @return true表示令牌有效，false表示令牌无效
      */
-    public static boolean validateToken(String token) {
+    public boolean validateToken(String token) {
+        if (token == null || token.isEmpty()) {
+            return false;
+        }
         try {
             parseToken(token);
             return true;
@@ -129,13 +122,15 @@ public final class JwtUtil {
      * @param token JWT令牌
      * @return 用户ID
      */
-    public static Long getUserId(String token) {
+    public Long getUserId(String token) {
         Claims claims = parseToken(token);
         Object userId = claims.get("userId");
         if (userId instanceof Integer) {
             return ((Integer) userId).longValue();
+        } else if (userId instanceof Long) {
+            return (Long) userId;
         }
-        return (Long) userId;
+        return null;
     }
 
     /**
@@ -144,7 +139,7 @@ public final class JwtUtil {
      * @param token JWT令牌
      * @return 用户名
      */
-    public static String getUsername(String token) {
+    public String getUsername(String token) {
         Claims claims = parseToken(token);
         return claims.getSubject();
     }
@@ -155,7 +150,7 @@ public final class JwtUtil {
      * @param token JWT令牌
      * @return 角色类型
      */
-    public static String getRole(String token) {
+    public String getRole(String token) {
         Claims claims = parseToken(token);
         Object role = claims.get("role");
         return role != null ? role.toString() : null;
@@ -167,7 +162,7 @@ public final class JwtUtil {
      * @param token JWT令牌
      * @return 岗位类型，可能为空
      */
-    public static String getPosition(String token) {
+    public String getPosition(String token) {
         Claims claims = parseToken(token);
         Object position = claims.get("position");
         return position != null ? position.toString() : null;
@@ -178,8 +173,8 @@ public final class JwtUtil {
      *
      * @return 过期时间
      */
-    public static Long getExpirationTime() {
-        return EXPIRATION_TIME;
+    public Long getExpirationTime() {
+        return jwtConfig.getExpiration();
     }
 
     /**
@@ -187,7 +182,7 @@ public final class JwtUtil {
      *
      * @return 令牌类型
      */
-    public static String getTokenType() {
-        return TOKEN_TYPE;
+    public String getTokenType() {
+        return jwtConfig.getTokenType();
     }
 }

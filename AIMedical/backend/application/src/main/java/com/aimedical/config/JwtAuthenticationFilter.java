@@ -8,7 +8,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,6 +28,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
+    private final JwtUtil jwtUtil;
+
+    public JwtAuthenticationFilter(JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -43,42 +54,43 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (!JwtUtil.validateToken(token)) {
+        if (!jwtUtil.validateToken(token)) {
+            log.debug("JWT令牌验证失败");
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 从令牌中获取用户信息
-        Long userId = JwtUtil.getUserId(token);
-        String username = JwtUtil.getUsername(token);
-        String role = JwtUtil.getRole(token);
+        Long userId = jwtUtil.getUserId(token);
+        if (userId == null) {
+            log.debug("从JWT令牌中获取用户ID失败");
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-        // 创建认证对象
+        String role = jwtUtil.getRole(token);
+        if (role == null) {
+            log.debug("从JWT令牌中获取角色失败");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                 userId,
                 null,
-                java.util.List.of(authority)
+                List.of(authority)
         );
 
-        // 设置认证详情
         authentication.setDetails(new org.springframework.security.web.authentication.WebAuthenticationDetailsSource()
                 .buildDetails(request));
 
-        // 设置Security上下文
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         filterChain.doFilter(request, response);
     }
 
-    /**
-     * 从Authorization头中提取JWT令牌
-     *
-     * @param authHeader Authorization请求头
-     * @return JWT令牌，如果无效则返回null
-     */
     private String extractToken(String authHeader) {
-        String tokenType = JwtUtil.getTokenType();
+        String tokenType = jwtUtil.getTokenType();
         if (authHeader.startsWith(tokenType + " ")) {
             return authHeader.substring(tokenType.length() + 1);
         }

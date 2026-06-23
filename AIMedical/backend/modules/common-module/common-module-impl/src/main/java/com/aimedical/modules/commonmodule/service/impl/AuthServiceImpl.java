@@ -16,10 +16,11 @@ import com.aimedical.modules.commonmodule.service.AuthService;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -33,33 +34,35 @@ import org.springframework.stereotype.Service;
 @Service
 public class AuthServiceImpl implements AuthService {
 
-    private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
 
-    public AuthServiceImpl(UserRepository userRepository) {
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+
+    public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
-        this.passwordEncoder = new BCryptPasswordEncoder();
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
     public LoginResponse login(LoginRequest request) {
-        Optional<User> userOptional = userRepository.findAll().stream()
-                .filter(u -> u.getUsername().equals(request.getUsername()))
-                .findFirst();
+        User user = userRepository.findByUsername(request.getUsername());
 
-        if (userOptional.isEmpty()) {
-            throw new BusinessException(GlobalErrorCode.NOT_FOUND, "用户不存在");
+        if (user == null) {
+            log.warn("登录失败：用户不存在，用户名: {}", request.getUsername());
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED, "用户名或密码错误");
         }
-
-        User user = userOptional.get();
 
         if (!Boolean.TRUE.equals(user.getEnabled())) {
-            throw new BusinessException(GlobalErrorCode.NOT_FOUND, "用户已被禁用");
+            log.warn("登录失败：用户已被禁用，用户名: {}", request.getUsername());
+            throw new BusinessException(GlobalErrorCode.FORBIDDEN, "用户已被禁用");
         }
 
-        // Phase1: 使用明文密码比对（生产环境应使用BCrypt）
-        if (!request.getPassword().equals(user.getPassword())) {
-            throw new BusinessException(GlobalErrorCode.NOT_FOUND, "密码错误");
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            log.warn("登录失败：密码错误，用户名: {}", request.getUsername());
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED, "用户名或密码错误");
         }
 
         String position = null;
@@ -68,17 +71,19 @@ public class AuthServiceImpl implements AuthService {
             position = post.getCode();
         }
 
-        String token = JwtUtil.generateToken(
+        String token = jwtUtil.generateToken(
                 user.getId(),
                 user.getUsername(),
                 user.getUserType().getCode(),
                 position
         );
 
+        log.info("用户登录成功，用户名: {}", request.getUsername());
+
         LoginResponse response = new LoginResponse();
         response.setToken(token);
-        response.setTokenType(JwtUtil.getTokenType());
-        response.setExpiresIn(JwtUtil.getExpirationTime());
+        response.setTokenType(jwtUtil.getTokenType());
+        response.setExpiresIn(jwtUtil.getExpirationTime());
         response.setUser(buildUserInfoResponse(user));
 
         return response;
@@ -88,21 +93,26 @@ public class AuthServiceImpl implements AuthService {
     public void logout(String token) {
         // Phase1: JWT无状态，登出只需客户端清除令牌
         // 生产环境可实现令牌黑名单
+        log.info("用户登出");
     }
 
     @Override
     public LoginResponse refreshToken(String token) {
-        if (!JwtUtil.validateToken(token)) {
-            throw new BusinessException(GlobalErrorCode.NOT_FOUND, "令牌无效");
+        if (!jwtUtil.validateToken(token)) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED, "令牌无效");
         }
 
-        Long userId = JwtUtil.getUserId(token);
+        Long userId = jwtUtil.getUserId(token);
+        if (userId == null) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED, "令牌无效");
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(GlobalErrorCode.NOT_FOUND, "用户不存在"));
 
-        String position = JwtUtil.getPosition(token);
+        String position = jwtUtil.getPosition(token);
 
-        String newToken = JwtUtil.generateToken(
+        String newToken = jwtUtil.generateToken(
                 user.getId(),
                 user.getUsername(),
                 user.getUserType().getCode(),
@@ -111,8 +121,8 @@ public class AuthServiceImpl implements AuthService {
 
         LoginResponse response = new LoginResponse();
         response.setToken(newToken);
-        response.setTokenType(JwtUtil.getTokenType());
-        response.setExpiresIn(JwtUtil.getExpirationTime());
+        response.setTokenType(jwtUtil.getTokenType());
+        response.setExpiresIn(jwtUtil.getExpirationTime());
         response.setUser(buildUserInfoResponse(user));
 
         return response;
@@ -120,11 +130,15 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public UserInfoResponse getCurrentUser(String token) {
-        if (!JwtUtil.validateToken(token)) {
-            throw new BusinessException(GlobalErrorCode.NOT_FOUND, "令牌无效");
+        if (!jwtUtil.validateToken(token)) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED, "令牌无效");
         }
 
-        Long userId = JwtUtil.getUserId(token);
+        Long userId = jwtUtil.getUserId(token);
+        if (userId == null) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED, "令牌无效");
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(GlobalErrorCode.NOT_FOUND, "用户不存在"));
 
