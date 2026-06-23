@@ -51,8 +51,8 @@ class CommonPomTest {
     }
 
     @Test
-    void dependencyCountShouldBeExactlyFive() throws Exception {
-        assertEquals(5, doc.getDocumentElement()
+    void dependencyCountShouldBeExactlySix() throws Exception {
+        assertEquals(6, doc.getDocumentElement()
             .getElementsByTagName("dependency").getLength());
     }
 }
