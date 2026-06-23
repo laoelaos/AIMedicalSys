@@ -1,8 +1,11 @@
 package com.aimedical.modules.commonmodule.permission;
 
 import com.aimedical.common.base.BaseEntity;
+import com.aimedical.common.base.MenuType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
@@ -32,8 +35,9 @@ public class Function extends BaseEntity {
     @Column(name = "parent_id")
     private Long parentId;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private String type = "MENU";
+    private MenuType type = MenuType.MENU;
 
     @Column(length = 128)
     private String path;
