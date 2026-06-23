@@ -29,9 +29,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtUtil jwtUtil;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, JwtUtil jwtUtil) {
         this.authService = authService;
+        this.jwtUtil = jwtUtil;
     }
 
     /**
@@ -103,7 +105,7 @@ public class AuthController {
         if (authHeader == null || authHeader.isEmpty()) {
             return null;
         }
-        String tokenType = JwtUtil.getTokenType();
+        String tokenType = jwtUtil.getTokenType();
         if (authHeader.startsWith(tokenType + " ")) {
             return authHeader.substring(tokenType.length() + 1);
         }

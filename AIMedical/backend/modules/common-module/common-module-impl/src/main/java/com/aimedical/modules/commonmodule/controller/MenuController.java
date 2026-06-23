@@ -25,9 +25,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class MenuController {
 
     private final MenuService menuService;
+    private final JwtUtil jwtUtil;
 
-    public MenuController(MenuService menuService) {
+    public MenuController(MenuService menuService, JwtUtil jwtUtil) {
         this.menuService = menuService;
+        this.jwtUtil = jwtUtil;
     }
 
     /**
@@ -43,11 +45,15 @@ public class MenuController {
             return Result.fail("UNAUTHORIZED", "未提供令牌");
         }
 
-        if (!JwtUtil.validateToken(token)) {
+        if (!jwtUtil.validateToken(token)) {
             return Result.fail("UNAUTHORIZED", "令牌无效");
         }
 
-        Long userId = JwtUtil.getUserId(token);
+        Long userId = jwtUtil.getUserId(token);
+        if (userId == null) {
+            return Result.fail("UNAUTHORIZED", "令牌无效");
+        }
+
         List<MenuResponse> menus = menuService.getUserMenuTree(userId);
         return Result.success(menus);
     }
@@ -73,7 +79,7 @@ public class MenuController {
         if (authHeader == null || authHeader.isEmpty()) {
             return null;
         }
-        String tokenType = JwtUtil.getTokenType();
+        String tokenType = jwtUtil.getTokenType();
         if (authHeader.startsWith(tokenType + " ")) {
             return authHeader.substring(tokenType.length() + 1);
         }
