@@ -1,9 +1,7 @@
 package com.aimedical.common.result;
 
 import com.aimedical.common.exception.ErrorCode;
-import lombok.Data;
 
-@Data
 public class Result<T> {
 
     private String code;
@@ -29,5 +27,29 @@ public class Result<T> {
 
     public static <T> Result<T> fail(ErrorCode errorCode) {
         return fail(errorCode.getCode(), errorCode.getMessage());
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public T getData() {
+        return data;
+    }
+
+    public void setData(T data) {
+        this.data = data;
     }
 }

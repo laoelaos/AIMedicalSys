@@ -1,6 +1,7 @@
 package com.aimedical;
 
 import com.aimedical.common.result.Result;
+import com.aimedical.HealthController;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

@@ -1,8 +1,5 @@
 package com.aimedical.common.exception;
 
-import lombok.Getter;
-
-@Getter
 public class BusinessException extends RuntimeException {
 
     private final ErrorCode errorCode;
@@ -24,5 +21,13 @@ public class BusinessException extends RuntimeException {
         super(errorCode.getMessage(), cause);
         this.errorCode = errorCode;
         this.args = null;
+    }
+
+    public ErrorCode getErrorCode() {
+        return errorCode;
+    }
+
+    public Object[] getArgs() {
+        return args;
     }
 }

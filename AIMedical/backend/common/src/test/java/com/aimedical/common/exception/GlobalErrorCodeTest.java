@@ -8,11 +8,13 @@ class GlobalErrorCodeTest {
 
     @Test
     void shouldHaveExpectedConstants() {
-        assertEquals(4, GlobalErrorCode.values().length);
+        assertEquals(6, GlobalErrorCode.values().length);
         assertNotNull(GlobalErrorCode.valueOf("SUCCESS"));
         assertNotNull(GlobalErrorCode.valueOf("SYSTEM_ERROR"));
         assertNotNull(GlobalErrorCode.valueOf("PARAM_INVALID"));
         assertNotNull(GlobalErrorCode.valueOf("NOT_FOUND"));
+        assertNotNull(GlobalErrorCode.valueOf("UNAUTHORIZED"));
+        assertNotNull(GlobalErrorCode.valueOf("FORBIDDEN"));
     }
 
     @Test
@@ -37,5 +39,17 @@ class GlobalErrorCodeTest {
     void notFoundShouldReturnCorrectCodeAndMessage() {
         assertEquals("NOT_FOUND", GlobalErrorCode.NOT_FOUND.getCode());
         assertEquals("资源不存在", GlobalErrorCode.NOT_FOUND.getMessage());
+    }
+
+    @Test
+    void unauthorizedShouldReturnCorrectCodeAndMessage() {
+        assertEquals("UNAUTHORIZED", GlobalErrorCode.UNAUTHORIZED.getCode());
+        assertEquals("未认证", GlobalErrorCode.UNAUTHORIZED.getMessage());
+    }
+
+    @Test
+    void forbiddenShouldReturnCorrectCodeAndMessage() {
+        assertEquals("FORBIDDEN", GlobalErrorCode.FORBIDDEN.getCode());
+        assertEquals("无权限", GlobalErrorCode.FORBIDDEN.getMessage());
     }
 }

@@ -46,6 +46,8 @@ application-dev*.yml
 application-dev*.yaml
 application-test*.yml
 application-test*.yaml
+!**/integration/**/application-test*.yml
+!**/integration/**/application-test*.yaml
 *.pid
 
 # Logs
