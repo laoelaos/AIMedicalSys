@@ -1,0 +1,97 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[7m[1m[36m RUN [39m[22m[27m [36mv2.1.0[39m [90mC:/Develop/Software/AIMedicalSys/AIMedical/frontend/packages/shared[39m
+
+ [32m✓[39m src/types/__tests__/types.test.ts[2m > [22mApiSuccess<T>[2m > [22mcreates a SUCCESS branch with data
+ [32m✓[39m src/types/__tests__/types.test.ts[2m > [22mApiSuccess<T>[2m > [22maccepts different data types
+ [32m✓[39m src/types/__tests__/types.test.ts[2m > [22mApiError[2m > [22mcreates a NETWORK_ERROR branch
+ [32m✓[39m src/types/__tests__/types.test.ts[2m > [22mApiError[2m > [22mcreates a UNAUTHORIZED branch
+ [32m✓[39m src/types/__tests__/types.test.ts[2m > [22mApiError[2m > [22mcreates a FORBIDDEN branch
+ [32m✓[39m src/types/__tests__/types.test.ts[2m > [22mApiError[2m > [22mcreates a HTTP_ERROR branch
+ [32m✓[39m src/types/__tests__/types.test.ts[2m > [22mApiError[2m > [22muses as const assertion for literal type preservation
+ [32m✓[39m src/types/__tests__/types.test.ts[2m > [22mApiResponse<T> discriminated union[2m > [22mnarrows to SUCCESS branch via code check
+ [32m✓[39m src/types/__tests__/types.test.ts[2m > [22mApiResponse<T> discriminated union[2m > [22mnarrows to error branch via code check
+ [32m✓[39m src/types/__tests__/types.test.ts[2m > [22mApiResponse<T> discriminated union[2m > [22mhandles UNAUTHORIZED branch in discriminated union
+ [32m✓[39m src/types/__tests__/types.test.ts[2m > [22mApiResponse<T> discriminated union[2m > [22mhandles FORBIDDEN branch in discriminated union
+ [32m✓[39m src/types/__tests__/types.test.ts[2m > [22mApiResponse<T> discriminated union[2m > [22mhandles HTTP_ERROR branch in discriminated union
+ [32m✓[39m src/types/__tests__/types.test.ts[2m > [22mApiResult backward compatibility[2m > [22mApiResult interface is still usable
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mSuccess interceptor[2m > [22munwraps SUCCESS response to body.data
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mSuccess interceptor[2m > [22munwraps nested data from SUCCESS response
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mSuccess interceptor[2m > [22munwraps array data from SUCCESS response
+ [31m×[39m src/api/__tests__/interceptors.test.ts[2m > [22mSuccess interceptor[2m > [22mreturns BusinessError when code is not SUCCESS
+[31m   → expected Promise{…} to deeply equal { code: 'BUSINESS_ERROR', …(2) }[39m
+ [31m×[39m src/api/__tests__/interceptors.test.ts[2m > [22mSuccess interceptor[2m > [22mreturns BusinessError with empty message fallback when message is undefined
+[31m   → expected Promise{…} to deeply equal { code: 'UNKNOWN_ERROR', …(2) }[39m
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mError interceptor[2m > [22mreturns NETWORK_ERROR when error.response is undefined
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mError interceptor[2m > [22mreturns UNAUTHORIZED for 401
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mError interceptor[2m > [22mreturns FORBIDDEN for 403
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mError interceptor[2m > [22mreturns HTTP_ERROR for 500
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mError interceptor[2m > [22mreturns HTTP_ERROR for 404
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mError interceptor[2m > [22mreturns resolved promise (not rejected)
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mError interceptor[2m > [22mall branches return promise resolved with { code, message, isBusinessError } shape
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mapiGet[2m > [22mcalls apiClient.get with url
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mapiGet[2m > [22mpasses config to apiClient.get
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mapiGet[2m > [22mreturns result after interceptor unwrapping
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mapiPost[2m > [22mcalls apiClient.post with url and data
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mapiPost[2m > [22mpasses config to apiClient.post
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mapiPost[2m > [22mworks without data argument
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mapiPut[2m > [22mcalls apiClient.put with url and data
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mapiPut[2m > [22mpasses config to apiClient.put
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mapiDelete[2m > [22mcalls apiClient.delete with url
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mapiDelete[2m > [22mpasses config to apiClient.delete
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mIntegration: wrapper functions & interceptors[2m > [22mapiGet response is processed by success interceptor
+ [32m✓[39m src/api/__tests__/interceptors.test.ts[2m > [22mIntegration: wrapper functions & interceptors[2m > [22mapiGet error is processed by error interceptor
+
+[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 2 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/api/__tests__/interceptors.test.ts[2m > [22mSuccess interceptor[2m > [22mreturns BusinessError when code is not SUCCESS
+[31m[1mAssertionError[22m: expected Promise{…} to deeply equal { code: 'BUSINESS_ERROR', …(2) }[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- Object {[39m
+[32m-   "code": "BUSINESS_ERROR",[39m
+[32m-   "isBusinessError": true,[39m
+[32m-   "message": "业务异常",[39m
+[32m- }[39m
+[31m+ Promise {}[39m
+
+[36m [2m❯[22m src/api/__tests__/interceptors.test.ts:[2m62:20[22m[39m
+    [90m 60| [39m    [35mconst[39m mockResponse [33m=[39m { data[33m:[39m { code[33m:[39m [32m'BUSINESS_ERROR'[39m[33m,[39m message[33m:[39m [32m'[39m…
+    [90m 61| [39m    [35mconst[39m result [33m=[39m [34mhandler[39m(mockResponse)
+    [90m 62| [39m    [34mexpect[39m(result)[33m.[39m[34mtoEqual[39m({ code[33m:[39m [32m'BUSINESS_ERROR'[39m[33m,[39m message[33m:[39m [32m'业务异[39m…
+    [90m   | [39m                   [31m^[39m
+    [90m 63| [39m  })
+    [90m 64| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/api/__tests__/interceptors.test.ts[2m > [22mSuccess interceptor[2m > [22mreturns BusinessError with empty message fallback when message is undefined
+[31m[1mAssertionError[22m: expected Promise{…} to deeply equal { code: 'UNKNOWN_ERROR', …(2) }[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- Object {[39m
+[32m-   "code": "UNKNOWN_ERROR",[39m
+[32m-   "isBusinessError": true,[39m
+[32m-   "message": "",[39m
+[32m- }[39m
+[31m+ Promise {}[39m
+
+[36m [2m❯[22m src/api/__tests__/interceptors.test.ts:[2m69:20[22m[39m
+    [90m 67| [39m    [35mconst[39m mockResponse [33m=[39m { data[33m:[39m { code[33m:[39m [32m'UNKNOWN_ERROR'[39m } }
+    [90m 68| [39m    [35mconst[39m result [33m=[39m [34mhandler[39m(mockResponse)
+    [90m 69| [39m    [34mexpect[39m(result)[33m.[39m[34mtoEqual[39m({ code[33m:[39m [32m'UNKNOWN_ERROR'[39m[33m,[39m message[33m:[39m [32m''[39m[33m,[39m isBus…
+    [90m   | [39m                   [31m^[39m
+    [90m 70| [39m  })
+    [90m 71| [39m})
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m35 passed[39m[22m[90m (37)[39m
+[2m   Start at [22m 00:31:49
+[2m   Duration [22m 382ms[2m (transform 74ms, setup 0ms, collect 95ms, tests 19ms, environment 0ms, prepare 248ms)[22m
+

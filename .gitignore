@@ -1,0 +1,89 @@
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# Java / Spring Boot / Maven / Gradle
+*.class
+*.log
+*.tmp
+*.swp
+*.swo
+hs_err_pid*
+replay_pid*
+
+# Build output
+build/
+target/
+out/
+classes/
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
+**/dependency-reduced-pom.xml
+
+# Gradle
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Spring Boot runtime artifacts
+*.jar
+*.war
+*.ear
+*.zip
+
+# Spring Boot / local config
+application-local*.yml
+application-local*.yaml
+application-dev*.yml
+application-dev*.yaml
+application-test*.yml
+application-test*.yaml
+!**/integration/**/application-test*.yml
+!**/integration/**/application-test*.yaml
+*.pid
+
+# Logs
+logs/
+log/
+*.log.*
+
+# Test / coverage
+coverage/
+reports/
+surefire-reports/
+failsafe-reports/
+*.gcda
+*.gcno
+*.exec
+
+# Frontend dependencies and builds
+node_modules/
+dist/
+frontend/dist/
+frontend/.vite/
+frontend/.next/
+frontend/.nuxt/
+frontend/build/
+frontend/coverage/
+frontend/.parcel-cache/
+frontend/.turbo/
+
+# Frontend env files
+.env
+.env.*
+!.env.example
+
+# Uploads / generated data
+uploads/
+files/
+temp/
+cache/
+.cache/

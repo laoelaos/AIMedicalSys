@@ -1,0 +1,21 @@
+{
+  "name": "@aimedical/app-patient",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@aimedical/shared": "0.0.0",
+    "@aimedical/ui-core": "0.0.0",
+    "vue": "^3.4.27",
+    "vue-router": "^4.3.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.5",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.12",
+    "vue-tsc": "^2.0.19"
+  }
+}
