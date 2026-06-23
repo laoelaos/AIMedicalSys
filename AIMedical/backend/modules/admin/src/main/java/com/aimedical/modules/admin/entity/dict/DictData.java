@@ -3,6 +3,8 @@ package com.aimedical.modules.admin.entity.dict;
 import com.aimedical.common.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 
@@ -19,8 +21,9 @@ public class DictData extends BaseEntity {
     @Column(length = 100)
     private String dictValue;
 
-    @Column(length = 100)
-    private String dictType;
+    @ManyToOne
+    @JoinColumn(name = "dict_type", referencedColumnName = "dict_type")
+    private DictType dictType;
 
     @Column(length = 100)
     private String cssClass;

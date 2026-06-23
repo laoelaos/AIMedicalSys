@@ -1,6 +1,5 @@
-package com.aimedical.modules.admin.entity;
+package com.aimedical.common.base;
 
-import com.aimedical.common.base.BaseEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

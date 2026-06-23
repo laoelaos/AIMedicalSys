@@ -78,7 +78,7 @@ CREATE TABLE `sys_function` (
   `parent_id`     BIGINT        DEFAULT NULL            COMMENT '父级ID',
   `code`          VARCHAR(128)  NOT NULL                COMMENT '功能编码',
   `name`          VARCHAR(64)   DEFAULT NULL            COMMENT '功能名称',
-  `type`          VARCHAR(20)   DEFAULT 'MENU'          COMMENT '类型 MENU/BUTTON',
+  `type`          VARCHAR(20)   DEFAULT 'MENU'          COMMENT '类型 DIRECTORY/MENU/BUTTON',
   `path`          VARCHAR(128)  DEFAULT NULL            COMMENT '路由路径',
   `component`     VARCHAR(255)  DEFAULT NULL            COMMENT '前端组件',
   `icon`          VARCHAR(64)   DEFAULT NULL            COMMENT '图标',
