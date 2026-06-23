@@ -1,5 +1,8 @@
 package com.aimedical.common.exception;
 
+import lombok.Getter;
+
+@Getter
 public enum GlobalErrorCode implements ErrorCode {
 
     SUCCESS("SUCCESS", "成功"),
@@ -13,15 +16,5 @@ public enum GlobalErrorCode implements ErrorCode {
     GlobalErrorCode(String code, String message) {
         this.code = code;
         this.message = message;
-    }
-
-    @Override
-    public String code() {
-        return code;
-    }
-
-    @Override
-    public String message() {
-        return message;
     }
 }

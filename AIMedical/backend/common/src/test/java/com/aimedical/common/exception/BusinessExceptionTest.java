@@ -8,12 +8,12 @@ class BusinessExceptionTest {
 
     private static final ErrorCode TEST_ERROR = new ErrorCode() {
         @Override
-        public String code() {
+        public String getCode() {
             return "TEST_ERR";
         }
 
         @Override
-        public String message() {
+        public String getMessage() {
             return "测试异常";
         }
     };

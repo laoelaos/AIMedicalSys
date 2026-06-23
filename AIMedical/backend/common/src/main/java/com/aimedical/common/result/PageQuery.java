@@ -3,8 +3,11 @@ package com.aimedical.common.result;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
+
 import java.util.List;
 
+@Data
 public class PageQuery {
 
     @Min(0)
@@ -15,28 +18,4 @@ public class PageQuery {
 
     @Size(max = 10)
     private List<String> sort;
-
-    public int getPage() {
-        return page;
-    }
-
-    public void setPage(int page) {
-        this.page = page;
-    }
-
-    public int getSize() {
-        return size;
-    }
-
-    public void setSize(int size) {
-        this.size = size;
-    }
-
-    public List<String> getSort() {
-        return sort;
-    }
-
-    public void setSort(List<String> sort) {
-        this.sort = sort;
-    }
 }

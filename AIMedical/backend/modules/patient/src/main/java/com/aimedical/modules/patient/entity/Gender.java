@@ -1,4 +1,4 @@
-package com.aimedical.modules.commonmodule.api;
+package com.aimedical.modules.patient.entity;
 
 import com.aimedical.common.base.BaseEnum;
 import lombok.AllArgsConstructor;
@@ -6,11 +6,11 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum UserType implements BaseEnum {
+public enum Gender implements BaseEnum {
 
-    DOCTOR("DOCTOR", "医生"),
-    PATIENT("PATIENT", "患者"),
-    ADMIN("ADMIN", "管理员");
+    MALE("MALE", "男"),
+    FEMALE("FEMALE", "女"),
+    UNKNOWN("UNKNOWN", "未知");
 
     private final String code;
     private final String desc;
