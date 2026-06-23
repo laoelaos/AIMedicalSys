@@ -26,7 +26,7 @@ public class Result<T> {
     }
 
     public static <T> Result<T> fail(ErrorCode errorCode) {
-        return fail(errorCode.code(), errorCode.message());
+        return fail(errorCode.getCode(), errorCode.getMessage());
     }
 
     public String getCode() {
