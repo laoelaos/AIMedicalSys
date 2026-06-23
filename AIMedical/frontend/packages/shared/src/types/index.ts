@@ -26,3 +26,46 @@ export type BusinessError = {
   message: string
   isBusinessError?: true
 }
+
+/**
+ * 用户信息类型
+ */
+export interface UserInfo {
+  id: number
+  username: string
+  realName: string
+  role: string
+  position?: string
+  permissions?: string[]
+}
+
+/**
+ * 菜单项类型
+ */
+export interface MenuItem {
+  id: number
+  name: string
+  path: string
+  icon?: string
+  permission?: string
+  sortOrder?: number
+  children?: MenuItem[]
+}
+
+/**
+ * 登录请求类型
+ */
+export interface LoginRequest {
+  username: string
+  password: string
+}
+
+/**
+ * 登录响应类型
+ */
+export interface LoginResponse {
+  token: string
+  tokenType: string
+  expiresIn: number
+  user: UserInfo
+}

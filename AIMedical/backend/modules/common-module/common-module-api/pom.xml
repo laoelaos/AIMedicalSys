@@ -1,4 +1,4 @@
-﻿<project>
+<project>
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.aimedical</groupId>
@@ -13,6 +13,21 @@
         <dependency>
             <groupId>com.aimedical</groupId>
             <artifactId>common</artifactId>
+        </dependency>
+        <!-- JWT -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

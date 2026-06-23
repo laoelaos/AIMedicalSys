@@ -1,24 +1,18 @@
 <template>
-  <div class="app-container">
-    <h1>智慧云脑诊疗平台 - 医生端</h1>
-    <p class="placeholder-hint">Phase 0 占位页面 — 后端开发中</p>
-  </div>
+  <router-view />
 </template>
 
 <script setup lang="ts">
 </script>
 
-<style scoped>
-.app-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  font-family: sans-serif;
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
-.placeholder-hint {
-  color: #666;
-  font-size: 14px;
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 </style>

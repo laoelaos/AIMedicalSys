@@ -1,5 +1,5 @@
-import axios, { AxiosRequestConfig } from 'axios'
-import type { ApiResponse, BusinessError, ApiResult } from '../types'
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
+import type { BusinessError, ApiResult, LoginRequest, LoginResponse, UserInfo, MenuItem } from '../types'
 
 const apiClient = axios.create({
   baseURL: '/api',
@@ -8,41 +8,145 @@ const apiClient = axios.create({
 })
 
 apiClient.interceptors.response.use(
-  (response) => {
+  (response: AxiosResponse) => {
     const body = response.data as ApiResult<unknown>
     if (body.code !== 'SUCCESS') {
-      return ({ code: body.code, message: body.message ?? '', isBusinessError: true as const } as BusinessError) as unknown
+      const error: BusinessError = { code: body.code, message: body.message ?? '', isBusinessError: true }
+      return Promise.reject(error)
     }
-    return body.data
+    response.data = body.data
+    return response
   },
   (error) => {
     if (error.response === undefined) {
-      return Promise.resolve({ code: 'NETWORK_ERROR' as const, message: '网络不可达，请检查网络连接', isBusinessError: true as const })
+      const err: BusinessError = { code: 'NETWORK_ERROR', message: '网络不可达，请检查网络连接', isBusinessError: true }
+      return Promise.resolve(err)
     }
     if (error.response.status === 401) {
-      return Promise.resolve({ code: 'UNAUTHORIZED' as const, message: '登录已过期，请重新登录', isBusinessError: true as const })
+      const err: BusinessError = { code: 'UNAUTHORIZED', message: '登录已过期，请重新登录', isBusinessError: true }
+      return Promise.resolve(err)
     }
     if (error.response.status === 403) {
-      return Promise.resolve({ code: 'FORBIDDEN' as const, message: '无权限访问', isBusinessError: true as const })
+      const err: BusinessError = { code: 'FORBIDDEN', message: '无权限访问', isBusinessError: true }
+      return Promise.resolve(err)
     }
-    return Promise.resolve({ code: 'HTTP_ERROR' as const, message: `请求失败（${error.response.status}）`, isBusinessError: true as const })
+    const err: BusinessError = { code: 'HTTP_ERROR', message: `请求失败（${error.response.status}）`, isBusinessError: true }
+    return Promise.resolve(err)
   },
 )
 
 export async function apiGet<T>(url: string, config?: AxiosRequestConfig): Promise<T | BusinessError> {
-  return apiClient.get(url, config) as unknown as Promise<T | BusinessError>
+  try {
+    const response = await apiClient.get<unknown>(url, config)
+    if ((response as unknown as BusinessError).isBusinessError) {
+      return response as unknown as BusinessError
+    }
+    return (response as AxiosResponse<T>).data
+  } catch (error) {
+    return error as BusinessError
+  }
 }
 
 export async function apiPost<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T | BusinessError> {
-  return apiClient.post(url, data, config) as unknown as Promise<T | BusinessError>
+  try {
+    const response = await apiClient.post<unknown>(url, data, config)
+    if ((response as unknown as BusinessError).isBusinessError) {
+      return response as unknown as BusinessError
+    }
+    return (response as AxiosResponse<T>).data
+  } catch (error) {
+    return error as BusinessError
+  }
 }
 
 export async function apiPut<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T | BusinessError> {
-  return apiClient.put(url, data, config) as unknown as Promise<T | BusinessError>
+  try {
+    const response = await apiClient.put<unknown>(url, data, config)
+    if ((response as unknown as BusinessError).isBusinessError) {
+      return response as unknown as BusinessError
+    }
+    return (response as AxiosResponse<T>).data
+  } catch (error) {
+    return error as BusinessError
+  }
 }
 
 export async function apiDelete<T>(url: string, config?: AxiosRequestConfig): Promise<T | BusinessError> {
-  return apiClient.delete(url, config) as unknown as Promise<T | BusinessError>
+  try {
+    const response = await apiClient.delete<unknown>(url, config)
+    if ((response as unknown as BusinessError).isBusinessError) {
+      return response as unknown as BusinessError
+    }
+    return (response as AxiosResponse<T>).data
+  } catch (error) {
+    return error as BusinessError
+  }
 }
 
 export { apiClient }
+
+/**
+ * 设置认证令牌
+ */
+export function setAuthToken(token: string): void {
+  apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`
+}
+
+/**
+ * 清除认证令牌
+ */
+export function clearAuthToken(): void {
+  delete apiClient.defaults.headers.common['Authorization']
+}
+
+/**
+ * 认证相关API
+ */
+export const authApi = {
+  /**
+   * 用户登录
+   */
+  login: (request: LoginRequest): Promise<LoginResponse | BusinessError> => {
+    return apiPost<LoginResponse>('/auth/login', request)
+  },
+
+  /**
+   * 用户登出
+   */
+  logout: (): Promise<void | BusinessError> => {
+    return apiPost<void>('/auth/logout')
+  },
+
+  /**
+   * 刷新令牌
+   */
+  refresh: (): Promise<LoginResponse | BusinessError> => {
+    return apiPost<LoginResponse>('/auth/refresh')
+  },
+
+  /**
+   * 获取当前用户信息
+   */
+  me: (): Promise<UserInfo | BusinessError> => {
+    return apiGet<UserInfo>('/auth/me')
+  },
+}
+
+/**
+ * 菜单相关API
+ */
+export const menuApi = {
+  /**
+   * 获取当前用户菜单树
+   */
+  tree: (): Promise<MenuItem[] | BusinessError> => {
+    return apiGet<MenuItem[]>('/menu/tree')
+  },
+
+  /**
+   * 获取所有菜单（管理员）
+   */
+  all: (): Promise<MenuItem[] | BusinessError> => {
+    return apiGet<MenuItem[]>('/menu/all')
+  },
+}
