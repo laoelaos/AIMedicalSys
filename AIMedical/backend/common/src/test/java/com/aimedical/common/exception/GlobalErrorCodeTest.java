@@ -17,25 +17,25 @@ class GlobalErrorCodeTest {
 
     @Test
     void successShouldReturnCorrectCodeAndMessage() {
-        assertEquals("SUCCESS", GlobalErrorCode.SUCCESS.code());
-        assertEquals("成功", GlobalErrorCode.SUCCESS.message());
+        assertEquals("SUCCESS", GlobalErrorCode.SUCCESS.getCode());
+        assertEquals("成功", GlobalErrorCode.SUCCESS.getMessage());
     }
 
     @Test
     void systemErrorShouldReturnCorrectCodeAndMessage() {
-        assertEquals("SYSTEM_ERROR", GlobalErrorCode.SYSTEM_ERROR.code());
-        assertEquals("系统异常", GlobalErrorCode.SYSTEM_ERROR.message());
+        assertEquals("SYSTEM_ERROR", GlobalErrorCode.SYSTEM_ERROR.getCode());
+        assertEquals("系统异常", GlobalErrorCode.SYSTEM_ERROR.getMessage());
     }
 
     @Test
     void paramInvalidShouldReturnCorrectCodeAndMessage() {
-        assertEquals("PARAM_INVALID", GlobalErrorCode.PARAM_INVALID.code());
-        assertEquals("参数校验失败", GlobalErrorCode.PARAM_INVALID.message());
+        assertEquals("PARAM_INVALID", GlobalErrorCode.PARAM_INVALID.getCode());
+        assertEquals("参数校验失败", GlobalErrorCode.PARAM_INVALID.getMessage());
     }
 
     @Test
     void notFoundShouldReturnCorrectCodeAndMessage() {
-        assertEquals("NOT_FOUND", GlobalErrorCode.NOT_FOUND.code());
-        assertEquals("资源不存在", GlobalErrorCode.NOT_FOUND.message());
+        assertEquals("NOT_FOUND", GlobalErrorCode.NOT_FOUND.getCode());
+        assertEquals("资源不存在", GlobalErrorCode.NOT_FOUND.getMessage());
     }
 }

@@ -34,12 +34,12 @@ class ResultTest {
     void shouldCreateFailResultWithErrorCode() {
         ErrorCode errorCode = new ErrorCode() {
             @Override
-            public String code() {
+            public String getCode() {
                 return "TEST_ERR";
             }
 
             @Override
-            public String message() {
+            public String getMessage() {
                 return "测试错误";
             }
         };

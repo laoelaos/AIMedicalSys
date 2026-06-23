@@ -25,12 +25,12 @@ class GlobalExceptionHandlerTest {
 
     private static final ErrorCode TEST_ERROR = new ErrorCode() {
         @Override
-        public String code() {
+        public String getCode() {
             return "BIZ_ERR";
         }
 
         @Override
-        public String message() {
+        public String getMessage() {
             return "业务异常";
         }
     };
@@ -55,8 +55,8 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatusCode.valueOf(400), response.getStatusCode());
         Result<Void> body = response.getBody();
         assertNotNull(body);
-        assertEquals(GlobalErrorCode.PARAM_INVALID.code(), body.getCode());
-        assertEquals(GlobalErrorCode.PARAM_INVALID.message(), body.getMessage());
+        assertEquals(GlobalErrorCode.PARAM_INVALID.getCode(), body.getCode());
+        assertEquals(GlobalErrorCode.PARAM_INVALID.getMessage(), body.getMessage());
     }
 
     @Test
@@ -74,8 +74,8 @@ class GlobalExceptionHandlerTest {
             assertEquals(HttpStatusCode.valueOf(400), response.getStatusCode());
             Result<Void> body = response.getBody();
             assertNotNull(body);
-            assertEquals(GlobalErrorCode.PARAM_INVALID.code(), body.getCode());
-            assertEquals(GlobalErrorCode.PARAM_INVALID.message(), body.getMessage());
+            assertEquals(GlobalErrorCode.PARAM_INVALID.getCode(), body.getCode());
+            assertEquals(GlobalErrorCode.PARAM_INVALID.getMessage(), body.getMessage());
             assertNull(body.getData());
         } finally {
             appender.stop();
@@ -98,8 +98,8 @@ class GlobalExceptionHandlerTest {
             assertEquals(HttpStatusCode.valueOf(500), response.getStatusCode());
             Result<Void> body = response.getBody();
             assertNotNull(body);
-            assertEquals(GlobalErrorCode.SYSTEM_ERROR.code(), body.getCode());
-            assertEquals(GlobalErrorCode.SYSTEM_ERROR.message(), body.getMessage());
+            assertEquals(GlobalErrorCode.SYSTEM_ERROR.getCode(), body.getCode());
+            assertEquals(GlobalErrorCode.SYSTEM_ERROR.getMessage(), body.getMessage());
             assertNull(body.getData());
         } finally {
             appender.stop();
@@ -114,8 +114,8 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatusCode.valueOf(500), response.getStatusCode());
         Result<Void> body = response.getBody();
         assertNotNull(body);
-        assertEquals(GlobalErrorCode.SYSTEM_ERROR.code(), body.getCode());
-        assertEquals(GlobalErrorCode.SYSTEM_ERROR.message(), body.getMessage());
+        assertEquals(GlobalErrorCode.SYSTEM_ERROR.getCode(), body.getCode());
+        assertEquals(GlobalErrorCode.SYSTEM_ERROR.getMessage(), body.getMessage());
         assertNull(body.getData());
     }
 }

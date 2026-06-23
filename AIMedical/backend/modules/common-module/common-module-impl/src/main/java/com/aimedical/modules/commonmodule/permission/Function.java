@@ -1,16 +1,23 @@
 package com.aimedical.modules.commonmodule.permission;
 
 import com.aimedical.common.base.BaseEntity;
+import com.aimedical.common.base.MenuType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Set;
 
 @Entity
 @Table(name = "sys_function")
+@Getter
+@Setter
 public class Function extends BaseEntity {
 
     @Column(nullable = false, unique = true)
@@ -25,43 +32,34 @@ public class Function extends BaseEntity {
     @ManyToMany(mappedBy = "functions", fetch = FetchType.LAZY)
     private Set<Post> posts;
 
-    public String getCode() {
-        return code;
-    }
+    @Column(name = "parent_id")
+    private Long parentId;
 
-    public void setCode(String code) {
-        this.code = code;
-    }
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private MenuType type = MenuType.MENU;
 
-    public String getName() {
-        return name;
-    }
+    @Column(length = 128)
+    private String path;
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    @Column(length = 255)
+    private String component;
 
-    public String getDescription() {
-        return description;
-    }
+    @Column(length = 64)
+    private String icon;
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    @Column(name = "sort")
+    private Integer sort;
 
-    public Boolean getEnabled() {
-        return enabled;
-    }
+    private Boolean visible;
 
-    public void setEnabled(Boolean enabled) {
-        this.enabled = enabled;
-    }
+    @Column(length = 128)
+    private String perms;
 
-    public Set<Post> getPosts() {
-        return posts;
-    }
+    @Column(name = "query_method", length = 10)
+    private String queryMethod;
 
-    public void setPosts(Set<Post> posts) {
-        this.posts = posts;
-    }
+    @Column(length = 500)
+    private String remark;
+
 }
