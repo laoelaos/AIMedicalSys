@@ -9,16 +9,35 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "patient_profile")
+@Getter
+@Setter
 public class PatientEntity extends BaseEntity {
 
+    @Column(name = "user_id", unique = true)
+    private Long userId;
+
+    @Column(length = 64)
+    private String realName;
+
+    @Column(length = 20)
+    private String gender;
+
+    @Column(length = 500)
+    private String avatarUrl;
+
+    @Column(length = 20)
+    private String phone;
+
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private com.aimedical.modules.commonmodule.permission.User user;
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
@@ -38,60 +57,4 @@ public class PatientEntity extends BaseEntity {
 
     @Column(length = 2000)
     private String emergencyContact;
-
-    public com.aimedical.modules.commonmodule.permission.User getUser() {
-        return user;
-    }
-
-    public void setUser(com.aimedical.modules.commonmodule.permission.User user) {
-        this.user = user;
-    }
-
-    public List<PatientAllergy> getAllergies() {
-        return allergies;
-    }
-
-    public void setAllergies(List<PatientAllergy> allergies) {
-        this.allergies = allergies;
-    }
-
-    public List<PatientChronicDisease> getChronicDiseases() {
-        return chronicDiseases;
-    }
-
-    public void setChronicDiseases(List<PatientChronicDisease> chronicDiseases) {
-        this.chronicDiseases = chronicDiseases;
-    }
-
-    public List<PatientFamilyHistory> getFamilyHistories() {
-        return familyHistories;
-    }
-
-    public void setFamilyHistories(List<PatientFamilyHistory> familyHistories) {
-        this.familyHistories = familyHistories;
-    }
-
-    public List<PatientSurgeryHistory> getSurgeryHistories() {
-        return surgeryHistories;
-    }
-
-    public void setSurgeryHistories(List<PatientSurgeryHistory> surgeryHistories) {
-        this.surgeryHistories = surgeryHistories;
-    }
-
-    public List<PatientMedicationHistory> getMedicationHistories() {
-        return medicationHistories;
-    }
-
-    public void setMedicationHistories(List<PatientMedicationHistory> medicationHistories) {
-        this.medicationHistories = medicationHistories;
-    }
-
-    public String getEmergencyContact() {
-        return emergencyContact;
-    }
-
-    public void setEmergencyContact(String emergencyContact) {
-        this.emergencyContact = emergencyContact;
-    }
 }

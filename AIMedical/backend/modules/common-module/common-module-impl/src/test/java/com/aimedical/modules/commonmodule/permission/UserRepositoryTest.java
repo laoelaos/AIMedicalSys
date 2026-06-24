@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
-import org.hibernate.PropertyValueException;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -49,7 +49,7 @@ class UserRepositoryTest {
         User user = new User();
         user.setUsername("testuser_null_pwd");
         user.setUserType(UserType.ADMIN);
-        assertThrows(PropertyValueException.class, () -> em.persistAndFlush(user));
+        assertThrows(ConstraintViolationException.class, () -> em.persistAndFlush(user));
     }
 
     @Test
