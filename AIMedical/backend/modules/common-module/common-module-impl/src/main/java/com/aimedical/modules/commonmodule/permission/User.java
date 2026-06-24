@@ -25,6 +25,7 @@ public class User extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String username;
 
+    @Column(nullable = false)
     private String password;
 
     private String nickname;
@@ -33,7 +34,7 @@ public class User extends BaseEntity {
 
     private String email;
 
-    private Boolean enabled;
+    private Boolean enabled = true;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

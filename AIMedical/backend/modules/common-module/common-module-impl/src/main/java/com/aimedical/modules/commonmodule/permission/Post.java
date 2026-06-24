@@ -27,7 +27,7 @@ public class Post extends BaseEntity {
 
     private String description;
 
-    private Boolean enabled;
+    private Boolean enabled = true;
 
     private Integer sort;
 

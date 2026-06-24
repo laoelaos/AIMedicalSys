@@ -13,7 +13,7 @@ DROP TABLE IF EXISTS `sys_user`;
 CREATE TABLE `sys_user` (
   `id`         BIGINT        NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `username`   VARCHAR(64)   NOT NULL                COMMENT '登录账号',
-  `password`   VARCHAR(128)  DEFAULT NULL            COMMENT '密码',
+  `password`   VARCHAR(128)  NOT NULL                COMMENT '密码',
   `nickname`   VARCHAR(64)   DEFAULT NULL            COMMENT '昵称',
   `phone`      VARCHAR(20)   DEFAULT NULL            COMMENT '手机号',
   `email`      VARCHAR(128)  DEFAULT NULL            COMMENT '邮箱',
@@ -22,7 +22,7 @@ CREATE TABLE `sys_user` (
   `remark`     VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
   `created_at` DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at` DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`    TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
+    `deleted`    TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_username` (`username`),
   KEY `idx_username_user_type` (`username`, `user_type`)
@@ -41,7 +41,7 @@ CREATE TABLE `sys_role` (
   `remark`      VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
   `created_at`  DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`  DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`     TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`     TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_code` (`code`),
   KEY `idx_code` (`code`)
@@ -62,7 +62,7 @@ CREATE TABLE `sys_post` (
   `remark`      VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
   `created_at`  DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`  DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`     TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`     TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_code` (`code`),
   KEY `idx_code` (`code`),
@@ -91,7 +91,7 @@ CREATE TABLE `sys_function` (
   `remark`        VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
   `created_at`    DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`    DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`       TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`       TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_code` (`code`),
   KEY `idx_code_type` (`code`, `type`),
@@ -110,7 +110,7 @@ CREATE TABLE `sys_dict_type` (
   `remark`     VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
   `created_at` DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at` DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`    TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
+    `deleted`    TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_dict_type` (`dict_type`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='字典类型表';
@@ -132,7 +132,7 @@ CREATE TABLE `sys_dict_data` (
   `remark`     VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
   `created_at` DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at` DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`    TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
+    `deleted`    TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   KEY `idx_dict_type` (`dict_type`),
   CONSTRAINT `fk_sys_dict_data_type` FOREIGN KEY (`dict_type`) REFERENCES `sys_dict_type` (`dict_type`)
@@ -194,7 +194,7 @@ CREATE TABLE `patient_profile` (
   `remark`              VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
   `created_at`          DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`          DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`             TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`             TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_id` (`user_id`),
   CONSTRAINT `fk_patient_profile_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`)
@@ -219,7 +219,7 @@ CREATE TABLE `doctor_profile` (
   `remark`             VARCHAR(500)   DEFAULT NULL            COMMENT '备注',
   `created_at`         DATETIME       DEFAULT NULL            COMMENT '创建时间',
   `updated_at`         DATETIME       DEFAULT NULL            COMMENT '更新时间',
-  `deleted`            TINYINT(1)     DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`            TINYINT(1)     NOT NULL DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_id` (`user_id`),
   CONSTRAINT `fk_doctor_profile_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`)
@@ -239,7 +239,7 @@ CREATE TABLE `admin_profile` (
   `remark`     VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
   `created_at` DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at` DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`    TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
+    `deleted`    TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_id` (`user_id`),
   CONSTRAINT `fk_admin_profile_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`)
@@ -260,7 +260,7 @@ CREATE TABLE `health_profile` (
   `lifestyle_note` TEXT          DEFAULT NULL            COMMENT '生活方式备注',
   `created_at`     DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`     DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`        TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`        TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_patient_id` (`patient_id`),
   CONSTRAINT `fk_health_profile_patient` FOREIGN KEY (`patient_id`) REFERENCES `patient_profile` (`id`)
@@ -281,7 +281,7 @@ CREATE TABLE `allergy_history` (
   `remark`            VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
   `created_at`        DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`        DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`           TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`           TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   KEY `idx_health_profile_id` (`health_profile_id`),
   CONSTRAINT `fk_allergy_history_health` FOREIGN KEY (`health_profile_id`) REFERENCES `health_profile` (`id`)
@@ -300,7 +300,7 @@ CREATE TABLE `chronic_disease` (
   `remark`            VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
   `created_at`        DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`        DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`           TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`           TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   KEY `idx_health_profile_id` (`health_profile_id`),
   CONSTRAINT `fk_chronic_disease_health` FOREIGN KEY (`health_profile_id`) REFERENCES `health_profile` (`id`)
@@ -319,7 +319,7 @@ CREATE TABLE `family_history` (
   `remark`            VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
   `created_at`        DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`        DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`           TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`           TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   KEY `idx_health_profile_id` (`health_profile_id`),
   CONSTRAINT `fk_family_history_health` FOREIGN KEY (`health_profile_id`) REFERENCES `health_profile` (`id`)
@@ -338,7 +338,7 @@ CREATE TABLE `surgery_history` (
   `remark`            VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
   `created_at`        DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`        DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`           TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`           TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   KEY `idx_health_profile_id` (`health_profile_id`),
   CONSTRAINT `fk_surgery_history_health` FOREIGN KEY (`health_profile_id`) REFERENCES `health_profile` (`id`)
@@ -358,7 +358,7 @@ CREATE TABLE `medication_history` (
   `remark`            VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
   `created_at`        DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`        DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`           TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`           TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   KEY `idx_health_profile_id` (`health_profile_id`),
   CONSTRAINT `fk_medication_history_health` FOREIGN KEY (`health_profile_id`) REFERENCES `health_profile` (`id`)
@@ -419,7 +419,7 @@ CREATE TABLE `sys_token` (
   `expires_at`    DATETIME      DEFAULT NULL            COMMENT '过期时间',
   `created_at`    DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`    DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`       TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`       TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_token` (`token`),
   KEY `idx_user_id_expires_at` (`user_id`, `expires_at`)
