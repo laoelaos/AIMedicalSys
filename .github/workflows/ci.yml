@@ -56,3 +56,27 @@ jobs:
 
       - name: Analyze dependencies
         run: mvn -B dependency:analyze
+
+      - name: "Smoke test: start Spring Boot application"
+        # mvn -B verify 编译/打包/跑单测通过, 但不会真正启动 Spring 上下文.
+        # spring-boot:start 会先把 application 模块 repackage, 然后 fork java 进程
+        # 启动应用. 若有 bean 装配/循环依赖/缺类等启动期错误, 进程崩溃,
+        # spring-boot:start 会超时返回非零, CI 立即失败.
+        run: mvn -B -pl application -am package -DskipTests spring-boot:start
+
+      - name: "Smoke test: wait for /actuator/health to be UP"
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/actuator/health 2>/dev/null | grep -q '"status":"UP"'; then
+              echo "Application is UP after ${i} attempts"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Application failed to become healthy within 120s"
+          curl -fsS http://localhost:8080/actuator/health || true
+          exit 1
+
+      - name: "Smoke test: stop Spring Boot application"
+        if: always()
+        run: mvn -B -pl application spring-boot:stop
