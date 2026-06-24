@@ -134,14 +134,14 @@ class EntityMappingIT {
         Function function = new Function();
         function.setCode("test:menu");
         function.setName("测试菜单");
-        function.setType(MenuType.MENU);
+        function.setType(MenuType.MENU.getCode());
         function.setEnabled(true);
 
         entityManager.persist(function);
         entityManager.flush();
 
         Function found = entityManager.find(Function.class, function.getId());
-        assertEquals(MenuType.MENU, found.getType());
+        assertEquals(MenuType.MENU.getCode(), found.getType());
     }
 
     @Test
@@ -149,14 +149,14 @@ class EntityMappingIT {
         Function dir = new Function();
         dir.setCode("test:directory");
         dir.setName("测试目录");
-        dir.setType(MenuType.DIRECTORY);
+        dir.setType(MenuType.DIRECTORY.getCode());
         dir.setEnabled(true);
 
         entityManager.persist(dir);
         entityManager.flush();
 
         Function found = entityManager.find(Function.class, dir.getId());
-        assertEquals(MenuType.DIRECTORY, found.getType());
+        assertEquals(MenuType.DIRECTORY.getCode(), found.getType());
     }
 
     // ==================== DictData ↔ DictType ====================

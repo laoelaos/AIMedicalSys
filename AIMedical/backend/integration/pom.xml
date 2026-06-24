@@ -15,6 +15,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>com.aimedical</groupId>
             <artifactId>application</artifactId>
             <scope>test</scope>
