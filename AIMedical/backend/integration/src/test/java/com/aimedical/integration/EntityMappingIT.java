@@ -4,7 +4,11 @@ import com.aimedical.common.base.MenuType;
 import com.aimedical.modules.admin.entity.TokenStore;
 import com.aimedical.modules.admin.entity.dict.DictData;
 import com.aimedical.modules.admin.entity.dict.DictType;
+import com.aimedical.modules.commonmodule.api.UserType;
 import com.aimedical.modules.commonmodule.permission.Function;
+import com.aimedical.modules.commonmodule.permission.Post;
+import com.aimedical.modules.commonmodule.permission.Role;
+import com.aimedical.modules.commonmodule.permission.User;
 import com.aimedical.modules.doctor.entity.DoctorEntity;
 import com.aimedical.modules.patient.entity.AllergyHistory;
 import com.aimedical.modules.patient.entity.HealthProfile;
@@ -15,12 +19,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -239,7 +246,241 @@ class EntityMappingIT {
         assertTrue(found.getToken().startsWith("test-jwt-token-"));
     }
 
+    // ==================== User.password NOT NULL ====================
+
+    @Test
+    void user_shouldPersistWithPassword() {
+        User user = new User();
+        user.setUsername("test_user_password");
+        user.setPassword("pwd123");
+        user.setUserType(UserType.ADMIN);
+
+        entityManager.persist(user);
+        entityManager.flush();
+
+        User found = entityManager.find(User.class, user.getId());
+        assertEquals("pwd123", found.getPassword());
+    }
+
+    @Test
+    void user_shouldRejectNullPassword() {
+        User user = new User();
+        user.setUsername("test_user_null_pwd");
+        user.setUserType(UserType.PATIENT);
+
+        assertThrows(ConstraintViolationException.class, () -> {
+            entityManager.persist(user);
+            entityManager.flush();
+        });
+    }
+
     // ==================== 跨实体综合测试 ====================
+
+    // ==================== User ====================
+
+    @Test
+    void user_shouldMapUsernameField() {
+        User user = new User();
+        user.setUsername("test_user_field");
+        user.setPassword("pwd123");
+        user.setUserType(UserType.DOCTOR);
+        user.setEnabled(true);
+
+        entityManager.persist(user);
+        entityManager.flush();
+
+        User found = entityManager.find(User.class, user.getId());
+        assertEquals("test_user_field", found.getUsername());
+        assertEquals("pwd123", found.getPassword());
+        assertEquals(UserType.DOCTOR, found.getUserType());
+        assertTrue(found.getEnabled());
+        assertFalse(found.getDeleted());
+        assertNotNull(found.getCreatedAt());
+        assertNotNull(found.getUpdatedAt());
+    }
+
+    @Test
+    void user_shouldEnforceUserTypeNotNull() {
+        User user = new User();
+        user.setUsername("test_user_no_type");
+        user.setPassword("pwd123");
+
+        assertThrows(ConstraintViolationException.class, () -> {
+            entityManager.persist(user);
+            entityManager.flush();
+        });
+    }
+
+    @Test
+    void user_shouldMapManyToManyWithRoles() {
+        Role role = new Role();
+        role.setCode("test_role_m2m");
+        role.setName("测试角色M2M");
+        entityManager.persist(role);
+        entityManager.flush();
+
+        User user = new User();
+        user.setUsername("test_user_roles");
+        user.setPassword("pwd123");
+        user.setUserType(UserType.ADMIN);
+        user.setRoles(Set.of(role));
+        entityManager.persist(user);
+        entityManager.flush();
+        entityManager.clear();
+
+        User found = entityManager.find(User.class, user.getId());
+        assertNotNull(found.getRoles());
+        assertEquals(1, found.getRoles().size());
+        assertEquals("test_role_m2m", found.getRoles().iterator().next().getCode());
+    }
+
+    @Test
+    void user_shouldMapManyToManyWithPosts() {
+        Post post = new Post();
+        post.setCode("test_post_m2m");
+        post.setName("测试岗位M2M");
+        entityManager.persist(post);
+        entityManager.flush();
+
+        User user = new User();
+        user.setUsername("test_user_posts");
+        user.setPassword("pwd123");
+        user.setUserType(UserType.ADMIN);
+        user.setPosts(Set.of(post));
+        entityManager.persist(user);
+        entityManager.flush();
+        entityManager.clear();
+
+        User found = entityManager.find(User.class, user.getId());
+        assertNotNull(found.getPosts());
+        assertEquals(1, found.getPosts().size());
+        assertEquals("test_post_m2m", found.getPosts().iterator().next().getCode());
+    }
+
+    @Test
+    void user_shouldMapUserTypeEnumAsString() {
+        User user = new User();
+        user.setUsername("test_user_enum");
+        user.setPassword("pwd123");
+        user.setUserType(UserType.PATIENT);
+
+        entityManager.persist(user);
+        entityManager.flush();
+        entityManager.clear();
+
+        String rawType = (String) entityManager.createNativeQuery(
+                "SELECT user_type FROM sys_user WHERE id = ?1")
+                .setParameter(1, user.getId())
+                .getSingleResult();
+        assertEquals("PATIENT", rawType);
+
+        User found = entityManager.find(User.class, user.getId());
+        assertEquals(UserType.PATIENT, found.getUserType());
+    }
+
+    // ==================== Role ====================
+
+    @Test
+    void role_shouldMapCodeField() {
+        Role role = new Role();
+        role.setCode("test_role_code");
+        role.setName("测试角色");
+        role.setEnabled(true);
+
+        entityManager.persist(role);
+        entityManager.flush();
+
+        Role found = entityManager.find(Role.class, role.getId());
+        assertEquals("test_role_code", found.getCode());
+        assertTrue(found.getEnabled());
+        assertFalse(found.getDeleted());
+    }
+
+    @Test
+    void role_shouldEnforceCodeUniqueConstraint() {
+        Role role1 = new Role();
+        role1.setCode("test_role_dup");
+        entityManager.persist(role1);
+        entityManager.flush();
+
+        Role role2 = new Role();
+        role2.setCode("test_role_dup");
+
+        assertThrows(ConstraintViolationException.class, () -> {
+            entityManager.persist(role2);
+            entityManager.flush();
+        });
+    }
+
+    @Test
+    void role_shouldMapOneToManyPosts() {
+        Role role = new Role();
+        role.setCode("test_role_posts");
+        role.setName("带岗位的角色");
+        entityManager.persist(role);
+        entityManager.flush();
+
+        Post post = new Post();
+        post.setCode("test_post_otm");
+        post.setName("测试岗位OTM");
+        post.setRole(role);
+        entityManager.persist(post);
+        entityManager.flush();
+        entityManager.clear();
+
+        Role found = entityManager.find(Role.class, role.getId());
+        assertNotNull(found.getPosts());
+        assertEquals(1, found.getPosts().size());
+        assertEquals("test_post_otm", found.getPosts().iterator().next().getCode());
+    }
+
+    // ==================== Post ====================
+
+    @Test
+    void post_shouldMapManyToOneRole() {
+        Role role = new Role();
+        role.setCode("test_role_post_ref");
+        role.setName("岗位引用的角色");
+        entityManager.persist(role);
+        entityManager.flush();
+
+        Post post = new Post();
+        post.setCode("test_post_role_ref");
+        post.setName("测试岗位引用角色");
+        post.setRole(role);
+        post.setSort(1);
+        entityManager.persist(post);
+        entityManager.flush();
+
+        Post found = entityManager.find(Post.class, post.getId());
+        assertNotNull(found.getRole());
+        assertEquals("test_role_post_ref", found.getRole().getCode());
+        assertEquals(Integer.valueOf(1), found.getSort());
+        assertFalse(found.getDeleted());
+    }
+
+    @Test
+    void post_shouldMapManyToManyFunctions() {
+        Function function = new Function();
+        function.setCode("test_func_post_m2m");
+        function.setName("测试功能M2M");
+        function.setType(MenuType.BUTTON);
+        entityManager.persist(function);
+        entityManager.flush();
+
+        Post post = new Post();
+        post.setCode("test_post_func_m2m");
+        post.setName("测试岗位功能M2M");
+        post.setFunctions(Set.of(function));
+        entityManager.persist(post);
+        entityManager.flush();
+        entityManager.clear();
+
+        Post found = entityManager.find(Post.class, post.getId());
+        assertNotNull(found.getFunctions());
+        assertEquals(1, found.getFunctions().size());
+        assertEquals("test_func_post_m2m", found.getFunctions().iterator().next().getCode());
+    }
 
     @Test
     void patientWithHealthProfileAndAllergy_shouldWorkTogether() {

@@ -21,7 +21,7 @@ public class Role extends BaseEntity {
 
     private String description;
 
-    private Boolean enabled;
+    private Boolean enabled = true;
 
     @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
     private Set<Post> posts;
