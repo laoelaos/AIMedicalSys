@@ -44,6 +44,8 @@ application-local*.yml
 application-local*.yaml
 application-dev*.yml
 application-dev*.yaml
+!**/application-dev.yml
+!**/application-dev.yaml
 application-test*.yml
 application-test*.yaml
 !**/integration/**/application-test*.yml
@@ -87,3 +89,8 @@ files/
 temp/
 cache/
 .cache/
+
+# Local startup scripts
+start-backend.ps1
+start-frontend.ps1
+start-all.ps1
