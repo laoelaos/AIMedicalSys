@@ -253,6 +253,7 @@ class EntityMappingIT {
         User user = new User();
         user.setUsername("test_user_password");
         user.setPassword("pwd123");
+        user.setNickname("测试用户密码");
         user.setUserType(UserType.ADMIN);
 
         entityManager.persist(user);
@@ -266,6 +267,7 @@ class EntityMappingIT {
     void user_shouldRejectNullPassword() {
         User user = new User();
         user.setUsername("test_user_null_pwd");
+        user.setNickname("测试空密码用户");
         user.setUserType(UserType.PATIENT);
 
         assertThrows(ConstraintViolationException.class, () -> {
@@ -283,6 +285,7 @@ class EntityMappingIT {
         User user = new User();
         user.setUsername("test_user_field");
         user.setPassword("pwd123");
+        user.setNickname("测试用户字段");
         user.setUserType(UserType.DOCTOR);
         user.setEnabled(true);
 
@@ -304,6 +307,7 @@ class EntityMappingIT {
         User user = new User();
         user.setUsername("test_user_no_type");
         user.setPassword("pwd123");
+        user.setNickname("测试无类型用户");
 
         assertThrows(ConstraintViolationException.class, () -> {
             entityManager.persist(user);
@@ -322,6 +326,7 @@ class EntityMappingIT {
         User user = new User();
         user.setUsername("test_user_roles");
         user.setPassword("pwd123");
+        user.setNickname("测试角色用户");
         user.setUserType(UserType.ADMIN);
         user.setRoles(Set.of(role));
         entityManager.persist(user);
@@ -345,6 +350,7 @@ class EntityMappingIT {
         User user = new User();
         user.setUsername("test_user_posts");
         user.setPassword("pwd123");
+        user.setNickname("测试岗位用户");
         user.setUserType(UserType.ADMIN);
         user.setPosts(Set.of(post));
         entityManager.persist(user);
@@ -362,6 +368,7 @@ class EntityMappingIT {
         User user = new User();
         user.setUsername("test_user_enum");
         user.setPassword("pwd123");
+        user.setNickname("测试枚举用户");
         user.setUserType(UserType.PATIENT);
 
         entityManager.persist(user);
