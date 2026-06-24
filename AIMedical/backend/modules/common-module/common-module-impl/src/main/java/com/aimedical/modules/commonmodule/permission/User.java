@@ -35,6 +35,12 @@ public class User extends BaseEntity {
     @Column(nullable = false, length = 20)
     private UserType userType;
 
+    @Column(length = 10)
+    private String gender;
+
+    @Column
+    private Integer age;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_role",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -101,6 +107,22 @@ public class User extends BaseEntity {
 
     public void setUserType(UserType userType) {
         this.userType = userType;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
     }
 
     public Set<Role> getRoles() {

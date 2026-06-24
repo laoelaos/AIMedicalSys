@@ -18,4 +18,14 @@ class PatientEntityTest {
         assertNull(entity.getId());
         assertFalse(entity.getDeleted());
     }
+
+    @Test
+    void shouldHaveEmptyHealthRecordCollections() {
+        PatientEntity entity = new PatientEntity();
+        assertNotNull(entity.getAllergies());
+        assertNotNull(entity.getChronicDiseases());
+        assertNotNull(entity.getFamilyHistories());
+        assertNotNull(entity.getSurgeryHistories());
+        assertNotNull(entity.getMedicationHistories());
+    }
 }

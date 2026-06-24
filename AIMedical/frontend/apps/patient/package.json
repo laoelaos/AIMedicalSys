@@ -9,6 +9,8 @@
   "dependencies": {
     "@aimedical/shared": "0.0.0",
     "@aimedical/ui-core": "0.0.0",
+    "element-plus": "^2.7.6",
+    "pinia": "^2.1.7",
     "vue": "^3.4.27",
     "vue-router": "^4.3.2"
   },

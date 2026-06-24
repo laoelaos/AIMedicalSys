@@ -2,7 +2,12 @@ spring:
   application:
     name: aimedical-sys
   profiles:
-    active: phase0,dev
+    active: phase1,dev
 
 server:
   port: 8080
+
+jwt:
+  secret: ${JWT_SECRET:aimedical-sys-jwt-secret-key-for-development-only-min-256bits}
+  access-token-validity: 7200
+  refresh-token-validity: 604800
