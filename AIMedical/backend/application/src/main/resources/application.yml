@@ -2,7 +2,7 @@ spring:
   application:
     name: aimedical-sys
   profiles:
-    active: phase0,dev
+    active: phase1,dev
 
   datasource:
     url: jdbc:mysql://localhost:3306/aimedical?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
@@ -52,3 +52,8 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
+
+jwt:
+  secret: ${JWT_SECRET:aimedical-sys-jwt-secret-key-for-development-only-min-256bits}
+  access-token-validity: 7200
+  refresh-token-validity: 604800

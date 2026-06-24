@@ -1,49 +1,97 @@
 package com.aimedical.modules.patient.entity;
 
 import com.aimedical.common.base.BaseEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import lombok.Data;
 
-import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "patient_profile")
-@Data
 public class PatientEntity extends BaseEntity {
 
-    @Column(unique = true)
-    private Long userId;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private com.aimedical.modules.commonmodule.permission.User user;
 
-    @Column(length = 64)
-    private String realName;
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<PatientAllergy> allergies = new ArrayList<>();
 
-    @Column(length = 20)
-    private String gender;
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<PatientChronicDisease> chronicDiseases = new ArrayList<>();
 
-    private LocalDate birthDate;
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<PatientFamilyHistory> familyHistories = new ArrayList<>();
 
-    private Integer age;
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<PatientSurgeryHistory> surgeryHistories = new ArrayList<>();
 
-    @Column(length = 32)
-    private String idCard;
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<PatientMedicationHistory> medicationHistories = new ArrayList<>();
 
-    @Column(length = 20)
-    private String phone;
-
-    @Column(length = 64)
+    @Column(length = 2000)
     private String emergencyContact;
 
-    @Column(length = 20)
-    private String emergencyPhone;
+    public com.aimedical.modules.commonmodule.permission.User getUser() {
+        return user;
+    }
 
-    @Column(length = 255)
-    private String address;
+    public void setUser(com.aimedical.modules.commonmodule.permission.User user) {
+        this.user = user;
+    }
 
-    @Column(length = 500)
-    private String avatarUrl;
+    public List<PatientAllergy> getAllergies() {
+        return allergies;
+    }
 
-    @Column(length = 500)
-    private String remark;
+    public void setAllergies(List<PatientAllergy> allergies) {
+        this.allergies = allergies;
+    }
+
+    public List<PatientChronicDisease> getChronicDiseases() {
+        return chronicDiseases;
+    }
+
+    public void setChronicDiseases(List<PatientChronicDisease> chronicDiseases) {
+        this.chronicDiseases = chronicDiseases;
+    }
+
+    public List<PatientFamilyHistory> getFamilyHistories() {
+        return familyHistories;
+    }
+
+    public void setFamilyHistories(List<PatientFamilyHistory> familyHistories) {
+        this.familyHistories = familyHistories;
+    }
+
+    public List<PatientSurgeryHistory> getSurgeryHistories() {
+        return surgeryHistories;
+    }
+
+    public void setSurgeryHistories(List<PatientSurgeryHistory> surgeryHistories) {
+        this.surgeryHistories = surgeryHistories;
+    }
+
+    public List<PatientMedicationHistory> getMedicationHistories() {
+        return medicationHistories;
+    }
+
+    public void setMedicationHistories(List<PatientMedicationHistory> medicationHistories) {
+        this.medicationHistories = medicationHistories;
+    }
+
+    public String getEmergencyContact() {
+        return emergencyContact;
+    }
+
+    public void setEmergencyContact(String emergencyContact) {
+        this.emergencyContact = emergencyContact;
+    }
 }
