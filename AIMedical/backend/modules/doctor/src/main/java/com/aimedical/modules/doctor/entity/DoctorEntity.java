@@ -1,8 +1,30 @@
 package com.aimedical.modules.doctor.entity;
 
 import com.aimedical.common.base.BaseEntity;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+import java.math.BigDecimal;
 
 @Entity
+@Data
+@EqualsAndHashCode(callSuper = true)
 public class DoctorEntity extends BaseEntity {
+
+    @Column(nullable = false)
+    private Long userId;
+
+    @Column(nullable = false)
+    private String realName;
+
+    @Column(length = 50)
+    private String title;
+
+    @Column(length = 100)
+    private String department;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal consultationFee;
 }
