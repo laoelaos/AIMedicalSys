@@ -25,6 +25,8 @@ public class Post extends BaseEntity {
 
     private Boolean enabled = true;
 
+    private Integer sort;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
     private Role role;
@@ -68,6 +70,14 @@ public class Post extends BaseEntity {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public Integer getSort() {
+        return sort;
+    }
+
+    public void setSort(Integer sort) {
+        this.sort = sort;
     }
 
     public Role getRole() {

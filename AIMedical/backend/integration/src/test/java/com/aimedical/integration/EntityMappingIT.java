@@ -464,7 +464,7 @@ class EntityMappingIT {
         Function function = new Function();
         function.setCode("test_func_post_m2m");
         function.setName("测试功能M2M");
-        function.setType(MenuType.BUTTON);
+        function.setType(MenuType.BUTTON.getCode());
         entityManager.persist(function);
         entityManager.flush();
 
