@@ -27,7 +27,7 @@ public class Function extends BaseEntity {
 
     private String description;
 
-    private Boolean enabled;
+    private Boolean enabled = true;
 
     @ManyToMany(mappedBy = "functions", fetch = FetchType.LAZY)
     private Set<Post> posts;
@@ -51,7 +51,7 @@ public class Function extends BaseEntity {
     @Column(name = "sort")
     private Integer sort;
 
-    private Boolean visible;
+    private Boolean visible = true;
 
     @Column(length = 128)
     private String perms;

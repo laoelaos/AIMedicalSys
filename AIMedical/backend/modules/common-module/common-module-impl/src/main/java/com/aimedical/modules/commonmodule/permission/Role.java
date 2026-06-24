@@ -25,7 +25,7 @@ public class Role extends BaseEntity {
 
     private String description;
 
-    private Boolean enabled;
+    private Boolean enabled = true;
 
     @Column(length = 500)
     private String remark;
