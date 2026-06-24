@@ -14,6 +14,7 @@ import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -39,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @SpringBootTest(classes = com.aimedical.Application.class)
 @AutoConfigureTestDatabase
+@ActiveProfiles({"test", "phase1"})
 @Transactional
 class EntityMappingIT {
 
