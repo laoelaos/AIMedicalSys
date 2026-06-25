@@ -13,13 +13,14 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class JwtTokenProvider implements TokenProvider {
 
     private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);
 
-    private final SecretKey secretKey;
+    private final SecretKey accessTokenKey;
     private final long accessTokenValidity;
     private final long refreshTokenValidity;
 
@@ -27,13 +28,21 @@ public class JwtTokenProvider implements TokenProvider {
      * In-memory token blacklist for logout.
      * In production, replace with Redis or a database table.
      */
-    private final Set<String> blacklistedTokens = Collections.synchronizedSet(new HashSet<>());
+    private final Map<String, Long> blacklistedTokens = new ConcurrentHashMap<>();
+    private final Map<String, String> refreshTokenFamily = new ConcurrentHashMap<>();
 
     public JwtTokenProvider(
             @Value("${jwt.secret}") String secret,
+            @Value("${jwt.refresh-secret:#{null}}") String refreshSecret,
             @Value("${jwt.access-token-validity:7200}") long accessTokenValidity,
             @Value("${jwt.refresh-token-validity:604800}") long refreshTokenValidity) {
-        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (secretBytes.length * 8 < 256) {
+            log.warn("JWT secret is less than 256 bits ({} bits). Consider using a stronger key.", secretBytes.length * 8);
+        }
+        this.accessTokenKey = Keys.hmacShaKeyFor(secretBytes);
+        // Use a derived key for refresh tokens if no separate secret provided
+        String actualRefreshSecret = (refreshSecret != null && !refreshSecret.isBlank()) ? refreshSecret : secret + ":refresh";
         this.accessTokenValidity = accessTokenValidity;
         this.refreshTokenValidity = refreshTokenValidity;
     }
@@ -42,6 +51,8 @@ public class JwtTokenProvider implements TokenProvider {
     public TokenResponse generateTokens(Long userId, String username) {
         String accessToken = generateAccessToken(userId, username);
         String refreshToken = generateRefreshToken(userId, username);
+        String familyId = UUID.randomUUID().toString();
+        refreshTokenFamily.put(refreshToken, familyId);
         return new TokenResponse(accessToken, refreshToken, accessTokenValidity);
     }
 
@@ -55,7 +66,7 @@ public class JwtTokenProvider implements TokenProvider {
                 .claim("type", "access")
                 .issuedAt(now)
                 .expiration(expiry)
-                .signWith(secretKey)
+                .signWith(accessTokenKey)
                 .compact();
     }
 
@@ -69,17 +80,30 @@ public class JwtTokenProvider implements TokenProvider {
                 .claim("type", "refresh")
                 .issuedAt(now)
                 .expiration(expiry)
-                .signWith(secretKey)
+                .signWith(accessTokenKey)
                 .compact();
     }
 
     @Override
     public boolean validateToken(String token) {
-        if (blacklistedTokens.contains(token)) {
+        return validateToken(token, "access");
+    }
+
+    public boolean validateRefreshToken(String token) {
+        return validateToken(token, "refresh");
+    }
+
+    private boolean validateToken(String token, String expectedType) {
+        if (blacklistedTokens.containsKey(token)) {
             return false;
         }
         try {
-            Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
+            Claims claims = parseClaims(token);
+            String type = claims.get("type", String.class);
+            if (!expectedType.equals(type)) {
+                log.debug("Token type mismatch: expected={}, actual={}", expectedType, type);
+                return false;
+            }
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             log.debug("JWT validation failed: {}", e.getMessage());
@@ -89,11 +113,17 @@ public class JwtTokenProvider implements TokenProvider {
 
     @Override
     public String getUsernameFromToken(String token) {
+        if (blacklistedTokens.containsKey(token)) {
+            return null;
+        }
         return parseClaims(token).getSubject();
     }
 
     @Override
     public CurrentUserResponse getCurrentUserFromToken(String token) {
+        if (blacklistedTokens.containsKey(token)) {
+            return null;
+        }
         Claims claims = parseClaims(token);
         CurrentUserResponse user = new CurrentUserResponse();
         user.setUserId(claims.get("userId", Long.class));
@@ -103,12 +133,29 @@ public class JwtTokenProvider implements TokenProvider {
 
     @Override
     public void invalidateToken(String token) {
-        blacklistedTokens.add(token);
+        blacklistedTokens.put(token, System.currentTimeMillis() + accessTokenValidity * 1000);
+    }
+
+    public void invalidateRefreshTokenFamily(String refreshToken) {
+        String familyId = refreshTokenFamily.remove(refreshToken);
+        if (familyId != null) {
+            refreshTokenFamily.entrySet().removeIf(e -> familyId.equals(e.getValue()));
+        }
+        blacklistedTokens.put(refreshToken, System.currentTimeMillis() + refreshTokenValidity * 1000);
+    }
+
+    public long getRefreshTokenValidity() {
+        return refreshTokenValidity;
+    }
+
+    public void cleanupExpiredBlacklist() {
+        long now = System.currentTimeMillis();
+        blacklistedTokens.entrySet().removeIf(e -> e.getValue() < now);
     }
 
     private Claims parseClaims(String token) {
         return Jwts.parser()
-                .verifyWith(secretKey)
+                .verifyWith(accessTokenKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

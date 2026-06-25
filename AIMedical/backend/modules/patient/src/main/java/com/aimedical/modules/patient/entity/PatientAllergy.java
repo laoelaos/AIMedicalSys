@@ -7,9 +7,15 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "patient_allergy")
+@Getter
+@Setter
 public class PatientAllergy extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -25,46 +31,6 @@ public class PatientAllergy extends BaseEntity {
     @Column(length = 20)
     private String severity;
 
-    @Column(length = 10)
-    private String occurredAt;
-
-    public PatientEntity getPatient() {
-        return patient;
-    }
-
-    public void setPatient(PatientEntity patient) {
-        this.patient = patient;
-    }
-
-    public String getAllergen() {
-        return allergen;
-    }
-
-    public void setAllergen(String allergen) {
-        this.allergen = allergen;
-    }
-
-    public String getReactionType() {
-        return reactionType;
-    }
-
-    public void setReactionType(String reactionType) {
-        this.reactionType = reactionType;
-    }
-
-    public String getSeverity() {
-        return severity;
-    }
-
-    public void setSeverity(String severity) {
-        this.severity = severity;
-    }
-
-    public String getOccurredAt() {
-        return occurredAt;
-    }
-
-    public void setOccurredAt(String occurredAt) {
-        this.occurredAt = occurredAt;
-    }
+    @Column(name = "occurred_at")
+    private LocalDate occurredAt;
 }

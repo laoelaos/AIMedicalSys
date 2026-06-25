@@ -40,7 +40,8 @@ public class SecurityConfigPhase1 {
                 .requestMatchers("/api/patient/login").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/doc.html").permitAll()
-                .requestMatchers("/actuator/**").permitAll()
+                .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/actuator/**").hasRole("ADMIN")
                 // Patient authenticated endpoints
                 .requestMatchers("/api/patient/**").hasRole("PATIENT")
                 // All other requests need authentication

@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -63,7 +64,7 @@ public class AuthServiceImpl implements AuthService {
         user.setUserType(UserType.PATIENT);
 
         Role patientRole = roleRepository.findByCode("PATIENT")
-                .orElseGet(() -> createPatientRole());
+                .orElseGet(this::createPatientRole);
         user.setRoles(Collections.singleton(patientRole));
 
         user = userRepository.save(user);
@@ -90,7 +91,7 @@ public class AuthServiceImpl implements AuthService {
                 new UsernamePasswordAuthenticationToken(user.getUsername(), null,
                         user.getRoles() != null
                                 ? user.getRoles().stream()
-                                    .map(r -> new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + r.getCode()))
+                                    .map(r -> new SimpleGrantedAuthority("ROLE_" + r.getCode()))
                                     .collect(Collectors.toList())
                                 : Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -100,15 +101,23 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public TokenResponse refresh(String refreshToken) {
-        if (!tokenProvider.validateToken(refreshToken)) {
+        if (!tokenProvider.validateRefreshToken(refreshToken)) {
             throw new BusinessException(PatientErrorCode.PATIENT_TOKEN_INVALID);
         }
         String username = tokenProvider.getUsernameFromToken(refreshToken);
+        if (username == null) {
+            throw new BusinessException(PatientErrorCode.PATIENT_TOKEN_INVALID);
+        }
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_LOGIN_FAILED));
 
-        String newAccessToken = tokenProvider.generateAccessToken(user.getId(), user.getUsername());
-        return new TokenResponse(newAccessToken, refreshToken, 7200);
+        // Invalidate old refresh token and its family (rotation)
+        tokenProvider.invalidateRefreshTokenFamily(refreshToken);
+
+        // Issue new token pair
+        TokenResponse tokens = tokenProvider.generateTokens(user.getId(), user.getUsername());
+        log.debug("Refresh token rotated for user: {}", username);
+        return tokens;
     }
 
     @Override

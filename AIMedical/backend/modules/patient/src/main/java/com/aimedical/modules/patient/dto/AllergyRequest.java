@@ -1,6 +1,7 @@
 package com.aimedical.modules.patient.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class AllergyRequest {
@@ -11,8 +12,10 @@ public class AllergyRequest {
     @Size(max = 50, message = "反应类型不能超过50字符")
     private String reactionType;
 
+    @Pattern(regexp = "^(MILD|MODERATE|SEVERE)?$", message = "严重程度取值必须为MILD、MODERATE或SEVERE")
     private String severity;
 
+    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "日期格式必须为YYYY-MM-DD")
     private String occurredAt;
 
     public String getAllergen() { return allergen; }

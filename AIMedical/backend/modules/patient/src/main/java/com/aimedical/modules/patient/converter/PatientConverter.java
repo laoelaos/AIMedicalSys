@@ -4,10 +4,20 @@ import com.aimedical.modules.commonmodule.permission.User;
 import com.aimedical.modules.patient.dto.*;
 import com.aimedical.modules.patient.entity.*;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class PatientConverter {
+
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    private PatientConverter() {
+        throw new UnsupportedOperationException("Utility class");
+    }
 
     public static PatientDto toDto(PatientEntity entity) {
         if (entity == null) return null;
@@ -33,7 +43,7 @@ public class PatientConverter {
         r.setAllergen(entity.getAllergen());
         r.setReactionType(entity.getReactionType());
         r.setSeverity(entity.getSeverity());
-        r.setOccurredAt(entity.getOccurredAt());
+        r.setOccurredAt(entity.getOccurredAt() != null ? entity.getOccurredAt().format(DATE_FMT) : null);
         return r;
     }
 
@@ -43,7 +53,7 @@ public class PatientConverter {
         e.setAllergen(req.getAllergen());
         e.setReactionType(req.getReactionType());
         e.setSeverity(req.getSeverity());
-        e.setOccurredAt(req.getOccurredAt());
+        e.setOccurredAt(parseDate(req.getOccurredAt()));
         return e;
     }
 
@@ -52,7 +62,7 @@ public class PatientConverter {
         ChronicDiseaseResponse r = new ChronicDiseaseResponse();
         r.setId(entity.getId());
         r.setDiseaseName(entity.getDiseaseName());
-        r.setDiagnosedAt(entity.getDiagnosedAt());
+        r.setDiagnosedAt(entity.getDiagnosedAt() != null ? entity.getDiagnosedAt().format(DATE_FMT) : null);
         r.setCurrentStatus(entity.getCurrentStatus());
         return r;
     }
@@ -61,7 +71,7 @@ public class PatientConverter {
         PatientChronicDisease e = new PatientChronicDisease();
         e.setPatient(patient);
         e.setDiseaseName(req.getDiseaseName());
-        e.setDiagnosedAt(req.getDiagnosedAt());
+        e.setDiagnosedAt(parseDate(req.getDiagnosedAt()));
         e.setCurrentStatus(req.getCurrentStatus());
         return e;
     }
@@ -90,7 +100,7 @@ public class PatientConverter {
         SurgeryHistoryResponse r = new SurgeryHistoryResponse();
         r.setId(entity.getId());
         r.setSurgeryName(entity.getSurgeryName());
-        r.setSurgeryAt(entity.getSurgeryAt());
+        r.setSurgeryAt(entity.getSurgeryAt() != null ? entity.getSurgeryAt().format(DATE_FMT) : null);
         r.setHospital(entity.getHospital());
         return r;
     }
@@ -99,7 +109,7 @@ public class PatientConverter {
         PatientSurgeryHistory e = new PatientSurgeryHistory();
         e.setPatient(patient);
         e.setSurgeryName(req.getSurgeryName());
-        e.setSurgeryAt(req.getSurgeryAt());
+        e.setSurgeryAt(parseDate(req.getSurgeryAt()));
         e.setHospital(req.getHospital());
         return e;
     }
@@ -110,8 +120,8 @@ public class PatientConverter {
         r.setId(entity.getId());
         r.setDrugName(entity.getDrugName());
         r.setReason(entity.getReason());
-        r.setStartedAt(entity.getStartedAt());
-        r.setEndedAt(entity.getEndedAt());
+        r.setStartedAt(entity.getStartedAt() != null ? entity.getStartedAt().format(DATE_FMT) : null);
+        r.setEndedAt(entity.getEndedAt() != null ? entity.getEndedAt().format(DATE_FMT) : null);
         return r;
     }
 
@@ -120,29 +130,34 @@ public class PatientConverter {
         e.setPatient(patient);
         e.setDrugName(req.getDrugName());
         e.setReason(req.getReason());
-        e.setStartedAt(req.getStartedAt());
-        e.setEndedAt(req.getEndedAt());
+        e.setStartedAt(parseDate(req.getStartedAt()));
+        e.setEndedAt(parseDate(req.getEndedAt()));
         return e;
     }
 
     // === Summary ===
     public static HealthRecordSummaryResponse toHealthRecordSummary(PatientEntity entity) {
         HealthRecordSummaryResponse r = new HealthRecordSummaryResponse();
-        if (entity.getAllergies() != null) {
-            r.setAllergies(entity.getAllergies().stream().map(PatientConverter::toAllergyResponse).collect(Collectors.toList()));
-        }
-        if (entity.getChronicDiseases() != null) {
-            r.setChronicDiseases(entity.getChronicDiseases().stream().map(PatientConverter::toChronicResponse).collect(Collectors.toList()));
-        }
-        if (entity.getFamilyHistories() != null) {
-            r.setFamilyHistories(entity.getFamilyHistories().stream().map(PatientConverter::toFamilyResponse).collect(Collectors.toList()));
-        }
-        if (entity.getSurgeryHistories() != null) {
-            r.setSurgeryHistories(entity.getSurgeryHistories().stream().map(PatientConverter::toSurgeryResponse).collect(Collectors.toList()));
-        }
-        if (entity.getMedicationHistories() != null) {
-            r.setMedicationHistories(entity.getMedicationHistories().stream().map(PatientConverter::toMedicationResponse).collect(Collectors.toList()));
-        }
+        r.setAllergies(entity.getAllergies() != null
+                ? entity.getAllergies().stream().map(PatientConverter::toAllergyResponse).collect(Collectors.toList())
+                : Collections.emptyList());
+        r.setChronicDiseases(entity.getChronicDiseases() != null
+                ? entity.getChronicDiseases().stream().map(PatientConverter::toChronicResponse).collect(Collectors.toList())
+                : Collections.emptyList());
+        r.setFamilyHistories(entity.getFamilyHistories() != null
+                ? entity.getFamilyHistories().stream().map(PatientConverter::toFamilyResponse).collect(Collectors.toList())
+                : Collections.emptyList());
+        r.setSurgeryHistories(entity.getSurgeryHistories() != null
+                ? entity.getSurgeryHistories().stream().map(PatientConverter::toSurgeryResponse).collect(Collectors.toList())
+                : Collections.emptyList());
+        r.setMedicationHistories(entity.getMedicationHistories() != null
+                ? entity.getMedicationHistories().stream().map(PatientConverter::toMedicationResponse).collect(Collectors.toList())
+                : Collections.emptyList());
         return r;
+    }
+
+    private static LocalDate parseDate(String dateStr) {
+        if (dateStr == null || dateStr.isBlank()) return null;
+        return LocalDate.parse(dateStr, DATE_FMT);
     }
 }

@@ -17,9 +17,15 @@ public interface TokenProvider {
 
     boolean validateToken(String token);
 
+    boolean validateRefreshToken(String token);
+
     String getUsernameFromToken(String token);
 
     CurrentUserResponse getCurrentUserFromToken(String token);
 
     void invalidateToken(String token);
+
+    void invalidateRefreshTokenFamily(String refreshToken);
+
+    long getRefreshTokenValidity();
 }

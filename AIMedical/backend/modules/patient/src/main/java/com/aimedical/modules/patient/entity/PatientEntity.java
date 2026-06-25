@@ -4,6 +4,8 @@ import com.aimedical.common.base.BaseEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
@@ -27,8 +29,9 @@ public class PatientEntity extends BaseEntity {
     @Column(length = 64)
     private String realName;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private String gender;
+    private Gender gender;
 
     @Column(length = 500)
     private String avatarUrl;

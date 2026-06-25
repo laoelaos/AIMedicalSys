@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { getAccessToken } from '@aimedical/shared'
+import { useAuthStore } from '../stores/auth'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -36,10 +36,13 @@ const router = createRouter({
 })
 
 router.beforeEach((to, _from, next) => {
-  const token = getAccessToken()
-  if (to.meta.requiresAuth !== false && !token) {
+  // Use auth store instead of directly reading localStorage for consistency
+  const authStore = useAuthStore()
+  const isAuthed = authStore.isLoggedIn
+
+  if (to.meta.requiresAuth !== false && !isAuthed) {
     next('/login')
-  } else if (to.meta.requiresAuth === false && token) {
+  } else if (to.meta.requiresAuth === false && isAuthed) {
     next('/profile')
   } else {
     next()

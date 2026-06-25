@@ -20,6 +20,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 @Service
 public class PatientServiceImpl implements PatientService {
 
@@ -119,6 +122,10 @@ public class PatientServiceImpl implements PatientService {
 
         PatientEntity patient = patientRepository.findByUserId(currentUser.getUserId())
                 .orElseGet(() -> createPatientProfile(currentUser.getUserId()));
+        if (request.getEmergencyContact() != null) {
+            patient.setEmergencyContact(request.getEmergencyContact());
+            patientRepository.save(patient);
+        }
         return Result.success(PatientConverter.toDto(patient));
     }
 
@@ -152,7 +159,7 @@ public class PatientServiceImpl implements PatientService {
         entity.setAllergen(request.getAllergen());
         entity.setReactionType(request.getReactionType());
         entity.setSeverity(request.getSeverity());
-        entity.setOccurredAt(request.getOccurredAt());
+        entity.setOccurredAt(parseDate(request.getOccurredAt()));
         entity = allergyRepo.save(entity);
         return Result.success(PatientConverter.toAllergyResponse(entity));
     }
@@ -190,7 +197,7 @@ public class PatientServiceImpl implements PatientService {
             throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND);
         }
         entity.setDiseaseName(request.getDiseaseName());
-        entity.setDiagnosedAt(request.getDiagnosedAt());
+        entity.setDiagnosedAt(parseDate(request.getDiagnosedAt()));
         entity.setCurrentStatus(request.getCurrentStatus());
         entity = chronicRepo.save(entity);
         return Result.success(PatientConverter.toChronicResponse(entity));
@@ -268,7 +275,7 @@ public class PatientServiceImpl implements PatientService {
             throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND);
         }
         entity.setSurgeryName(request.getSurgeryName());
-        entity.setSurgeryAt(request.getSurgeryAt());
+        entity.setSurgeryAt(parseDate(request.getSurgeryAt()));
         entity.setHospital(request.getHospital());
         entity = surgeryRepo.save(entity);
         return Result.success(PatientConverter.toSurgeryResponse(entity));
@@ -308,8 +315,8 @@ public class PatientServiceImpl implements PatientService {
         }
         entity.setDrugName(request.getDrugName());
         entity.setReason(request.getReason());
-        entity.setStartedAt(request.getStartedAt());
-        entity.setEndedAt(request.getEndedAt());
+        entity.setStartedAt(parseDate(request.getStartedAt()));
+        entity.setEndedAt(parseDate(request.getEndedAt()));
         entity = medicationRepo.save(entity);
         return Result.success(PatientConverter.toMedicationResponse(entity));
     }
@@ -341,5 +348,10 @@ public class PatientServiceImpl implements PatientService {
         PatientEntity patient = new PatientEntity();
         patient.setUser(user);
         return patientRepository.save(patient);
+    }
+
+    private static LocalDate parseDate(String dateStr) {
+        if (dateStr == null || dateStr.isBlank()) return null;
+        return LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
     }
 }

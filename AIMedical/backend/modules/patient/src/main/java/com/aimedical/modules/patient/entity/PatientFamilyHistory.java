@@ -7,9 +7,13 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "patient_family_history")
+@Getter
+@Setter
 public class PatientFamilyHistory extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -24,36 +28,4 @@ public class PatientFamilyHistory extends BaseEntity {
 
     @Column(length = 200)
     private String note;
-
-    public PatientEntity getPatient() {
-        return patient;
-    }
-
-    public void setPatient(PatientEntity patient) {
-        this.patient = patient;
-    }
-
-    public String getRelationship() {
-        return relationship;
-    }
-
-    public void setRelationship(String relationship) {
-        this.relationship = relationship;
-    }
-
-    public String getDiseaseName() {
-        return diseaseName;
-    }
-
-    public void setDiseaseName(String diseaseName) {
-        this.diseaseName = diseaseName;
-    }
-
-    public String getNote() {
-        return note;
-    }
-
-    public void setNote(String note) {
-        this.note = note;
-    }
 }

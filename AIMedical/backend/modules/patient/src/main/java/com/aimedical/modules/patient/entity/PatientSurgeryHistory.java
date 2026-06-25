@@ -7,9 +7,15 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "patient_surgery_history")
+@Getter
+@Setter
 public class PatientSurgeryHistory extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -19,41 +25,9 @@ public class PatientSurgeryHistory extends BaseEntity {
     @Column(nullable = false, length = 100)
     private String surgeryName;
 
-    @Column(length = 10)
-    private String surgeryAt;
+    @Column(name = "surgery_at")
+    private LocalDate surgeryAt;
 
     @Column(length = 100)
     private String hospital;
-
-    public PatientEntity getPatient() {
-        return patient;
-    }
-
-    public void setPatient(PatientEntity patient) {
-        this.patient = patient;
-    }
-
-    public String getSurgeryName() {
-        return surgeryName;
-    }
-
-    public void setSurgeryName(String surgeryName) {
-        this.surgeryName = surgeryName;
-    }
-
-    public String getSurgeryAt() {
-        return surgeryAt;
-    }
-
-    public void setSurgeryAt(String surgeryAt) {
-        this.surgeryAt = surgeryAt;
-    }
-
-    public String getHospital() {
-        return hospital;
-    }
-
-    public void setHospital(String hospital) {
-        this.hospital = hospital;
-    }
 }

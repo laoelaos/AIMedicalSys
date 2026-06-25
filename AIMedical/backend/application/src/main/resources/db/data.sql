@@ -9,9 +9,9 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- 角色
 -- ---------------------------------------------
 INSERT INTO `sys_role` (`id`, `code`, `name`, `description`, `enabled`, `created_at`, `updated_at`, `deleted`) VALUES
-(1, 'ROLE_ADMIN',   '系统管理员', '拥有系统全部权限', 1, NOW(), NOW(), 0),
-(2, 'ROLE_DOCTOR',  '医生',       '医生角色',         1, NOW(), NOW(), 0),
-(3, 'ROLE_PATIENT', '患者',       '患者角色',         1, NOW(), NOW(), 0);
+(1, 'ADMIN',   '系统管理员', '拥有系统全部权限', 1, NOW(), NOW(), 0),
+(2, 'DOCTOR',  '医生',       '医生角色',         1, NOW(), NOW(), 0),
+(3, 'PATIENT', '患者',       '患者角色',         1, NOW(), NOW(), 0);
 
 -- ---------------------------------------------
 -- 岗位

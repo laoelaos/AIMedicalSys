@@ -17,6 +17,7 @@
               <el-descriptions-item label="性别">{{ profile?.gender || '-' }}</el-descriptions-item>
               <el-descriptions-item label="年龄">{{ profile?.age ?? '-' }}</el-descriptions-item>
               <el-descriptions-item label="邮箱">{{ profile?.email || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="紧急联系人">{{ profile?.emergencyContact || '-' }}</el-descriptions-item>
             </el-descriptions>
             <el-button type="primary" style="margin-top:16px" @click="showEditDialog = true">编辑资料</el-button>
           </el-skeleton>
@@ -46,6 +47,9 @@
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="editForm.email" maxlength="100" />
+        </el-form-item>
+        <el-form-item label="紧急联系人" prop="emergencyContact">
+          <el-input v-model="editForm.emergencyContact" maxlength="2000" type="textarea" :rows="2" placeholder="紧急联系人及联系方式" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -80,12 +84,14 @@ const editForm = reactive({
   gender: '',
   age: undefined as number | undefined,
   email: '',
+  emergencyContact: '',
 })
 
 const editRules = {
   name: [{ min: 1, max: 20, message: '姓名长度需在1-20个字符之间', trigger: 'blur' }],
   gender: [{ pattern: /^(男|女|未知)?$/, message: '性别必须为男、女或未知', trigger: 'change' }],
   age: [{ type: 'number', min: 0, max: 150, message: '年龄范围0-150', trigger: 'blur' }],
+  email: [{ type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }],
 }
 
 onMounted(async () => {
@@ -105,6 +111,7 @@ watch(showEditDialog, (val) => {
     editForm.gender = profile.value.gender || ''
     editForm.age = profile.value.age
     editForm.email = profile.value.email || ''
+    editForm.emergencyContact = profile.value.emergencyContact || ''
   }
 })
 
@@ -116,12 +123,14 @@ async function handleUpdateProfile() {
     gender: editForm.gender || undefined,
     age: editForm.age,
     email: editForm.email || undefined,
+    emergencyContact: editForm.emergencyContact || undefined,
   })
   if ((result as BusinessError).isBusinessError) {
     ElMessage.error((result as BusinessError).message)
   } else {
     profile.value = result as typeof profile.value
-    auth.profile = result as typeof profile.value
+    // Use store method instead of direct mutation
+    await auth.setProfile(result as typeof profile.value)
     ElMessage.success('资料更新成功')
     showEditDialog.value = false
   }

@@ -1,6 +1,6 @@
-import axios, { AxiosRequestConfig } from 'axios'
+import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import type { ApiResult, BusinessError } from '../types'
-import { getAccessToken, setTokens, clearTokens } from '../utils'
+import { getAccessToken, setTokens, clearTokens, getRefreshToken } from '../utils'
 
 const apiClient = axios.create({
   baseURL: '/api',
@@ -9,7 +9,7 @@ const apiClient = axios.create({
 })
 
 // Request interceptor: attach JWT token
-apiClient.interceptors.request.use((config) => {
+apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = getAccessToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
@@ -18,20 +18,42 @@ apiClient.interceptors.request.use((config) => {
 })
 
 // Response interceptor: unwrap Result<T>, handle errors
-// We intentionally unwrap AxiosResponse → data for ergonomic API wrappers
-;(apiClient.interceptors.response as any).use(
-  (response: any) => {
+apiClient.interceptors.response.use(
+  (response: AxiosResponse<ApiResult<unknown>>) => {
     const body = response.data as ApiResult<unknown>
     if (body.code !== 'SUCCESS') {
       return { code: body.code, message: body.message ?? '', isBusinessError: true as const } as BusinessError
     }
     return body.data
   },
-  (error: any) => {
+  async (error: { response?: AxiosResponse; config?: InternalAxiosRequestConfig & { _retry?: boolean } }) => {
     if (error.response === undefined) {
       return Promise.resolve({ code: 'NETWORK_ERROR' as const, message: '网络不可达，请检查网络连接', isBusinessError: true as const })
     }
-    if (error.response.status === 401) {
+
+    // Try refresh token on 401 (only once)
+    if (error.response.status === 401 && error.config && !error.config._retry) {
+      const refreshToken = getRefreshToken()
+      if (refreshToken) {
+        error.config._retry = true
+        try {
+          const refreshResponse = await axios.post<ApiResult<{ access_token: string; refresh_token: string }>>(
+            '/api/patient/refresh',
+            {},
+            { headers: { Authorization: `Bearer ${refreshToken}` } }
+          )
+          const refreshBody = refreshResponse.data
+          if (refreshBody.code === 'SUCCESS' && refreshBody.data) {
+            setTokens(refreshBody.data.access_token, refreshBody.data.refresh_token)
+            if (error.config.headers) {
+              error.config.headers.Authorization = `Bearer ${refreshBody.data.access_token}`
+            }
+            return apiClient(error.config)
+          }
+        } catch {
+          // Refresh failed, clear tokens and redirect to login
+        }
+      }
       clearTokens()
       return Promise.resolve({ code: 'UNAUTHORIZED' as const, message: '登录已过期，请重新登录', isBusinessError: true as const })
     }
@@ -43,19 +65,19 @@ apiClient.interceptors.request.use((config) => {
 )
 
 export async function apiGet<T>(url: string, config?: AxiosRequestConfig): Promise<T | BusinessError> {
-  return apiClient.get(url, config) as unknown as Promise<T | BusinessError>
+  return apiClient.get(url, config) as Promise<T | BusinessError>
 }
 
 export async function apiPost<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T | BusinessError> {
-  return apiClient.post(url, data, config) as unknown as Promise<T | BusinessError>
+  return apiClient.post(url, data, config) as Promise<T | BusinessError>
 }
 
 export async function apiPut<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T | BusinessError> {
-  return apiClient.put(url, data, config) as unknown as Promise<T | BusinessError>
+  return apiClient.put(url, data, config) as Promise<T | BusinessError>
 }
 
 export async function apiDelete<T>(url: string, config?: AxiosRequestConfig): Promise<T | BusinessError> {
-  return apiClient.delete(url, config) as unknown as Promise<T | BusinessError>
+  return apiClient.delete(url, config) as Promise<T | BusinessError>
 }
 
 export { apiClient }
