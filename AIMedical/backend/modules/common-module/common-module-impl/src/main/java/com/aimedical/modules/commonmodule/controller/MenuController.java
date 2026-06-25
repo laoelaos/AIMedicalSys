@@ -9,6 +9,7 @@ import com.aimedical.modules.commonmodule.service.MenuService;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -69,7 +70,7 @@ public class MenuController {
     /**
      * 获取所有菜单（仅管理员）
      *
-     * <p>此接口需要管理员权限，普通用户无法访问。
+     * <p>此接口通过@PreAuthorize注解进行权限控制，普通用户无法访问。
      *
      * @param authHeader Authorization请求头
      * @return 所有菜单列表
@@ -84,11 +85,6 @@ public class MenuController {
 
         if (!jwtUtil.validateToken(token)) {
             return Result.fail("UNAUTHORIZED", "令牌无效");
-        }
-
-        String role = jwtUtil.getRole(token);
-        if (!"ADMIN".equals(role)) {
-            return Result.fail("FORBIDDEN", "无权限访问，仅管理员可访问此接口");
         }
 
         List<MenuResponse> menus = menuService.getAllMenus();
@@ -119,7 +115,7 @@ public class MenuController {
      */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public Result<MenuResponse> create(@RequestBody MenuCreateRequest request) {
+    public Result<MenuResponse> create(@Valid @RequestBody MenuCreateRequest request) {
         MenuResponse menu = menuService.createMenu(request);
         return Result.success(menu);
     }
@@ -133,7 +129,7 @@ public class MenuController {
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public Result<MenuResponse> update(@PathVariable Long id, @RequestBody MenuUpdateRequest request) {
+    public Result<MenuResponse> update(@PathVariable Long id, @Valid @RequestBody MenuUpdateRequest request) {
         MenuResponse menu = menuService.updateMenu(id, request);
         if (menu == null) {
             return Result.fail("MENU_NOT_FOUND", "菜单不存在");

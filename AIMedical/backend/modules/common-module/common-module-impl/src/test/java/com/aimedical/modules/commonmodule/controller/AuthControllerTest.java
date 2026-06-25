@@ -1,5 +1,7 @@
 package com.aimedical.modules.commonmodule.controller;
 
+import com.aimedical.common.exception.BusinessException;
+import com.aimedical.common.exception.GlobalErrorCode;
 import com.aimedical.common.result.Result;
 import com.aimedical.modules.commonmodule.dto.request.LoginRequest;
 import com.aimedical.modules.commonmodule.dto.response.LoginResponse;
@@ -26,6 +28,8 @@ import static org.mockito.Mockito.*;
  * AuthController纯单元测试
  *
  * <p>不依赖Spring容器，直接测试Controller方法逻辑。
+ * 注意：Service层在失败场景抛出BusinessException而非返回null，
+ * 因此测试用例覆盖成功路径与BusinessException抛出路径。
  *
  * @author AIMedical Team
  * @version 1.0.0
@@ -83,24 +87,25 @@ class AuthControllerTest {
             Result<LoginResponse> result = authController.login(request);
 
             assertEquals("SUCCESS", result.getCode());
+            assertEquals("成功", result.getMessage());
             assertEquals("mock-jwt-token", result.getData().getToken());
             assertEquals("Bearer", result.getData().getTokenType());
             verify(authService, times(1)).login(any(LoginRequest.class));
         }
 
         @Test
-        @DisplayName("登录失败返回null数据")
-        void shouldReturnNullDataWhenLoginFails() {
-            when(authService.login(any(LoginRequest.class))).thenReturn(null);
+        @DisplayName("登录失败抛出BusinessException（用户名或密码错误）")
+        void shouldThrowBusinessExceptionWhenLoginFails() {
+            // Service层从不返回null，而是抛出BusinessException
+            when(authService.login(any(LoginRequest.class)))
+                    .thenThrow(new BusinessException(GlobalErrorCode.UNAUTHORIZED, "用户名或密码错误"));
 
             LoginRequest request = new LoginRequest();
             request.setUsername("testuser");
             request.setPassword("wrongpassword");
 
-            Result<LoginResponse> result = authController.login(request);
-
-            assertEquals("SUCCESS", result.getCode());
-            assertNull(result.getData());
+            // Controller直接抛出BusinessException，由GlobalExceptionHandler处理
+            assertThrows(BusinessException.class, () -> authController.login(request));
             verify(authService, times(1)).login(any(LoginRequest.class));
         }
     }
@@ -117,6 +122,7 @@ class AuthControllerTest {
             Result<Void> result = authController.logout("Bearer mock-token");
 
             assertEquals("SUCCESS", result.getCode());
+            assertEquals("成功", result.getMessage());
             verify(authService, times(1)).logout("mock-token");
         }
 
@@ -147,14 +153,13 @@ class AuthControllerTest {
         }
 
         @Test
-        @DisplayName("无效token返回null数据")
-        void shouldReturnNullDataWhenInvalidToken() {
-            when(authService.refreshToken("invalid-token")).thenReturn(null);
+        @DisplayName("无效token抛出BusinessException（令牌无效）")
+        void shouldThrowBusinessExceptionWhenInvalidToken() {
+            // Service层对无效token抛出BusinessException而非返回null
+            when(authService.refreshToken("invalid-token"))
+                    .thenThrow(new BusinessException(GlobalErrorCode.UNAUTHORIZED, "令牌无效"));
 
-            Result<LoginResponse> result = authController.refresh("Bearer invalid-token");
-
-            assertEquals("SUCCESS", result.getCode());
-            assertNull(result.getData());
+            assertThrows(BusinessException.class, () -> authController.refresh("Bearer invalid-token"));
         }
 
         @Test
@@ -189,14 +194,13 @@ class AuthControllerTest {
         }
 
         @Test
-        @DisplayName("无效token返回null数据")
-        void shouldReturnNullDataWhenInvalidToken() {
-            when(authService.getCurrentUser("invalid-token")).thenReturn(null);
+        @DisplayName("无效token抛出BusinessException（令牌无效）")
+        void shouldThrowBusinessExceptionWhenInvalidToken() {
+            // Service层对无效token抛出BusinessException而非返回null
+            when(authService.getCurrentUser("invalid-token"))
+                    .thenThrow(new BusinessException(GlobalErrorCode.UNAUTHORIZED, "令牌无效"));
 
-            Result<UserInfoResponse> result = authController.me("Bearer invalid-token");
-
-            assertEquals("SUCCESS", result.getCode());
-            assertNull(result.getData());
+            assertThrows(BusinessException.class, () -> authController.me("Bearer invalid-token"));
         }
 
         @Test

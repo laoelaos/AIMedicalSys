@@ -1,5 +1,7 @@
 package com.aimedical.modules.commonmodule.service;
 
+import com.aimedical.common.base.MenuType;
+import com.aimedical.common.exception.BusinessException;
 import com.aimedical.modules.commonmodule.dto.request.MenuCreateRequest;
 import com.aimedical.modules.commonmodule.dto.request.MenuUpdateRequest;
 import com.aimedical.modules.commonmodule.dto.response.MenuResponse;
@@ -207,6 +209,7 @@ class MenuServiceTest {
             request.setCode("menu:new");
             request.setPath("/new-menu");
             request.setIcon("plus");
+            request.setType(MenuType.MENU);
             request.setSortOrder(10);
             request.setVisible(true);
             request.setEnabled(true);
@@ -217,10 +220,13 @@ class MenuServiceTest {
             savedFunction.setCode("menu:new");
             savedFunction.setPath("/new-menu");
             savedFunction.setIcon("plus");
+            savedFunction.setType(MenuType.MENU.getCode());
             savedFunction.setSortOrder(10);
             savedFunction.setVisible(true);
             savedFunction.setEnabled(true);
+            savedFunction.setDeleted(false);
 
+            when(functionRepository.existsByCode("menu:new")).thenReturn(false);
             when(functionRepository.save(any(Function.class))).thenReturn(savedFunction);
 
             MenuResponse response = menuService.createMenu(request);
@@ -238,6 +244,7 @@ class MenuServiceTest {
             MenuCreateRequest request = new MenuCreateRequest();
             request.setName("子菜单");
             request.setCode("menu:child");
+            request.setType(MenuType.MENU);
             request.setParentId(1L);
 
             Function parentFunction = new Function();
@@ -250,10 +257,13 @@ class MenuServiceTest {
             savedFunction.setName("子菜单");
             savedFunction.setCode("menu:child");
             savedFunction.setParent(parentFunction);
+            savedFunction.setType(MenuType.MENU.getCode());
             savedFunction.setSortOrder(0);
             savedFunction.setVisible(true);
             savedFunction.setEnabled(true);
+            savedFunction.setDeleted(false);
 
+            when(functionRepository.existsByCode("menu:child")).thenReturn(false);
             when(functionRepository.findById(1L)).thenReturn(Optional.of(parentFunction));
             when(functionRepository.save(any(Function.class))).thenReturn(savedFunction);
 
@@ -262,6 +272,20 @@ class MenuServiceTest {
             assertNotNull(response);
             assertEquals("子菜单", response.getName());
             verify(functionRepository, times(1)).findById(1L);
+        }
+
+        @Test
+        @DisplayName("code重复时抛出BusinessException")
+        void shouldThrowBusinessExceptionWhenCodeDuplicate() {
+            MenuCreateRequest request = new MenuCreateRequest();
+            request.setName("重复菜单");
+            request.setCode("menu:existing");
+            request.setType(MenuType.MENU);
+
+            when(functionRepository.existsByCode("menu:existing")).thenReturn(true);
+
+            assertThrows(BusinessException.class, () -> menuService.createMenu(request));
+            verify(functionRepository, never()).save(any());
         }
     }
 
@@ -284,6 +308,7 @@ class MenuServiceTest {
             existingFunction.setSortOrder(0);
             existingFunction.setVisible(true);
             existingFunction.setEnabled(true);
+            existingFunction.setDeleted(false);
 
             Function updatedFunction = new Function();
             updatedFunction.setId(1L);
@@ -293,6 +318,7 @@ class MenuServiceTest {
             updatedFunction.setSortOrder(0);
             updatedFunction.setVisible(true);
             updatedFunction.setEnabled(true);
+            updatedFunction.setDeleted(false);
 
             when(functionRepository.findById(1L)).thenReturn(Optional.of(existingFunction));
             when(functionRepository.save(any(Function.class))).thenReturn(updatedFunction);
@@ -317,6 +343,24 @@ class MenuServiceTest {
             assertNull(response);
             verify(functionRepository, never()).save(any());
         }
+
+        @Test
+        @DisplayName("parentId自引用时抛出BusinessException")
+        void shouldThrowBusinessExceptionWhenParentIdSelfReference() {
+            MenuUpdateRequest request = new MenuUpdateRequest();
+            request.setParentId(1L);
+
+            Function existingFunction = new Function();
+            existingFunction.setId(1L);
+            existingFunction.setCode("menu:test");
+            existingFunction.setName("测试菜单");
+            existingFunction.setDeleted(false);
+
+            when(functionRepository.findById(1L)).thenReturn(Optional.of(existingFunction));
+
+            assertThrows(BusinessException.class, () -> menuService.updateMenu(1L, request));
+            verify(functionRepository, never()).save(any());
+        }
     }
 
     @Nested
@@ -326,11 +370,36 @@ class MenuServiceTest {
         @Test
         @DisplayName("删除菜单成功")
         void shouldDeleteMenuSuccessfully() {
+            when(functionRepository.findByParentId(1L)).thenReturn(Collections.emptyList());
+            when(functionRepository.existsById(1L)).thenReturn(true);
             doNothing().when(functionRepository).deleteById(1L);
 
             assertDoesNotThrow(() -> menuService.deleteMenu(1L));
 
             verify(functionRepository, times(1)).deleteById(1L);
+        }
+
+        @Test
+        @DisplayName("存在子菜单时抛出BusinessException")
+        void shouldThrowBusinessExceptionWhenHasChildren() {
+            Function child = new Function();
+            child.setId(2L);
+            child.setName("子菜单");
+
+            when(functionRepository.findByParentId(1L)).thenReturn(Collections.singletonList(child));
+
+            assertThrows(BusinessException.class, () -> menuService.deleteMenu(1L));
+            verify(functionRepository, never()).deleteById(any());
+        }
+
+        @Test
+        @DisplayName("菜单不存在时抛出BusinessException")
+        void shouldThrowBusinessExceptionWhenMenuNotExists() {
+            when(functionRepository.findByParentId(999L)).thenReturn(Collections.emptyList());
+            when(functionRepository.existsById(999L)).thenReturn(false);
+
+            assertThrows(BusinessException.class, () -> menuService.deleteMenu(999L));
+            verify(functionRepository, never()).deleteById(any());
         }
     }
 
@@ -349,6 +418,7 @@ class MenuServiceTest {
             function.setSortOrder(0);
             function.setVisible(true);
             function.setEnabled(true);
+            function.setDeleted(false);
 
             when(functionRepository.findById(1L)).thenReturn(Optional.of(function));
 

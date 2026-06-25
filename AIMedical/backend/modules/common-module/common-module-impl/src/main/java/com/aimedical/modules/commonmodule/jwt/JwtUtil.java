@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import javax.crypto.SecretKey;
 
@@ -72,6 +73,8 @@ public class JwtUtil {
     /**
      * 解析JWT令牌
      *
+     * <p>注意：本方法不会返回 null，解析失败时会抛出异常。
+     *
      * @param token JWT令牌
      * @return Claims对象，包含令牌中的声明信息
      * @throws ExpiredJwtException      令牌已过期
@@ -96,24 +99,7 @@ public class JwtUtil {
      * @return true表示令牌有效，false表示令牌无效
      */
     public boolean validateToken(String token) {
-        if (token == null || token.isEmpty()) {
-            return false;
-        }
-        try {
-            parseToken(token);
-            return true;
-        } catch (ExpiredJwtException e) {
-            log.warn("JWT令牌已过期: {}", e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            log.warn("不支持的JWT令牌格式: {}", e.getMessage());
-        } catch (MalformedJwtException e) {
-            log.warn("JWT令牌格式错误: {}", e.getMessage());
-        } catch (SignatureException e) {
-            log.warn("JWT签名验证失败: {}", e.getMessage());
-        } catch (IllegalArgumentException e) {
-            log.warn("JWT令牌为空或无效: {}", e.getMessage());
-        }
-        return false;
+        return validateTokenAndGetClaims(token) != null;
     }
 
     /**
@@ -145,17 +131,31 @@ public class JwtUtil {
     }
 
     /**
+     * 安全地从令牌中提取声明值
+     *
+     * <p>统一处理解析异常，避免每个 getter 方法重复 try-catch 样板代码。
+     *
+     * @param token JWT令牌
+     * @param extractor 从Claims中提取值的函数
+     * @param <T> 返回值类型
+     * @return 提取的值，解析失败返回null
+     */
+    private <T> T getClaimFromToken(String token, Function<Claims, T> extractor) {
+        Claims claims = validateTokenAndGetClaims(token);
+        if (claims == null) {
+            return null;
+        }
+        return extractor.apply(claims);
+    }
+
+    /**
      * 从令牌中获取用户ID
      *
      * @param token JWT令牌
      * @return 用户ID，解析失败返回null
      */
     public Long getUserId(String token) {
-        try {
-            Claims claims = parseToken(token);
-            if (claims == null) {
-                return null;
-            }
+        return getClaimFromToken(token, claims -> {
             Object userId = claims.get("userId");
             if (userId instanceof Integer) {
                 return ((Integer) userId).longValue();
@@ -163,20 +163,7 @@ public class JwtUtil {
                 return (Long) userId;
             }
             return null;
-        } catch (ExpiredJwtException e) {
-            log.warn("JWT令牌已过期: {}", e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            log.warn("不支持的JWT令牌格式: {}", e.getMessage());
-        } catch (MalformedJwtException e) {
-            log.warn("JWT令牌格式错误: {}", e.getMessage());
-        } catch (SignatureException e) {
-            log.warn("JWT签名验证失败: {}", e.getMessage());
-        } catch (IllegalArgumentException e) {
-            log.warn("JWT令牌为空或无效: {}", e.getMessage());
-        } catch (Exception e) {
-            log.warn("JWT解析异常: {}", e.getMessage());
-        }
-        return null;
+        });
     }
 
     /**
@@ -186,26 +173,7 @@ public class JwtUtil {
      * @return 用户名，解析失败返回null
      */
     public String getUsername(String token) {
-        try {
-            Claims claims = parseToken(token);
-            if (claims == null) {
-                return null;
-            }
-            return claims.getSubject();
-        } catch (ExpiredJwtException e) {
-            log.warn("JWT令牌已过期: {}", e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            log.warn("不支持的JWT令牌格式: {}", e.getMessage());
-        } catch (MalformedJwtException e) {
-            log.warn("JWT令牌格式错误: {}", e.getMessage());
-        } catch (SignatureException e) {
-            log.warn("JWT签名验证失败: {}", e.getMessage());
-        } catch (IllegalArgumentException e) {
-            log.warn("JWT令牌为空或无效: {}", e.getMessage());
-        } catch (Exception e) {
-            log.warn("JWT解析异常: {}", e.getMessage());
-        }
-        return null;
+        return getClaimFromToken(token, Claims::getSubject);
     }
 
     /**
@@ -215,27 +183,10 @@ public class JwtUtil {
      * @return 角色类型，解析失败返回null
      */
     public String getRole(String token) {
-        try {
-            Claims claims = parseToken(token);
-            if (claims == null) {
-                return null;
-            }
+        return getClaimFromToken(token, claims -> {
             Object role = claims.get("role");
             return role != null ? role.toString() : null;
-        } catch (ExpiredJwtException e) {
-            log.warn("JWT令牌已过期: {}", e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            log.warn("不支持的JWT令牌格式: {}", e.getMessage());
-        } catch (MalformedJwtException e) {
-            log.warn("JWT令牌格式错误: {}", e.getMessage());
-        } catch (SignatureException e) {
-            log.warn("JWT签名验证失败: {}", e.getMessage());
-        } catch (IllegalArgumentException e) {
-            log.warn("JWT令牌为空或无效: {}", e.getMessage());
-        } catch (Exception e) {
-            log.warn("JWT解析异常: {}", e.getMessage());
-        }
-        return null;
+        });
     }
 
     /**
@@ -245,27 +196,10 @@ public class JwtUtil {
      * @return 岗位类型，解析失败返回null
      */
     public String getPosition(String token) {
-        try {
-            Claims claims = parseToken(token);
-            if (claims == null) {
-                return null;
-            }
+        return getClaimFromToken(token, claims -> {
             Object position = claims.get("position");
             return position != null ? position.toString() : null;
-        } catch (ExpiredJwtException e) {
-            log.warn("JWT令牌已过期: {}", e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            log.warn("不支持的JWT令牌格式: {}", e.getMessage());
-        } catch (MalformedJwtException e) {
-            log.warn("JWT令牌格式错误: {}", e.getMessage());
-        } catch (SignatureException e) {
-            log.warn("JWT签名验证失败: {}", e.getMessage());
-        } catch (IllegalArgumentException e) {
-            log.warn("JWT令牌为空或无效: {}", e.getMessage());
-        } catch (Exception e) {
-            log.warn("JWT解析异常: {}", e.getMessage());
-        }
-        return null;
+        });
     }
 
     /**

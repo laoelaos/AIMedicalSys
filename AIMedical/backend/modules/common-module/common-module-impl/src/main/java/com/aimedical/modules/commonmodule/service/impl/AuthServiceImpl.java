@@ -13,6 +13,8 @@ import com.aimedical.modules.commonmodule.permission.User;
 import com.aimedical.modules.commonmodule.permission.UserRepository;
 import com.aimedical.modules.commonmodule.service.AuthService;
 
+import io.jsonwebtoken.Claims;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -92,25 +94,37 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void logout(String token) {
         // Phase1: JWT无状态，登出只需客户端清除令牌
-        // 生产环境可实现令牌黑名单
+        // 生产环境（Phase2+）可通过Redis实现令牌黑名单，使服务端主动失效令牌
         log.info("用户登出");
     }
 
     @Override
     public LoginResponse refreshToken(String token) {
-        if (!jwtUtil.validateToken(token)) {
+        // 一次性解析token并获取Claims，避免重复解析
+        Claims claims = jwtUtil.validateTokenAndGetClaims(token);
+        if (claims == null) {
             throw new BusinessException(GlobalErrorCode.UNAUTHORIZED, "令牌无效");
         }
 
-        Long userId = jwtUtil.getUserId(token);
-        if (userId == null) {
+        Object userIdObj = claims.get("userId");
+        Long userId;
+        if (userIdObj instanceof Integer) {
+            userId = ((Integer) userIdObj).longValue();
+        } else if (userIdObj instanceof Long) {
+            userId = (Long) userIdObj;
+        } else {
             throw new BusinessException(GlobalErrorCode.UNAUTHORIZED, "令牌无效");
         }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(GlobalErrorCode.NOT_FOUND, "用户不存在"));
 
-        String position = jwtUtil.getPosition(token);
+        // 从数据库重新获取岗位信息，避免使用旧token中可能过期的岗位
+        String position = null;
+        if (user.getUserType() == UserType.DOCTOR && user.getPosts() != null && !user.getPosts().isEmpty()) {
+            Post post = user.getPosts().iterator().next();
+            position = post.getCode();
+        }
 
         String newToken = jwtUtil.generateToken(
                 user.getId(),
@@ -130,12 +144,19 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public UserInfoResponse getCurrentUser(String token) {
-        if (!jwtUtil.validateToken(token)) {
+        // 一次性解析token并获取Claims，避免重复解析
+        Claims claims = jwtUtil.validateTokenAndGetClaims(token);
+        if (claims == null) {
             throw new BusinessException(GlobalErrorCode.UNAUTHORIZED, "令牌无效");
         }
 
-        Long userId = jwtUtil.getUserId(token);
-        if (userId == null) {
+        Object userIdObj = claims.get("userId");
+        Long userId;
+        if (userIdObj instanceof Integer) {
+            userId = ((Integer) userIdObj).longValue();
+        } else if (userIdObj instanceof Long) {
+            userId = (Long) userIdObj;
+        } else {
             throw new BusinessException(GlobalErrorCode.UNAUTHORIZED, "令牌无效");
         }
 

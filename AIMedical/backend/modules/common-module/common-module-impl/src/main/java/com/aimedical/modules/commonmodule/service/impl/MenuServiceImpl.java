@@ -1,5 +1,8 @@
 package com.aimedical.modules.commonmodule.service.impl;
 
+import com.aimedical.common.base.MenuType;
+import com.aimedical.common.exception.BusinessException;
+import com.aimedical.common.exception.GlobalErrorCode;
 import com.aimedical.modules.commonmodule.dto.request.MenuCreateRequest;
 import com.aimedical.modules.commonmodule.dto.request.MenuUpdateRequest;
 import com.aimedical.modules.commonmodule.dto.response.MenuResponse;
@@ -13,7 +16,9 @@ import com.aimedical.modules.commonmodule.service.MenuService;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -62,29 +67,38 @@ public class MenuServiceImpl implements MenuService {
             }
         }
 
-        // 转换为菜单响应列表
+        // 过滤启用的功能并转换为响应列表
         List<MenuResponse> menus = functions.stream()
                 .filter(f -> Boolean.TRUE.equals(f.getEnabled()))
+                .filter(f -> !Boolean.TRUE.equals(f.getDeleted()))
                 .map(this::convertToMenuResponse)
                 .sorted(Comparator.comparing(MenuResponse::getSortOrder, Comparator.nullsLast(Comparator.naturalOrder())))
                 .collect(Collectors.toList());
 
-        // Phase1: 返回扁平列表（暂不支持树形结构）
-        return menus;
+        // 构建树形结构
+        return buildMenuTree(menus);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<MenuResponse> getAllMenus() {
-        return functionRepository.findAll().stream()
+        List<MenuResponse> menus = functionRepository.findAll().stream()
                 .filter(f -> !Boolean.TRUE.equals(f.getDeleted()))
                 .map(this::convertToMenuResponse)
                 .sorted(Comparator.comparing(MenuResponse::getSortOrder, Comparator.nullsLast(Comparator.naturalOrder())))
                 .collect(Collectors.toList());
+
+        // 构建树形结构
+        return buildMenuTree(menus);
     }
 
     @Override
     public MenuResponse createMenu(MenuCreateRequest request) {
+        // code 唯一性预校验，避免触发 DB 约束违例
+        if (functionRepository.existsByCode(request.getCode())) {
+            throw new BusinessException(GlobalErrorCode.PARAM_INVALID, "菜单编码已存在: " + request.getCode());
+        }
+
         Function function = new Function();
         function.setName(request.getName());
         function.setCode(request.getCode());
@@ -92,12 +106,14 @@ public class MenuServiceImpl implements MenuService {
 
         // 设置父菜单
         if (request.getParentId() != null) {
-            function.setParent(functionRepository.findById(request.getParentId()).orElse(null));
+            Function parent = functionRepository.findById(request.getParentId())
+                    .orElseThrow(() -> new BusinessException(GlobalErrorCode.PARAM_INVALID, "父菜单不存在"));
+            function.setParent(parent);
         }
 
         function.setPath(request.getPath());
         function.setIcon(request.getIcon());
-        function.setType(request.getType());
+        function.setType(request.getType().getCode());
         function.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0);
         function.setVisible(request.getVisible() != null ? request.getVisible() : true);
         function.setEnabled(request.getEnabled() != null ? request.getEnabled() : true);
@@ -120,13 +136,24 @@ public class MenuServiceImpl implements MenuService {
             function.setName(request.getName());
         }
         if (request.getCode() != null) {
+            // code 唯一性预校验（排除自身）
+            if (!request.getCode().equals(function.getCode())
+                    && functionRepository.existsByCode(request.getCode())) {
+                throw new BusinessException(GlobalErrorCode.PARAM_INVALID, "菜单编码已存在: " + request.getCode());
+            }
             function.setCode(request.getCode());
         }
         if (request.getDescription() != null) {
             function.setDescription(request.getDescription());
         }
         if (request.getParentId() != null) {
-            function.setParent(functionRepository.findById(request.getParentId()).orElse(null));
+            // 自引用校验：parentId 不能等于当前菜单 id
+            if (request.getParentId().equals(id)) {
+                throw new BusinessException(GlobalErrorCode.PARAM_INVALID, "父菜单不能是自身");
+            }
+            Function parent = functionRepository.findById(request.getParentId())
+                    .orElseThrow(() -> new BusinessException(GlobalErrorCode.PARAM_INVALID, "父菜单不存在"));
+            function.setParent(parent);
         }
         if (request.getPath() != null) {
             function.setPath(request.getPath());
@@ -135,7 +162,7 @@ public class MenuServiceImpl implements MenuService {
             function.setIcon(request.getIcon());
         }
         if (request.getType() != null) {
-            function.setType(request.getType());
+            function.setType(request.getType().getCode());
         }
         if (request.getSortOrder() != null) {
             function.setSortOrder(request.getSortOrder());
@@ -153,6 +180,15 @@ public class MenuServiceImpl implements MenuService {
 
     @Override
     public void deleteMenu(Long id) {
+        // 检查是否存在子功能，避免产生孤立记录
+        List<Function> children = functionRepository.findByParentId(id);
+        if (children != null && !children.isEmpty()) {
+            throw new BusinessException(GlobalErrorCode.PARAM_INVALID, "存在子菜单，无法删除，请先删除子菜单");
+        }
+
+        if (!functionRepository.existsById(id)) {
+            throw new BusinessException(GlobalErrorCode.NOT_FOUND, "菜单不存在");
+        }
         functionRepository.deleteById(id);
     }
 
@@ -167,6 +203,8 @@ public class MenuServiceImpl implements MenuService {
     /**
      * 将Function实体转换为MenuResponse
      *
+     * <p>注意：本方法只填充自身字段，children 由 buildMenuTree 统一构建。
+     *
      * @param function 功能实体
      * @return 菜单响应
      */
@@ -178,7 +216,49 @@ public class MenuServiceImpl implements MenuService {
         response.setIcon(function.getIcon());
         response.setPermission(function.getCode());
         response.setSortOrder(function.getSortOrder());
-        response.setChildren(null);
+        response.setParentId(function.getParent() != null ? function.getParent().getId() : null);
+        response.setType(function.getType());
+        response.setVisible(function.getVisible());
+        response.setEnabled(function.getEnabled());
         return response;
+    }
+
+    /**
+     * 构建菜单树
+     *
+     * <p>将扁平的菜单列表按 parentId 组装为树形结构。
+     * 顶层节点为 parentId 为 null 的菜单。
+     *
+     * @param menus 扁平菜单列表
+     * @return 树形菜单列表
+     */
+    private List<MenuResponse> buildMenuTree(List<MenuResponse> menus) {
+        if (menus == null || menus.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        Map<Long, MenuResponse> idToMenu = new LinkedHashMap<>();
+        for (MenuResponse menu : menus) {
+            menu.setChildren(new ArrayList<>());
+            idToMenu.put(menu.getId(), menu);
+        }
+
+        List<MenuResponse> roots = new ArrayList<>();
+        for (MenuResponse menu : menus) {
+            Long parentId = menu.getParentId();
+            if (parentId == null) {
+                roots.add(menu);
+            } else {
+                MenuResponse parent = idToMenu.get(parentId);
+                if (parent != null) {
+                    parent.getChildren().add(menu);
+                } else {
+                    // 父节点不在当前列表中（可能无权限），作为顶层节点处理
+                    roots.add(menu);
+                }
+            }
+        }
+
+        return roots;
     }
 }

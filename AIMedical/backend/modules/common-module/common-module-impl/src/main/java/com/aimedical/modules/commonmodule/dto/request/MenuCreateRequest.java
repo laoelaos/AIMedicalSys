@@ -1,5 +1,11 @@
 package com.aimedical.modules.commonmodule.dto.request;
 
+import com.aimedical.common.base.MenuType;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 /**
  * 创建菜单请求DTO
  *
@@ -10,15 +16,32 @@ package com.aimedical.modules.commonmodule.dto.request;
  */
 public class MenuCreateRequest {
 
+    @NotBlank(message = "菜单名称不能为空")
+    @Size(max = 50, message = "菜单名称长度不能超过50")
     private String name;
+
+    @NotBlank(message = "菜单编码不能为空")
+    @Size(max = 100, message = "菜单编码长度不能超过100")
     private String code;
+
+    @Size(max = 255, message = "描述长度不能超过255")
     private String description;
+
     private Long parentId;
+
+    @Size(max = 255, message = "路径长度不能超过255")
     private String path;
+
+    @Size(max = 100, message = "图标长度不能超过100")
     private String icon;
-    private String type;
+
+    @NotNull(message = "菜单类型不能为空")
+    private MenuType type;
+
     private Integer sortOrder;
+
     private Boolean visible;
+
     private Boolean enabled;
 
     public String getName() {
@@ -69,11 +92,11 @@ public class MenuCreateRequest {
         this.icon = icon;
     }
 
-    public String getType() {
+    public MenuType getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(MenuType type) {
         this.type = type;
     }
 

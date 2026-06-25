@@ -43,6 +43,7 @@ const router = createRouter({
  *
  * 检查用户认证状态，未认证用户重定向到登录页。
  * 菜单获取失败时也重定向到登录页。
+ * 进入登录页时清理动态路由，避免路由表膨胀。
  */
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
@@ -51,6 +52,8 @@ router.beforeEach(async (to, from, next) => {
 
   if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated) {
+      // 未认证跳转登录前，清理可能残留的菜单和动态路由
+      menuStore.clearMenus()
       return next('/login')
     }
 
@@ -59,12 +62,17 @@ router.beforeEach(async (to, from, next) => {
       const success = await menuStore.fetchMenus()
       if (!success) {
         // 菜单获取失败（网络错误/Token过期），清除认证状态并重定向到登录页
-        authStore.logout()
+        await authStore.logout()
+        menuStore.clearMenus()
         return next('/login')
       }
     }
-  } else if (to.path === '/login' && authStore.isAuthenticated) {
-    return next('/')
+  } else if (to.path === '/login') {
+    // 进入登录页时，清理动态路由和菜单状态（登出场景）
+    menuStore.clearMenus()
+    if (authStore.isAuthenticated) {
+      return next('/')
+    }
   }
 
   next()

@@ -1,10 +1,12 @@
 package com.aimedical.common.config;
 
 import com.aimedical.common.exception.BusinessException;
+import com.aimedical.common.exception.ErrorCode;
 import com.aimedical.common.exception.GlobalErrorCode;
 import com.aimedical.common.result.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -19,8 +21,39 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Result<Void>> handleBusinessException(BusinessException e) {
-        return ResponseEntity.badRequest()
-                .body(Result.fail(e.getErrorCode()));
+        ErrorCode errorCode = e.getErrorCode();
+        HttpStatus status = resolveHttpStatus(errorCode);
+        return ResponseEntity.status(status)
+                .body(Result.fail(errorCode));
+    }
+
+    /**
+     * 根据ErrorCode映射对应的HTTP状态码
+     *
+     * <p>区分认证/授权/资源不存在/参数错误等场景，避免所有业务异常统一返回400。
+     *
+     * @param errorCode 错误码
+     * @return 对应的HTTP状态码
+     */
+    private HttpStatus resolveHttpStatus(ErrorCode errorCode) {
+        String code = errorCode.getCode();
+        if (GlobalErrorCode.UNAUTHORIZED.getCode().equals(code)) {
+            return HttpStatus.UNAUTHORIZED;
+        }
+        if (GlobalErrorCode.FORBIDDEN.getCode().equals(code)) {
+            return HttpStatus.FORBIDDEN;
+        }
+        if (GlobalErrorCode.NOT_FOUND.getCode().equals(code)) {
+            return HttpStatus.NOT_FOUND;
+        }
+        if (GlobalErrorCode.PARAM_INVALID.getCode().equals(code)) {
+            return HttpStatus.BAD_REQUEST;
+        }
+        if (GlobalErrorCode.SYSTEM_ERROR.getCode().equals(code)) {
+            return HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        // 其他业务错误码默认返回400
+        return HttpStatus.BAD_REQUEST;
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

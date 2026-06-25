@@ -43,6 +43,26 @@ public class MenuResponse {
     private Integer sortOrder;
 
     /**
+     * 父菜单ID，用于前端构建树形结构
+     */
+    private Long parentId;
+
+    /**
+     * 菜单类型（DIRECTORY/MENU/BUTTON）
+     */
+    private String type;
+
+    /**
+     * 是否可见
+     */
+    private Boolean visible;
+
+    /**
+     * 是否启用
+     */
+    private Boolean enabled;
+
+    /**
      * 子菜单列表
      */
     private List<MenuResponse> children;
@@ -93,6 +113,38 @@ public class MenuResponse {
 
     public void setSortOrder(Integer sortOrder) {
         this.sortOrder = sortOrder;
+    }
+
+    public Long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(Long parentId) {
+        this.parentId = parentId;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public Boolean getVisible() {
+        return visible;
+    }
+
+    public void setVisible(Boolean visible) {
+        this.visible = visible;
+    }
+
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 
     public List<MenuResponse> getChildren() {

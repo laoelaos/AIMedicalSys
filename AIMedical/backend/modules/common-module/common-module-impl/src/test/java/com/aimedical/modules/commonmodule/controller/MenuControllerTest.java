@@ -4,6 +4,8 @@ import com.aimedical.common.result.Result;
 import com.aimedical.modules.commonmodule.dto.request.MenuCreateRequest;
 import com.aimedical.modules.commonmodule.dto.request.MenuUpdateRequest;
 import com.aimedical.modules.commonmodule.dto.response.MenuResponse;
+import com.aimedical.modules.commonmodule.jwt.JwtConfig;
+import com.aimedical.modules.commonmodule.jwt.JwtUtil;
 import com.aimedical.modules.commonmodule.service.MenuService;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +27,7 @@ import static org.mockito.Mockito.*;
  * MenuController纯单元测试
  *
  * <p>不依赖Spring容器，直接测试Controller方法逻辑。
- * 注意：tree和all方法依赖JwtUtil验证token，此处使用真实JwtUtil测试。
+ * 使用真实JwtUtil实例，避免传入null导致后续维护NPE。
  *
  * @author AIMedical Team
  * @version 1.0.0
@@ -37,15 +39,21 @@ class MenuControllerTest {
     @Mock
     private MenuService menuService;
 
+    private JwtUtil jwtUtil;
     private MenuController menuController;
 
     private MenuResponse mockMenu;
 
     @BeforeEach
     void setUp() {
-        // MenuController需要JwtUtil，但tree和all方法测试会使用真实token验证
-        // 此处只测试不依赖token验证的方法
-        menuController = new MenuController(menuService, null);
+        // 创建真实的JwtUtil实例，避免传入null
+        JwtConfig jwtConfig = new JwtConfig();
+        jwtConfig.setSecret("AIMedicalSysJwtSecretKey2026Phase1DevelopmentTestSecretKey");
+        jwtConfig.setExpiration(86400L);
+        jwtConfig.setTokenType("Bearer");
+        jwtUtil = new JwtUtil(jwtConfig);
+
+        menuController = new MenuController(menuService, jwtUtil);
 
         mockMenu = new MenuResponse();
         mockMenu.setId(1L);

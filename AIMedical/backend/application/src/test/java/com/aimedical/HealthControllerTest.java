@@ -23,8 +23,8 @@ class HealthControllerTest {
     }
 
     @Test
-    void shouldReturnNullMessage() {
+    void shouldReturnSuccessMessage() {
         Result<String> result = controller.ping();
-        assertNull(result.getMessage());
+        assertEquals("成功", result.getMessage());
     }
 }
