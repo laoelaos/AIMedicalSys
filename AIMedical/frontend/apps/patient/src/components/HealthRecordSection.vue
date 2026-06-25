@@ -236,15 +236,15 @@ function buildHealthFormRequest(): AllergyRequest | ChronicDiseaseRequest | Fami
   const f = healthForm
   switch (dialogType.value) {
     case 'allergy':
-      return { allergen: f.allergen, reactionType: f.reaction_type || undefined, severity: f.severity || undefined, occurredAt: f.occurred_at || undefined } as AllergyRequest
+      return { allergen: f.allergen, reaction_type: f.reaction_type || undefined, severity: f.severity || undefined, occurred_at: f.occurred_at || undefined } as AllergyRequest
     case 'chronic':
-      return { diseaseName: f.disease_name, diagnosedAt: f.diagnosed_at || undefined, currentStatus: f.current_status || undefined } as ChronicDiseaseRequest
+      return { disease_name: f.disease_name, diagnosed_at: f.diagnosed_at || undefined, current_status: f.current_status || undefined } as ChronicDiseaseRequest
     case 'family':
-      return { relationship: f.relationship, diseaseName: f.disease_name, note: f.note || undefined } as FamilyHistoryRequest
+      return { relationship: f.relationship, disease_name: f.disease_name, note: f.note || undefined } as FamilyHistoryRequest
     case 'surgery':
-      return { surgeryName: f.surgery_name, surgeryAt: f.surgery_at || undefined, hospital: f.hospital || undefined } as SurgeryHistoryRequest
+      return { surgery_name: f.surgery_name, surgery_at: f.surgery_at || undefined, hospital: f.hospital || undefined } as SurgeryHistoryRequest
     case 'medication':
-      return { drugName: f.drug_name, reason: f.reason || undefined, startedAt: f.started_at || undefined, endedAt: f.ended_at || undefined } as MedicationHistoryRequest
+      return { drug_name: f.drug_name, reason: f.reason || undefined, started_at: f.started_at || undefined, ended_at: f.ended_at || undefined } as MedicationHistoryRequest
   }
 }
 

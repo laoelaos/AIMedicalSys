@@ -78,6 +78,7 @@ export interface PatientProfileUpdateRequest {
   gender?: string
   age?: number
   email?: string
+  emergency_contact?: string
 }
 
 // ==================== Health Records ====================

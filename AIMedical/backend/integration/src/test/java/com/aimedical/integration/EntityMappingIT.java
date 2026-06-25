@@ -11,6 +11,7 @@ import com.aimedical.modules.commonmodule.permission.Role;
 import com.aimedical.modules.commonmodule.permission.User;
 import com.aimedical.modules.doctor.entity.DoctorEntity;
 import com.aimedical.modules.patient.entity.AllergyHistory;
+import com.aimedical.modules.patient.entity.Gender;
 import com.aimedical.modules.patient.entity.HealthProfile;
 import com.aimedical.modules.patient.entity.PatientEntity;
 import jakarta.persistence.EntityManager;
@@ -101,7 +102,7 @@ class EntityMappingIT {
         PatientEntity patient = new PatientEntity();
         patient.setUserId(100L);
         patient.setRealName("测试患者");
-        patient.setGender("MALE");
+        patient.setGender(Gender.MALE);
         // 测试最大长度 500 字符（https://example.com/avatar/ = 27 chars + 469 x + .jpg = 4 chars = 500）
         String longUrl = "https://example.com/avatar/" + "x".repeat(469) + ".jpg";
         patient.setAvatarUrl(longUrl);
@@ -485,7 +486,7 @@ class EntityMappingIT {
         PatientEntity patient = new PatientEntity();
         patient.setUserId(300L);
         patient.setRealName("综合测试");
-        patient.setGender("FEMALE");
+        patient.setGender(Gender.FEMALE);
         entityManager.persist(patient);
         entityManager.flush();
 

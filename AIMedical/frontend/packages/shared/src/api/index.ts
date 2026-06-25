@@ -18,14 +18,16 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 })
 
 // Response interceptor: unwrap Result<T>, handle errors
+// Note: we intentionally unwrap AxiosResponse → data for ergonomic API wrappers.
+// Axios strict interceptor typing disagrees with this pattern, so we assert.
 apiClient.interceptors.response.use(
-  (response: AxiosResponse<ApiResult<unknown>>) => {
+  ((response: AxiosResponse<ApiResult<unknown>>): unknown => {
     const body = response.data as ApiResult<unknown>
     if (body.code !== 'SUCCESS') {
       return { code: body.code, message: body.message ?? '', isBusinessError: true as const } as BusinessError
     }
     return body.data
-  },
+  }) as Parameters<typeof apiClient.interceptors.response.use>[0],
   async (error: { response?: AxiosResponse; config?: InternalAxiosRequestConfig & { _retry?: boolean } }) => {
     if (error.response === undefined) {
       return Promise.resolve({ code: 'NETWORK_ERROR' as const, message: '网络不可达，请检查网络连接', isBusinessError: true as const })

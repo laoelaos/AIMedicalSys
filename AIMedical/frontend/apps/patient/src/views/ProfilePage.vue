@@ -17,7 +17,7 @@
               <el-descriptions-item label="性别">{{ profile?.gender || '-' }}</el-descriptions-item>
               <el-descriptions-item label="年龄">{{ profile?.age ?? '-' }}</el-descriptions-item>
               <el-descriptions-item label="邮箱">{{ profile?.email || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="紧急联系人">{{ profile?.emergencyContact || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="紧急联系人">{{ profile?.emergency_contact || '-' }}</el-descriptions-item>
             </el-descriptions>
             <el-button type="primary" style="margin-top:16px" @click="showEditDialog = true">编辑资料</el-button>
           </el-skeleton>
@@ -48,8 +48,8 @@
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="editForm.email" maxlength="100" />
         </el-form-item>
-        <el-form-item label="紧急联系人" prop="emergencyContact">
-          <el-input v-model="editForm.emergencyContact" maxlength="2000" type="textarea" :rows="2" placeholder="紧急联系人及联系方式" />
+        <el-form-item label="紧急联系人" prop="emergency_contact">
+          <el-input v-model="editForm.emergency_contact" maxlength="2000" type="textarea" :rows="2" placeholder="紧急联系人及联系方式" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -67,7 +67,7 @@ import { useAuthStore } from '../stores/auth'
 import { updatePatientProfile } from '@aimedical/shared'
 import { ElMessage } from 'element-plus'
 import type { FormInstance } from 'element-plus'
-import type { BusinessError } from '@aimedical/shared'
+import type { BusinessError, PatientProfile } from '@aimedical/shared'
 import HealthRecordSection from '../components/HealthRecordSection.vue'
 
 const auth = useAuthStore()
@@ -84,7 +84,7 @@ const editForm = reactive({
   gender: '',
   age: undefined as number | undefined,
   email: '',
-  emergencyContact: '',
+  emergency_contact: '',
 })
 
 const editRules = {
@@ -111,7 +111,7 @@ watch(showEditDialog, (val) => {
     editForm.gender = profile.value.gender || ''
     editForm.age = profile.value.age
     editForm.email = profile.value.email || ''
-    editForm.emergencyContact = profile.value.emergencyContact || ''
+    editForm.emergency_contact = profile.value.emergency_contact || ''
   }
 })
 
@@ -123,14 +123,15 @@ async function handleUpdateProfile() {
     gender: editForm.gender || undefined,
     age: editForm.age,
     email: editForm.email || undefined,
-    emergencyContact: editForm.emergencyContact || undefined,
+    emergency_contact: editForm.emergency_contact || undefined,
   })
   if ((result as BusinessError).isBusinessError) {
     ElMessage.error((result as BusinessError).message)
   } else {
-    profile.value = result as typeof profile.value
+    const updated = result as PatientProfile
+    profile.value = updated
     // Use store method instead of direct mutation
-    await auth.setProfile(result as typeof profile.value)
+    await auth.setProfile(updated)
     ElMessage.success('资料更新成功')
     showEditDialog.value = false
   }
