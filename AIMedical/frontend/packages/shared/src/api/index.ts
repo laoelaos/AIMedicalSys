@@ -137,6 +137,13 @@ export const authApi = {
   me: (): Promise<UserInfo | BusinessError> => {
     return apiGet<UserInfo>('/auth/me')
   },
+
+  /**
+   * 编辑当前用户个人资料（昵称、手机号、邮箱）
+   */
+  updateMe: (data: { nickname?: string; phone?: string; email?: string }): Promise<UserInfo | BusinessError> => {
+    return apiPut<UserInfo>('/auth/me', data)
+  },
 }
 
 /**

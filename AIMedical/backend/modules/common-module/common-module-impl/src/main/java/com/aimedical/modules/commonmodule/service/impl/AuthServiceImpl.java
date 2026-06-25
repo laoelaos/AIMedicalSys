@@ -5,6 +5,7 @@ import com.aimedical.common.exception.GlobalErrorCode;
 import com.aimedical.modules.commonmodule.jwt.JwtUtil;
 import com.aimedical.modules.commonmodule.api.UserType;
 import com.aimedical.modules.commonmodule.dto.request.LoginRequest;
+import com.aimedical.modules.commonmodule.dto.request.ProfileUpdateRequest;
 import com.aimedical.modules.commonmodule.dto.response.LoginResponse;
 import com.aimedical.modules.commonmodule.dto.response.UserInfoResponse;
 import com.aimedical.modules.commonmodule.permission.Function;
@@ -24,16 +25,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 认证服务实现
  *
  * <p>实现用户认证相关的业务逻辑。
  *
+ * <p>使用 @Transactional（readOnly=true）确保 Hibernate Session 在方法内保持开启，
+ * 避免懒加载 User.posts/roles 时抛出 LazyInitializationException
+ * （application-dev.yml 配置 open-in-view=false）。
+ *
  * @author AIMedical Team
  * @version 1.0.0
  */
 @Service
+@Transactional(readOnly = true)
 public class AuthServiceImpl implements AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
@@ -164,6 +171,45 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new BusinessException(GlobalErrorCode.NOT_FOUND, "用户不存在"));
 
         return buildUserInfoResponse(user);
+    }
+
+    @Override
+    @Transactional
+    public UserInfoResponse updateProfile(String token, ProfileUpdateRequest request) {
+        // 一次性解析token并获取Claims，避免重复解析
+        Claims claims = jwtUtil.validateTokenAndGetClaims(token);
+        if (claims == null) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED, "令牌无效");
+        }
+
+        Object userIdObj = claims.get("userId");
+        Long userId;
+        if (userIdObj instanceof Integer) {
+            userId = ((Integer) userIdObj).longValue();
+        } else if (userIdObj instanceof Long) {
+            userId = (Long) userIdObj;
+        } else {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED, "令牌无效");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(GlobalErrorCode.NOT_FOUND, "用户不存在"));
+
+        // 仅更新非敏感字段，null 值不覆盖（前端未传的字段保持原值）
+        if (request.getNickname() != null) {
+            user.setNickname(request.getNickname());
+        }
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone());
+        }
+        if (request.getEmail() != null) {
+            user.setEmail(request.getEmail());
+        }
+
+        User saved = userRepository.save(user);
+        log.info("用户个人资料更新成功，用户名: {}", user.getUsername());
+
+        return buildUserInfoResponse(saved);
     }
 
     /**

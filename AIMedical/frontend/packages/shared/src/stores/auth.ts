@@ -13,6 +13,20 @@ export interface AuthStoreOptions {
 /**
  * 创建认证状态管理Store
  *
+ * <p>安全说明（技术债务 T12 评估结论）：
+ * 当前 Phase1 使用 localStorage 存储 JWT，存在 XSS 攻击风险（恶意脚本可读取 token）。
+ * 这是有意为之的过渡方案，原因：
+ * <ul>
+ *   <li>跨域分离部署下 httpOnly cookie 需要 SameSite/CORS 精细配置，Phase1 为单体部署</li>
+ *   <li>Spring Security 现有 JwtAuthenticationFilter 基于 Authorization header，改造为 cookie 需同步调整后端</li>
+ * </ul>
+ * Phase2+ 计划迁移到 httpOnly + SameSite=Strict cookie 方案，届时：
+ * <ul>
+ *   <li>后端登录/刷新接口通过 Set-Cookie 返回 token，不再在响应体返回</li>
+ *   <li>前端不再手动管理 token，axios 配置 withCredentials=true</li>
+ *   <li>CSRF 防护需同步启用（Spring Security CSRF token）</li>
+ * </ul>
+ *
  * @param options 配置选项
  * @returns Pinia store
  */
@@ -22,6 +36,7 @@ export function createAuthStore(options: AuthStoreOptions) {
 
   return defineStore(`auth_${options.appType}`, () => {
     // 从localStorage初始化token和user
+    // 安全提示：localStorage 可被 XSS 读取，Phase2+ 将迁移到 httpOnly cookie
     const token = ref<string>(localStorage.getItem(TOKEN_KEY) || '')
     const storedUser = localStorage.getItem(USER_KEY)
     const user = ref<UserInfo | null>(storedUser ? JSON.parse(storedUser) : null)
@@ -113,6 +128,22 @@ export function createAuthStore(options: AuthStoreOptions) {
     }
 
     /**
+     * 编辑当前用户个人资料
+     * @param data 待更新的字段（nickname/phone/email）
+     * @returns 更新结果 { success: boolean, user?: UserInfo, errorMessage?: string }
+     */
+    async function updateProfile(
+      data: { nickname?: string; phone?: string; email?: string }
+    ): Promise<{ success: boolean; user?: UserInfo; errorMessage?: string }> {
+      const response = await authApi.updateMe(data)
+      if (isBusinessError(response)) {
+        return { success: false, errorMessage: response.message || '个人资料更新失败' }
+      }
+      saveUser(response)
+      return { success: true, user: response }
+    }
+
+    /**
      * 初始化认证状态（页面刷新后恢复会话）
      */
     async function initializeAuth(): Promise<boolean> {
@@ -138,6 +169,7 @@ export function createAuthStore(options: AuthStoreOptions) {
       logout,
       refreshToken,
       fetchCurrentUser,
+      updateProfile,
       initializeAuth,
       clearAuthData,
     }

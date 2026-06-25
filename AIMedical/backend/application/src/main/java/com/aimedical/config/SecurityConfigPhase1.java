@@ -21,7 +21,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  *
  * <p>安全策略：
  * <ul>
- *   <li>H2 Console：仅当 spring.h2.console.enabled=true 时放行（开发环境）</li>
+ *   <li>H2 Console：仅当 spring.h2.console.enabled=true 时放行（开发环境），生产环境完全拒绝</li>
  *   <li>Actuator：仅 health 和 info 放行，其他端点需认证</li>
  * </ul>
  *
@@ -61,11 +61,11 @@ public class SecurityConfigPhase1 {
                     .requestMatchers("/swagger-ui/**").permitAll()
                     .requestMatchers("/v3/api-docs/**").permitAll();
 
-                // H2 Console：仅开发环境（spring.h2.console.enabled=true）放行
+                // H2 Console：仅开发环境（spring.h2.console.enabled=true）放行；生产环境完全拒绝
                 if (h2ConsoleEnabled) {
                     auth.requestMatchers("/h2-console/**").permitAll();
                 } else {
-                    auth.requestMatchers("/h2-console/**").authenticated();
+                    auth.requestMatchers("/h2-console/**").denyAll();
                 }
 
                 auth.anyRequest().authenticated();

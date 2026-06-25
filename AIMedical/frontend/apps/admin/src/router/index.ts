@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useMenuStore } from '../stores/menu'
 
 /**
  * 路由配置
@@ -47,7 +48,6 @@ const router = createRouter({
  */
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
-  const { useMenuStore } = await import('../stores/menu')
   const menuStore = useMenuStore()
 
   if (to.meta.requiresAuth) {

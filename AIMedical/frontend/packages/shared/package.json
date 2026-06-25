@@ -28,7 +28,16 @@
     "./stores/menu": {
       "types": "./src/stores/menu.ts",
       "default": "./src/stores/menu.ts"
+    },
+    "./components": {
+      "types": "./src/components/index.ts",
+      "default": "./src/components/index.ts"
     }
+  },
+  "peerDependencies": {
+    "vue": "^3.4.0",
+    "vue-router": "^4.3.0",
+    "pinia": "^2.1.0"
   },
   "devDependencies": {
     "axios": "^1.7.2",

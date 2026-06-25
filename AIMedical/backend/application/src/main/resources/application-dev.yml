@@ -7,7 +7,7 @@ spring:
   sql:
     init:
       encoding: UTF-8
-      mode: never
+      mode: always
 
   h2:
     console:

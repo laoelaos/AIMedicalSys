@@ -3,6 +3,7 @@ package com.aimedical.modules.commonmodule.controller;
 import com.aimedical.common.result.Result;
 import com.aimedical.modules.commonmodule.jwt.JwtUtil;
 import com.aimedical.modules.commonmodule.dto.request.LoginRequest;
+import com.aimedical.modules.commonmodule.dto.request.ProfileUpdateRequest;
 import com.aimedical.modules.commonmodule.dto.response.LoginResponse;
 import com.aimedical.modules.commonmodule.dto.response.UserInfoResponse;
 import com.aimedical.modules.commonmodule.service.AuthService;
@@ -11,6 +12,7 @@ import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -92,6 +94,27 @@ public class AuthController {
             return Result.fail("UNAUTHORIZED", "未提供令牌");
         }
         UserInfoResponse response = authService.getCurrentUser(token);
+        return Result.success(response);
+    }
+
+    /**
+     * 编辑当前用户个人资料
+     *
+     * <p>仅允许修改昵称、手机号、邮箱等非敏感字段。
+     *
+     * @param authHeader Authorization请求头
+     * @param request 个人资料更新请求
+     * @return 更新后的用户信息响应
+     */
+    @PutMapping("/me")
+    public Result<UserInfoResponse> updateMe(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @Valid @RequestBody ProfileUpdateRequest request) {
+        String token = extractToken(authHeader);
+        if (token == null) {
+            return Result.fail("UNAUTHORIZED", "未提供令牌");
+        }
+        UserInfoResponse response = authService.updateProfile(token, request);
         return Result.success(response);
     }
 
