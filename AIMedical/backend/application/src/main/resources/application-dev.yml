@@ -7,6 +7,7 @@ spring:
   sql:
     init:
       encoding: UTF-8
+      mode: never
 
   h2:
     console:
@@ -22,11 +23,15 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
-    show-sql: false
+    show-sql: true
 
 jwt:
   secret: dev-secret-key-for-local-development-only-please-change-in-production
   expiration: 86400
+
+ai:
+  mock:
+    enabled: true
 
 springdoc:
   api-docs:
@@ -38,4 +43,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
