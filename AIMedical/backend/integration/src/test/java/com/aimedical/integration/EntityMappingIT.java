@@ -99,8 +99,16 @@ class EntityMappingIT {
 
     @Test
     void patientEntity_shouldMapAvatarUrl() {
+        // Create a User first to satisfy FK constraint on user_id
+        User testUser = new User();
+        testUser.setUsername("test_patient_avatar");
+        testUser.setPassword("pwd123");
+        testUser.setUserType(UserType.PATIENT);
+        entityManager.persist(testUser);
+        entityManager.flush();
+
         PatientEntity patient = new PatientEntity();
-        patient.setUserId(100L);
+        patient.setUserId(testUser.getId());
         patient.setRealName("测试患者");
         patient.setGender(Gender.MALE);
         // 测试最大长度 500 字符（https://example.com/avatar/ = 27 chars + 469 x + .jpg = 4 chars = 500）
@@ -483,8 +491,16 @@ class EntityMappingIT {
 
     @Test
     void patientWithHealthProfileAndAllergy_shouldWorkTogether() {
+        // Create a User first to satisfy FK constraint on user_id
+        User compositeUser = new User();
+        compositeUser.setUsername("test_composite_patient");
+        compositeUser.setPassword("pwd123");
+        compositeUser.setUserType(UserType.PATIENT);
+        entityManager.persist(compositeUser);
+        entityManager.flush();
+
         PatientEntity patient = new PatientEntity();
-        patient.setUserId(300L);
+        patient.setUserId(compositeUser.getId());
         patient.setRealName("综合测试");
         patient.setGender(Gender.FEMALE);
         entityManager.persist(patient);
