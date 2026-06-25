@@ -1,73 +1,28 @@
 <template>
-  <div class="header-container">
-    <div class="header-left">
-      <span class="app-title">智慧云脑诊疗平台 - 医生端</span>
-    </div>
-    <div class="header-right">
-      <span class="user-name">{{ authStore.user?.realName || '医生' }}</span>
-      <button class="logout-btn" @click="handleLogout">退出登录</button>
-    </div>
-  </div>
+  <HeaderBase
+    title="智慧云脑诊疗平台 - 医生端"
+    fallback-name="医生"
+    :user="authStore.user"
+    @logout="handleLogout"
+  />
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+/**
+ * 医生端顶部栏
+ *
+ * <p>薄包装组件：复用 shared 包的 HeaderBase（T4 抽取重复组件），
+ * 仅连接医生端的 authStore 和 menuStore，处理登出逻辑。
+ */
+import { HeaderBase } from '@aimedical/shared/components'
 import { useAuthStore } from '../stores/auth'
 import { useMenuStore } from '../stores/menu'
 
-const router = useRouter()
 const authStore = useAuthStore()
 const menuStore = useMenuStore()
 
 async function handleLogout() {
   await authStore.logout()
   menuStore.clearMenus()
-  router.push('/login')
 }
 </script>
-
-<style scoped>
-.header-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  height: 60px;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-}
-
-.app-title {
-  font-size: 16px;
-  font-weight: 500;
-  color: #333;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.user-name {
-  font-size: 14px;
-  color: #666;
-}
-
-.logout-btn {
-  padding: 8px 16px;
-  background: #f56c6c;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.logout-btn:hover {
-  opacity: 0.9;
-}
-</style>

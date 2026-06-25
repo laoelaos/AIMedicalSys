@@ -4,8 +4,6 @@ import com.aimedical.common.result.Result;
 import com.aimedical.modules.commonmodule.dto.request.MenuCreateRequest;
 import com.aimedical.modules.commonmodule.dto.request.MenuUpdateRequest;
 import com.aimedical.modules.commonmodule.dto.response.MenuResponse;
-import com.aimedical.modules.commonmodule.jwt.JwtConfig;
-import com.aimedical.modules.commonmodule.jwt.JwtUtil;
 import com.aimedical.modules.commonmodule.service.MenuService;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +25,9 @@ import static org.mockito.Mockito.*;
  * MenuController纯单元测试
  *
  * <p>不依赖Spring容器，直接测试Controller方法逻辑。
- * 使用真实JwtUtil实例，避免传入null导致后续维护NPE。
+ *
+ * <p>注：/tree 端点依赖 SecurityContext（T1/T7 修复后从 SecurityContext 获取 userId），
+ * 纯单元测试无法 mock SecurityContext，因此 /tree 端点的测试由集成测试覆盖。
  *
  * @author AIMedical Team
  * @version 1.0.0
@@ -39,21 +39,14 @@ class MenuControllerTest {
     @Mock
     private MenuService menuService;
 
-    private JwtUtil jwtUtil;
     private MenuController menuController;
 
     private MenuResponse mockMenu;
 
     @BeforeEach
     void setUp() {
-        // 创建真实的JwtUtil实例，避免传入null
-        JwtConfig jwtConfig = new JwtConfig();
-        jwtConfig.setSecret("AIMedicalSysJwtSecretKey2026Phase1DevelopmentTestSecretKey");
-        jwtConfig.setExpiration(86400L);
-        jwtConfig.setTokenType("Bearer");
-        jwtUtil = new JwtUtil(jwtConfig);
-
-        menuController = new MenuController(menuService, jwtUtil);
+        // T1/T7 修复后 MenuController 仅依赖 MenuService，不再依赖 JwtUtil
+        menuController = new MenuController(menuService);
 
         mockMenu = new MenuResponse();
         mockMenu.setId(1L);

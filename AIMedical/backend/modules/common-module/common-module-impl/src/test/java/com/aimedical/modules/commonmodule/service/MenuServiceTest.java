@@ -170,8 +170,11 @@ class MenuServiceTest {
         }
 
         @Test
-        @DisplayName("排除已删除的菜单")
-        void shouldExcludeDeletedMenus() {
+        @DisplayName("deleted 过滤由 @SQLRestriction 在 SQL 层处理，Service 不再重复过滤")
+        void shouldNotFilterDeletedInJavaLayer() {
+            // T2/T8 修复：Service 不再在 Java 层过滤 deleted，依赖 BaseEntity 的 @SQLRestriction("deleted = false")
+            // 单元测试 mock 的 findAll() 不经过 Hibernate，因此 deleted=true 的 Function 也会被返回。
+            // 真实 SQL 查询时 @SQLRestriction 会自动添加 WHERE deleted = false 条件。
             Function func1 = new Function();
             func1.setId(1L);
             func1.setCode("menu:active");
@@ -192,8 +195,8 @@ class MenuServiceTest {
 
             List<MenuResponse> menus = menuService.getAllMenus();
 
-            assertEquals(1, menus.size());
-            assertEquals("活跃菜单", menus.get(0).getName());
+            // 单元测试中 mock 返回 2 条（不经过 @SQLRestriction），Service 不再过滤
+            assertEquals(2, menus.size());
         }
     }
 

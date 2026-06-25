@@ -68,9 +68,9 @@ public class MenuServiceImpl implements MenuService {
         }
 
         // 过滤启用的功能并转换为响应列表
+        // 注：deleted 过滤由 BaseEntity 的 @SQLRestriction("deleted = false") 在 SQL 层自动处理，无需 Java 层重复过滤
         List<MenuResponse> menus = functions.stream()
                 .filter(f -> Boolean.TRUE.equals(f.getEnabled()))
-                .filter(f -> !Boolean.TRUE.equals(f.getDeleted()))
                 .map(this::convertToMenuResponse)
                 .sorted(Comparator.comparing(MenuResponse::getSortOrder, Comparator.nullsLast(Comparator.naturalOrder())))
                 .collect(Collectors.toList());
@@ -82,8 +82,8 @@ public class MenuServiceImpl implements MenuService {
     @Override
     @Transactional(readOnly = true)
     public List<MenuResponse> getAllMenus() {
+        // 注：deleted 过滤由 BaseEntity 的 @SQLRestriction("deleted = false") 在 SQL 层自动处理
         List<MenuResponse> menus = functionRepository.findAll().stream()
-                .filter(f -> !Boolean.TRUE.equals(f.getDeleted()))
                 .map(this::convertToMenuResponse)
                 .sorted(Comparator.comparing(MenuResponse::getSortOrder, Comparator.nullsLast(Comparator.naturalOrder())))
                 .collect(Collectors.toList());
@@ -229,6 +229,13 @@ public class MenuServiceImpl implements MenuService {
      * <p>将扁平的菜单列表按 parentId 组装为树形结构。
      * 顶层节点为 parentId 为 null 的菜单。
      *
+     * <p>children 语义（T9 修复）：
+     * <ul>
+     *   <li>叶子节点（无子菜单）：children=null，JSON 中省略该字段，语义明确</li>
+     *   <li>父节点（有子菜单）：children=非空列表</li>
+     * </ul>
+     * 前端可通过 children 是否为 null 判断是否为叶子节点，无需依赖空列表的歧义语义。
+     *
      * @param menus 扁平菜单列表
      * @return 树形菜单列表
      */
@@ -237,12 +244,13 @@ public class MenuServiceImpl implements MenuService {
             return new ArrayList<>();
         }
 
+        // 第一遍：建立 id -> menu 映射，children 保持 null（叶子节点语义）
         Map<Long, MenuResponse> idToMenu = new LinkedHashMap<>();
         for (MenuResponse menu : menus) {
-            menu.setChildren(new ArrayList<>());
             idToMenu.put(menu.getId(), menu);
         }
 
+        // 第二遍：按 parentId 挂载子节点，仅父节点才初始化 children 列表
         List<MenuResponse> roots = new ArrayList<>();
         for (MenuResponse menu : menus) {
             Long parentId = menu.getParentId();
@@ -251,6 +259,10 @@ public class MenuServiceImpl implements MenuService {
             } else {
                 MenuResponse parent = idToMenu.get(parentId);
                 if (parent != null) {
+                    // 父节点首次挂载子节点时初始化 children 列表
+                    if (parent.getChildren() == null) {
+                        parent.setChildren(new ArrayList<>());
+                    }
                     parent.getChildren().add(menu);
                 } else {
                     // 父节点不在当前列表中（可能无权限），作为顶层节点处理
