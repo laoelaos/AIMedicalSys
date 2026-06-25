@@ -10,7 +10,9 @@
     "@aimedical/shared": "0.0.0",
     "@aimedical/ui-core": "0.0.0",
     "vue": "^3.4.27",
-    "vue-router": "^4.3.2"
+    "vue-router": "^4.3.2",
+    "pinia": "^2.1.7",
+    "element-plus": "^2.7.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.5",

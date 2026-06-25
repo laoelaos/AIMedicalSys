@@ -42,6 +42,14 @@ classes/
 # Spring Boot / local config
 application-local*.yml
 application-local*.yaml
+application-dev*.yml
+application-dev*.yaml
+!**/application-dev.yml
+!**/application-dev.yaml
+application-test*.yml
+application-test*.yaml
+!**/integration/**/application-test*.yml
+!**/integration/**/application-test*.yaml
 *.pid
 
 # Logs
@@ -81,3 +89,8 @@ files/
 temp/
 cache/
 .cache/
+
+# Local startup scripts
+启动后端.bat
+启动前端.bat
+启动全部.bat

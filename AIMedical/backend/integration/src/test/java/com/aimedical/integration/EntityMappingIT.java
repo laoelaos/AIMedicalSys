@@ -18,6 +18,7 @@ import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @SpringBootTest(classes = com.aimedical.Application.class)
 @AutoConfigureTestDatabase
+@ActiveProfiles({"test", "phase1"})
 @Transactional
 class EntityMappingIT {
 
@@ -141,14 +143,14 @@ class EntityMappingIT {
         Function function = new Function();
         function.setCode("test:menu");
         function.setName("测试菜单");
-        function.setType(MenuType.MENU);
+        function.setType(MenuType.MENU.getCode());
         function.setEnabled(true);
 
         entityManager.persist(function);
         entityManager.flush();
 
         Function found = entityManager.find(Function.class, function.getId());
-        assertEquals(MenuType.MENU, found.getType());
+        assertEquals(MenuType.MENU.getCode(), found.getType());
     }
 
     @Test
@@ -156,14 +158,14 @@ class EntityMappingIT {
         Function dir = new Function();
         dir.setCode("test:directory");
         dir.setName("测试目录");
-        dir.setType(MenuType.DIRECTORY);
+        dir.setType(MenuType.DIRECTORY.getCode());
         dir.setEnabled(true);
 
         entityManager.persist(dir);
         entityManager.flush();
 
         Function found = entityManager.find(Function.class, dir.getId());
-        assertEquals(MenuType.DIRECTORY, found.getType());
+        assertEquals(MenuType.DIRECTORY.getCode(), found.getType());
     }
 
     // ==================== DictData ↔ DictType ====================
@@ -251,6 +253,7 @@ class EntityMappingIT {
         User user = new User();
         user.setUsername("test_user_password");
         user.setPassword("pwd123");
+        user.setNickname("测试用户密码");
         user.setUserType(UserType.ADMIN);
 
         entityManager.persist(user);
@@ -264,6 +267,7 @@ class EntityMappingIT {
     void user_shouldRejectNullPassword() {
         User user = new User();
         user.setUsername("test_user_null_pwd");
+        user.setNickname("测试空密码用户");
         user.setUserType(UserType.PATIENT);
 
         assertThrows(ConstraintViolationException.class, () -> {
@@ -281,6 +285,7 @@ class EntityMappingIT {
         User user = new User();
         user.setUsername("test_user_field");
         user.setPassword("pwd123");
+        user.setNickname("测试用户字段");
         user.setUserType(UserType.DOCTOR);
         user.setEnabled(true);
 
@@ -302,6 +307,7 @@ class EntityMappingIT {
         User user = new User();
         user.setUsername("test_user_no_type");
         user.setPassword("pwd123");
+        user.setNickname("测试无类型用户");
 
         assertThrows(ConstraintViolationException.class, () -> {
             entityManager.persist(user);
@@ -320,6 +326,7 @@ class EntityMappingIT {
         User user = new User();
         user.setUsername("test_user_roles");
         user.setPassword("pwd123");
+        user.setNickname("测试角色用户");
         user.setUserType(UserType.ADMIN);
         user.setRoles(Set.of(role));
         entityManager.persist(user);
@@ -343,6 +350,7 @@ class EntityMappingIT {
         User user = new User();
         user.setUsername("test_user_posts");
         user.setPassword("pwd123");
+        user.setNickname("测试岗位用户");
         user.setUserType(UserType.ADMIN);
         user.setPosts(Set.of(post));
         entityManager.persist(user);
@@ -360,6 +368,7 @@ class EntityMappingIT {
         User user = new User();
         user.setUsername("test_user_enum");
         user.setPassword("pwd123");
+        user.setNickname("测试枚举用户");
         user.setUserType(UserType.PATIENT);
 
         entityManager.persist(user);
@@ -462,7 +471,7 @@ class EntityMappingIT {
         Function function = new Function();
         function.setCode("test_func_post_m2m");
         function.setName("测试功能M2M");
-        function.setType(MenuType.BUTTON);
+        function.setType(MenuType.BUTTON.getCode());
         entityManager.persist(function);
         entityManager.flush();
 

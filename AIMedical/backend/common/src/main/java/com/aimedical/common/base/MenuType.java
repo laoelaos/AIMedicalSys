@@ -1,10 +1,5 @@
 package com.aimedical.common.base;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
-@Getter
-@AllArgsConstructor
 public enum MenuType implements BaseEnum {
 
     DIRECTORY("DIRECTORY", "目录"),
@@ -13,4 +8,19 @@ public enum MenuType implements BaseEnum {
 
     private final String code;
     private final String desc;
+
+    MenuType(String code, String desc) {
+        this.code = code;
+        this.desc = desc;
+    }
+
+    @Override
+    public String getCode() {
+        return code;
+    }
+
+    @Override
+    public String getDesc() {
+        return desc;
+    }
 }

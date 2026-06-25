@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
-import org.hibernate.PropertyValueException;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -48,8 +48,9 @@ class UserRepositoryTest {
     void shouldRejectNullPassword() {
         User user = new User();
         user.setUsername("testuser_null_pwd");
+        user.setNickname("测试用户");
         user.setUserType(UserType.ADMIN);
-        assertThrows(PropertyValueException.class, () -> em.persistAndFlush(user));
+        assertThrows(ConstraintViolationException.class, () -> em.persistAndFlush(user));
     }
 
     @Test
@@ -57,6 +58,7 @@ class UserRepositoryTest {
         User user = new User();
         user.setUsername("testuser_valid_pwd");
         user.setPassword("pwd123");
+        user.setNickname("测试用户");
         user.setUserType(UserType.ADMIN);
         User saved = em.persistAndFlush(user);
         assertNotNull(saved.getId());
