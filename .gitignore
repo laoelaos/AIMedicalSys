@@ -42,10 +42,6 @@ classes/
 # Spring Boot / local config
 application-local*.yml
 application-local*.yaml
-application-dev*.yml
-application-dev*.yaml
-application-test*.yml
-application-test*.yaml
 *.pid
 
 # Logs
