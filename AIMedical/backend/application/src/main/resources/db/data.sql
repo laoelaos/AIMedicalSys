@@ -163,4 +163,24 @@ INSERT INTO `surgery_history` (`health_profile_id`, `surgery_name`, `surgery_at`
 INSERT INTO `medication_history` (`health_profile_id`, `drug_name`, `reason`, `started_at`, `created_at`, `updated_at`, `deleted`) VALUES
 (1, '硝苯地平缓释片', '高血压', '2022-02-01', NOW(), NOW(), 0);
 
+-- ---------------------------------------------
+-- 患者健康记录 (关联 patient_profile.id=1)
+-- ---------------------------------------------
+INSERT INTO `patient_allergy` (`patient_id`, `allergen`, `reaction_type`, `severity`, `occurred_at`, `created_at`, `updated_at`, `deleted`) VALUES
+(1, '青霉素', '皮疹',     'MILD',     '2015-03-10', NOW(), NOW(), 0),
+(1, '头孢类', '呼吸困难', 'MODERATE', '2018-07-20', NOW(), NOW(), 0);
+
+INSERT INTO `patient_chronic_disease` (`patient_id`, `disease_name`, `diagnosed_at`, `current_status`, `created_at`, `updated_at`, `deleted`) VALUES
+(1, '高血压', '2022-01-15', 'STABLE', NOW(), NOW(), 0);
+
+INSERT INTO `patient_family_history` (`patient_id`, `relationship`, `disease_name`, `note`, `created_at`, `updated_at`, `deleted`) VALUES
+(1, '父亲', '冠心病', '60岁发病', NOW(), NOW(), 0),
+(1, '母亲', '糖尿病', '55岁发病', NOW(), NOW(), 0);
+
+INSERT INTO `patient_surgery_history` (`patient_id`, `surgery_name`, `surgery_at`, `hospital`, `created_at`, `updated_at`, `deleted`) VALUES
+(1, '阑尾切除术', '2010-06-15', '北京市第一人民医院', NOW(), NOW(), 0);
+
+INSERT INTO `patient_medication_history` (`patient_id`, `drug_name`, `reason`, `started_at`, `created_at`, `updated_at`, `deleted`) VALUES
+(1, '硝苯地平缓释片', '高血压', '2022-02-01', NOW(), NOW(), 0);
+
 SET FOREIGN_KEY_CHECKS = 1;

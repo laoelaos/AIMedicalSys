@@ -134,6 +134,7 @@ export interface PatientProfile {
 
 export interface PatientProfileUpdateRequest {
   name?: string
+  phone?: string
   gender?: string
   age?: number
   email?: string

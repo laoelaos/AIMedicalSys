@@ -76,16 +76,4 @@ class PatientServiceImplTest {
         assertThrows(BusinessException.class, () -> service.getProfile());
     }
 
-    @Test
-    void shouldReturnPatientPlaceholderData() {
-        Result<String> result = service.getPlaceholder();
-        assertEquals("patient placeholder", result.getData());
-    }
-
-    @Test
-    void shouldReturnSuccessMessage() {
-        Result<String> result = service.getPlaceholder();
-        assertEquals("成功", result.getMessage());
-    }
-    }
 }

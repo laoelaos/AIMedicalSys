@@ -23,16 +23,17 @@ public class PatientConverter {
         if (entity == null) return null;
         PatientDto dto = new PatientDto();
         dto.setId(entity.getId());
+        dto.setUserId(entity.getUserId());
+        dto.setName(entity.getRealName());
+        dto.setPhone(entity.getPhone());
+        dto.setGender(entity.getGender() != null ? entity.getGender().getDesc() : null);
+        dto.setEmergencyContact(entity.getEmergencyContact());
+        // Supplement with User data when available for fields not on PatientEntity
         if (entity.getUser() != null) {
             User user = entity.getUser();
-            dto.setUserId(user.getId());
-            dto.setName(user.getNickname());
-            dto.setPhone(user.getPhone());
-            dto.setGender(user.getGender());
             dto.setAge(user.getAge());
             dto.setEmail(user.getEmail());
         }
-        dto.setEmergencyContact(entity.getEmergencyContact());
         return dto;
     }
 

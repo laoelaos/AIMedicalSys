@@ -35,6 +35,9 @@
         <el-form-item label="姓名" prop="name">
           <el-input v-model="editForm.name" maxlength="20" />
         </el-form-item>
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="editForm.phone" maxlength="11" placeholder="请输入11位手机号" />
+        </el-form-item>
         <el-form-item label="性别" prop="gender">
           <el-select v-model="editForm.gender" style="width:100%">
             <el-option label="男" value="男" />
@@ -81,6 +84,7 @@ const profile = ref(auth.profile)
 
 const editForm = reactive({
   name: '',
+  phone: '',
   gender: '',
   age: undefined as number | undefined,
   email: '',
@@ -108,6 +112,7 @@ onMounted(async () => {
 watch(showEditDialog, (val) => {
   if (val && profile.value) {
     editForm.name = profile.value.name || ''
+    editForm.phone = profile.value.phone || ''
     editForm.gender = profile.value.gender || ''
     editForm.age = profile.value.age
     editForm.email = profile.value.email || ''
@@ -120,6 +125,7 @@ async function handleUpdateProfile() {
   if (!valid) return
   const result = await updatePatientProfile({
     name: editForm.name || undefined,
+    phone: editForm.phone || undefined,
     gender: editForm.gender || undefined,
     age: editForm.age,
     email: editForm.email || undefined,

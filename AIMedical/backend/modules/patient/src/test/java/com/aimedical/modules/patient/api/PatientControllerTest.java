@@ -2,6 +2,7 @@ package com.aimedical.modules.patient.api;
 
 import com.aimedical.common.config.GlobalExceptionHandler;
 import com.aimedical.common.result.Result;
+import com.aimedical.common.util.MessageInterpolator;
 import com.aimedical.modules.commonmodule.api.dto.LoginRequest;
 import com.aimedical.modules.commonmodule.api.dto.RegisterRequest;
 import com.aimedical.modules.commonmodule.api.dto.TokenResponse;
@@ -21,6 +22,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,11 +39,15 @@ class PatientControllerTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    @Mock
+    private MessageInterpolator messageInterpolator;
+
     @BeforeEach
     void setUp() {
+        when(messageInterpolator.interpolate(any(), any())).thenReturn("mock error");
         PatientController controller = new PatientController(patientService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
-                .setControllerAdvice(new GlobalExceptionHandler())
+                .setControllerAdvice(new GlobalExceptionHandler(messageInterpolator))
                 .build();
     }
 

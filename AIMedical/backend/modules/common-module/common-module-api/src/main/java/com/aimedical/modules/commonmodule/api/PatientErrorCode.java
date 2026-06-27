@@ -1,9 +1,7 @@
 package com.aimedical.modules.commonmodule.api;
 
 import com.aimedical.common.exception.ErrorCode;
-import lombok.Getter;
 
-@Getter
 public enum PatientErrorCode implements ErrorCode {
 
     PATIENT_MOBILE_EXISTS("PATIENT_MOBILE_EXISTS", "该手机号已注册"),
@@ -19,5 +17,15 @@ public enum PatientErrorCode implements ErrorCode {
     PatientErrorCode(String code, String message) {
         this.code = code;
         this.message = message;
+    }
+
+    @Override
+    public String getCode() {
+        return code;
+    }
+
+    @Override
+    public String getMessage() {
+        return message;
     }
 }

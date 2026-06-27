@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { authApi, setAuthToken, clearAuthToken } from '../api'
-import type { UserInfo, LoginRequest, BusinessError } from '../types'
+import type { UserInfo, DoctorLoginRequest, BusinessError } from '../types'
 
 export interface AuthStoreOptions {
   /** 应用类型标识，用于localStorage的key区分 */
@@ -81,7 +81,7 @@ export function createAuthStore(options: AuthStoreOptions) {
      * 用户登录
      * @returns 登录结果对象 { success: boolean, errorMessage?: string }
      */
-    async function login(request: LoginRequest): Promise<{ success: boolean; errorMessage?: string }> {
+    async function login(request: DoctorLoginRequest): Promise<{ success: boolean; errorMessage?: string }> {
       const response = await authApi.login(request)
       if (isBusinessError(response)) {
         // 透传后端返回的错误信息

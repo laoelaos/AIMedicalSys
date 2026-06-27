@@ -65,7 +65,15 @@ public class PatientServiceImpl implements PatientService {
         User user = userRepository.findByUsername(request.getPhone())
                 .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_NOT_FOUND));
         PatientEntity patient = new PatientEntity();
+        patient.setUserId(user.getId());
         patient.setUser(user);
+        patient.setRealName(request.getName());
+        patient.setPhone(request.getPhone());
+        try {
+            patient.setGender(Gender.valueOf(request.getGender().equals("男") ? "MALE" : request.getGender().equals("女") ? "FEMALE" : "UNKNOWN"));
+        } catch (IllegalArgumentException e) {
+            patient.setGender(Gender.UNKNOWN);
+        }
         patientRepository.save(patient);
         log.info("Patient profile created: patientId={}, userId={}", patient.getId(), user.getId());
         return Result.success(token);
@@ -103,30 +111,42 @@ public class PatientServiceImpl implements PatientService {
     @Transactional
     public Result<PatientDto> updateProfile(PatientProfileUpdateRequest request) {
         CurrentUserResponse currentUser = authService.getCurrentUser();
-        User user = userRepository.findById(currentUser.getUserId())
-                .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_NOT_FOUND));
-
-        if (request.getName() != null) {
-            user.setNickname(request.getName());
-        }
-        if (request.getGender() != null) {
-            user.setGender(request.getGender());
-        }
-        if (request.getAge() != null) {
-            user.setAge(request.getAge());
-        }
-        if (request.getEmail() != null) {
-            user.setEmail(request.getEmail());
-        }
-        userRepository.save(user);
-
         PatientEntity patient = patientRepository.findByUserId(currentUser.getUserId())
                 .orElseGet(() -> createPatientProfile(currentUser.getUserId()));
+
+        if (request.getName() != null) {
+            patient.setRealName(request.getName());
+        }
+        if (request.getGender() != null) {
+            try {
+                patient.setGender(Gender.valueOf(mapGenderToEnum(request.getGender())));
+            } catch (IllegalArgumentException e) {
+                // ignore invalid gender value
+            }
+        }
+        if (request.getPhone() != null) {
+            patient.setPhone(request.getPhone());
+        }
+        if (request.getEmail() != null) {
+            User user = userRepository.findById(currentUser.getUserId())
+                    .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_NOT_FOUND));
+            user.setEmail(request.getEmail());
+            userRepository.save(user);
+        }
         if (request.getEmergencyContact() != null) {
             patient.setEmergencyContact(request.getEmergencyContact());
-            patientRepository.save(patient);
         }
+        patientRepository.save(patient);
         return Result.success(PatientConverter.toDto(patient));
+    }
+
+    private static String mapGenderToEnum(String gender) {
+        if (gender == null) return null;
+        return switch (gender) {
+            case "男", "MALE" -> "MALE";
+            case "女", "FEMALE" -> "FEMALE";
+            default -> "UNKNOWN";
+        };
     }
 
     // ==================== Health Record ====================
@@ -346,7 +366,18 @@ public class PatientServiceImpl implements PatientService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_NOT_FOUND));
         PatientEntity patient = new PatientEntity();
+        patient.setUserId(user.getId());
         patient.setUser(user);
+        // Initialize patient profile fields from user data
+        patient.setRealName(user.getNickname());
+        patient.setPhone(user.getPhone());
+        if (user.getGender() != null) {
+            try {
+                patient.setGender(Gender.valueOf(user.getGender()));
+            } catch (IllegalArgumentException e) {
+                patient.setGender(Gender.UNKNOWN);
+            }
+        }
         return patientRepository.save(patient);
     }
 

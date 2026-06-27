@@ -11,6 +11,9 @@ public class PatientProfileUpdateRequest {
     @Size(min = 1, max = 20, message = "姓名长度需在1-20个字符之间")
     private String name;
 
+    @Pattern(regexp = "^(1[3-9]\\d{9})?$", message = "手机号格式不合法")
+    private String phone;
+
     @Pattern(regexp = "^(男|女|未知|MALE|FEMALE|UNKNOWN)?$", message = "性别必须为男、女或未知")
     private String gender;
 
@@ -31,6 +34,14 @@ public class PatientProfileUpdateRequest {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
     public String getGender() {

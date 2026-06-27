@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getAccessToken, clearTokens, loginApi, registerApi, logoutApi, getPatientProfile } from '@aimedical/shared'
-import type { LoginRequest, RegisterRequest, PatientProfile, BusinessError } from '@aimedical/shared'
+import type { LoginRequest, RegisterRequest, TokenResponse, PatientProfile, BusinessError } from '@aimedical/shared'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(getAccessToken())
@@ -17,7 +17,7 @@ export const useAuthStore = defineStore('auth', () => {
       if ((result as BusinessError).isBusinessError) {
         return (result as BusinessError).message
       }
-      token.value = getAccessToken()
+      token.value = (result as TokenResponse).access_token
       return null
     } finally {
       loading.value = false
@@ -31,7 +31,7 @@ export const useAuthStore = defineStore('auth', () => {
       if ((result as BusinessError).isBusinessError) {
         return (result as BusinessError).message
       }
-      token.value = getAccessToken()
+      token.value = (result as TokenResponse).access_token
       return null
     } finally {
       loading.value = false
