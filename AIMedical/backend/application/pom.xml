@@ -46,6 +46,16 @@
             <artifactId>admin</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.aimedical</groupId>
+            <artifactId>medical-order</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.aimedical</groupId>
+            <artifactId>registration</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- Spring Boot starters -->
         <dependency>
@@ -126,6 +136,8 @@
                         <ignoredUnusedDeclaredDependency>com.aimedical:patient</ignoredUnusedDeclaredDependency>
                         <ignoredUnusedDeclaredDependency>com.aimedical:doctor</ignoredUnusedDeclaredDependency>
                         <ignoredUnusedDeclaredDependency>com.aimedical:admin</ignoredUnusedDeclaredDependency>
+                        <ignoredUnusedDeclaredDependency>com.aimedical:medical-order</ignoredUnusedDeclaredDependency>
+                        <ignoredUnusedDeclaredDependency>com.aimedical:registration</ignoredUnusedDeclaredDependency>
                     </ignoredUnusedDeclaredDependencies>
                 </configuration>
             </plugin>

@@ -4,7 +4,7 @@ import com.aimedical.common.base.MenuType;
 import com.aimedical.modules.admin.entity.TokenStore;
 import com.aimedical.modules.admin.entity.dict.DictData;
 import com.aimedical.modules.admin.entity.dict.DictType;
-import com.aimedical.modules.commonmodule.permission.Function;
+import com.aimedical.modules.commonmodule.permission.PermissionFunction;
 import com.aimedical.modules.doctor.entity.DoctorEntity;
 import com.aimedical.modules.patient.entity.AllergyHistory;
 import com.aimedical.modules.patient.entity.HealthProfile;
@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * - HealthProfile 的 height_cm / weight_kg / bmi 精度
  * - PatientEntity.avatarUrl 长度 (500)
  * - DoctorEntity.consultationFee DECIMAL(10,2)
- * - Function.type → MenuType 枚举映射
+ * - PermissionFunction.type 映射
  * - DictData ↔ DictType @ManyToOne 关系
  * - TokenStore.token 唯一索引与长度 (768)
  */
@@ -127,36 +127,36 @@ class EntityMappingIT {
         assertEquals(0, new BigDecimal("200.00").compareTo(found.getConsultationFee()));
     }
 
-    // ==================== Function + MenuType ====================
+    // ==================== PermissionFunction + MenuType ====================
 
     @Test
-    void function_shouldMapMenuTypeEnum() {
-        Function function = new Function();
+    void permissionFunction_shouldMapType() {
+        PermissionFunction function = new PermissionFunction();
         function.setCode("test:menu");
         function.setName("测试菜单");
-        function.setType(MenuType.MENU);
+        function.setType(MenuType.MENU.getCode());
         function.setEnabled(true);
 
         entityManager.persist(function);
         entityManager.flush();
 
-        Function found = entityManager.find(Function.class, function.getId());
-        assertEquals(MenuType.MENU, found.getType());
+        PermissionFunction found = entityManager.find(PermissionFunction.class, function.getId());
+        assertEquals(MenuType.MENU.getCode(), found.getType());
     }
 
     @Test
-    void function_shouldPersistDirectoryType() {
-        Function dir = new Function();
+    void permissionFunction_shouldPersistDirectoryType() {
+        PermissionFunction dir = new PermissionFunction();
         dir.setCode("test:directory");
         dir.setName("测试目录");
-        dir.setType(MenuType.DIRECTORY);
+        dir.setType(MenuType.DIRECTORY.getCode());
         dir.setEnabled(true);
 
         entityManager.persist(dir);
         entityManager.flush();
 
-        Function found = entityManager.find(Function.class, dir.getId());
-        assertEquals(MenuType.DIRECTORY, found.getType());
+        PermissionFunction found = entityManager.find(PermissionFunction.class, dir.getId());
+        assertEquals(MenuType.DIRECTORY.getCode(), found.getType());
     }
 
     // ==================== DictData ↔ DictType ====================

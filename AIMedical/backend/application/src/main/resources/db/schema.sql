@@ -425,4 +425,164 @@ CREATE TABLE `sys_token` (
   KEY `idx_user_id_expires_at` (`user_id`, `expires_at`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='令牌表';
 
+-- ---------------------------------------------
+-- 22. registration
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `registration`;
+CREATE TABLE `registration` (
+  `id`                BIGINT         NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `patient_id`        BIGINT         DEFAULT NULL            COMMENT '患者档案ID',
+  `doctor_id`         BIGINT         DEFAULT NULL            COMMENT '医生档案ID',
+  `registration_type` VARCHAR(20)    NOT NULL                COMMENT '挂号类型 OUTPATIENT/EXAMINATION/EMERGENCY',
+  `department`        VARCHAR(64)    DEFAULT NULL            COMMENT '科室',
+  `scheduled_date`    DATE           DEFAULT NULL            COMMENT '预约日期',
+  `scheduled_time_slot` VARCHAR(20)  DEFAULT NULL            COMMENT '时间段 AM/PM',
+  `status`            VARCHAR(20)    NOT NULL DEFAULT 'PENDING' COMMENT '状态 PENDING/CONFIRMED/COMPLETED/CANCELLED/NO_SHOW',
+  `cancel_reason`     VARCHAR(500)   DEFAULT NULL            COMMENT '取消原因',
+  `cancel_time`       DATETIME       DEFAULT NULL            COMMENT '取消时间',
+  `cancel_type`       VARCHAR(20)    DEFAULT NULL            COMMENT '取消方式 ONLINE/OFFLINE',
+  `triage_level`      VARCHAR(20)    DEFAULT NULL            COMMENT '分诊级别 LEVEL_1/LEVEL_2/LEVEL_3/LEVEL_4',
+  `chief_complaint`   VARCHAR(500)   DEFAULT NULL            COMMENT '主诉',
+  `registration_fee`  DECIMAL(10, 2) DEFAULT NULL            COMMENT '挂号费',
+  `queue_number`      INT            DEFAULT NULL            COMMENT '排队号',
+  `remark`            VARCHAR(500)   DEFAULT NULL            COMMENT '备注',
+  `created_at`        DATETIME       DEFAULT NULL            COMMENT '创建时间',
+  `updated_at`        DATETIME       DEFAULT NULL            COMMENT '更新时间',
+  `deleted`           TINYINT(1)     DEFAULT 0               COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_patient_id` (`patient_id`),
+  KEY `idx_doctor_id` (`doctor_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_scheduled_date` (`scheduled_date`),
+  CONSTRAINT `fk_registration_patient` FOREIGN KEY (`patient_id`) REFERENCES `patient_profile` (`id`),
+  CONSTRAINT `fk_registration_doctor` FOREIGN KEY (`doctor_id`) REFERENCES `doctor_profile` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='挂号记录表';
+
+-- ---------------------------------------------
+-- 23. triage_record
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `triage_record`;
+CREATE TABLE `triage_record` (
+  `id`                BIGINT         NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `registration_id`   BIGINT         DEFAULT NULL            COMMENT '挂号记录ID',
+  `patient_id`        BIGINT         DEFAULT NULL            COMMENT '患者档案ID',
+  `nurse_id`          BIGINT         DEFAULT NULL            COMMENT '分诊护士ID(admin_profile)',
+  `symptoms`          TEXT           DEFAULT NULL            COMMENT '症状描述',
+  `temperature`       DECIMAL(4, 1)  DEFAULT NULL            COMMENT '体温',
+  `blood_pressure`    VARCHAR(20)    DEFAULT NULL            COMMENT '血压',
+  `heart_rate`        INT            DEFAULT NULL            COMMENT '心率',
+  `triage_department` VARCHAR(64)    DEFAULT NULL            COMMENT '分诊科室',
+  `triage_level`      VARCHAR(20)    DEFAULT NULL            COMMENT '分诊级别 LEVEL_1/LEVEL_2/LEVEL_3/LEVEL_4',
+  `triage_note`       VARCHAR(500)   DEFAULT NULL            COMMENT '分诊备注',
+  `created_at`        DATETIME       DEFAULT NULL            COMMENT '创建时间',
+  `updated_at`        DATETIME       DEFAULT NULL            COMMENT '更新时间',
+  `deleted`           TINYINT(1)     DEFAULT 0               COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_registration_id` (`registration_id`),
+  KEY `idx_patient_id` (`patient_id`),
+  CONSTRAINT `fk_triage_registration` FOREIGN KEY (`registration_id`) REFERENCES `registration` (`id`),
+  CONSTRAINT `fk_triage_patient` FOREIGN KEY (`patient_id`) REFERENCES `patient_profile` (`id`),
+  CONSTRAINT `fk_triage_nurse` FOREIGN KEY (`nurse_id`) REFERENCES `admin_profile` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='分诊记录表';
+
+-- ---------------------------------------------
+-- 24. medical_order
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `medical_order`;
+CREATE TABLE `medical_order` (
+  `id`              BIGINT         NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `patient_id`      BIGINT         DEFAULT NULL            COMMENT '患者档案ID',
+  `doctor_id`       BIGINT         DEFAULT NULL            COMMENT '医生档案ID',
+  `registration_id` BIGINT         DEFAULT NULL            COMMENT '挂号记录ID',
+  `order_no`        VARCHAR(32)    NOT NULL                COMMENT '医嘱编号',
+  `order_type`      VARCHAR(20)    NOT NULL                COMMENT '医嘱类型 DRUG/EXAMINATION/LAB_TEST',
+  `order_status`    VARCHAR(20)    NOT NULL DEFAULT 'DRAFT' COMMENT '状态 DRAFT/SUBMITTED/CHARGED/DISPENSED/COMPLETED/CANCELLED',
+  `diagnosis`       TEXT           DEFAULT NULL            COMMENT '诊断',
+  `total_amount`    DECIMAL(10, 2) DEFAULT NULL            COMMENT '总金额',
+  `is_urgent`       TINYINT(1)     DEFAULT 0               COMMENT '是否紧急',
+  `remark`          VARCHAR(500)   DEFAULT NULL            COMMENT '备注',
+  `created_at`      DATETIME       DEFAULT NULL            COMMENT '创建时间',
+  `updated_at`      DATETIME       DEFAULT NULL            COMMENT '更新时间',
+  `deleted`         TINYINT(1)     DEFAULT 0               COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_order_no` (`order_no`),
+  KEY `idx_patient_id` (`patient_id`),
+  KEY `idx_doctor_id` (`doctor_id`),
+  KEY `idx_status` (`order_status`),
+  CONSTRAINT `fk_medical_order_patient` FOREIGN KEY (`patient_id`) REFERENCES `patient_profile` (`id`),
+  CONSTRAINT `fk_medical_order_doctor` FOREIGN KEY (`doctor_id`) REFERENCES `doctor_profile` (`id`),
+  CONSTRAINT `fk_medical_order_registration` FOREIGN KEY (`registration_id`) REFERENCES `registration` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='医嘱主表';
+
+-- ---------------------------------------------
+-- 25. medical_order_item
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `medical_order_item`;
+CREATE TABLE `medical_order_item` (
+  `id`          BIGINT         NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `order_id`    BIGINT         DEFAULT NULL            COMMENT '医嘱ID',
+  `item_type`   VARCHAR(20)    NOT NULL                COMMENT '项目类型 DRUG/EXAMINATION/LAB_TEST',
+  `item_code`   VARCHAR(64)    DEFAULT NULL            COMMENT '项目编码',
+  `item_name`   VARCHAR(255)   NOT NULL                COMMENT '项目名称',
+  `specification` VARCHAR(255) DEFAULT NULL            COMMENT '规格',
+  `quantity`    DECIMAL(10, 2) DEFAULT NULL            COMMENT '数量',
+  `unit`        VARCHAR(20)    DEFAULT NULL            COMMENT '单位',
+  `unit_price`  DECIMAL(10, 2) DEFAULT NULL            COMMENT '单价',
+  `amount`      DECIMAL(10, 2) DEFAULT NULL            COMMENT '金额',
+  `dosage`      VARCHAR(100)   DEFAULT NULL            COMMENT '每次用量',
+  `usage_method` VARCHAR(100)  DEFAULT NULL            COMMENT '用法',
+  `frequency`   VARCHAR(50)    DEFAULT NULL            COMMENT '频次',
+  `days`        INT            DEFAULT NULL            COMMENT '天数',
+  `remark`      VARCHAR(500)   DEFAULT NULL            COMMENT '备注',
+  `created_at`  DATETIME       DEFAULT NULL            COMMENT '创建时间',
+  `updated_at`  DATETIME       DEFAULT NULL            COMMENT '更新时间',
+  `deleted`     TINYINT(1)     DEFAULT 0               COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_order_id` (`order_id`),
+  CONSTRAINT `fk_medical_order_item_order` FOREIGN KEY (`order_id`) REFERENCES `medical_order` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='医嘱明细表';
+
+-- ---------------------------------------------
+-- 26. charge_pre_order
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `charge_pre_order`;
+CREATE TABLE `charge_pre_order` (
+  `id`            BIGINT         NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `order_id`      BIGINT         DEFAULT NULL            COMMENT '医嘱ID',
+  `patient_id`    BIGINT         DEFAULT NULL            COMMENT '患者档案ID',
+  `charge_no`     VARCHAR(32)    NOT NULL                COMMENT '收费单号',
+  `total_amount`  DECIMAL(10, 2) DEFAULT NULL            COMMENT '总金额',
+  `charge_status` VARCHAR(20)    NOT NULL DEFAULT 'PENDING' COMMENT '状态 PENDING/CHARGED/REFUNDED',
+  `remark`        VARCHAR(500)   DEFAULT NULL            COMMENT '备注',
+  `created_at`    DATETIME       DEFAULT NULL            COMMENT '创建时间',
+  `updated_at`    DATETIME       DEFAULT NULL            COMMENT '更新时间',
+  `deleted`       TINYINT(1)     DEFAULT 0               COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_charge_no` (`charge_no`),
+  KEY `idx_order_id` (`order_id`),
+  KEY `idx_patient_id` (`patient_id`),
+  CONSTRAINT `fk_charge_pre_order_order` FOREIGN KEY (`order_id`) REFERENCES `medical_order` (`id`),
+  CONSTRAINT `fk_charge_pre_order_patient` FOREIGN KEY (`patient_id`) REFERENCES `patient_profile` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='收费前置单';
+
+-- ---------------------------------------------
+-- 27. charge_pre_order_item
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `charge_pre_order_item`;
+CREATE TABLE `charge_pre_order_item` (
+  `id`                   BIGINT         NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `charge_pre_order_id`  BIGINT         DEFAULT NULL            COMMENT '收费前置单ID',
+  `order_item_id`        BIGINT         DEFAULT NULL            COMMENT '医嘱明细ID',
+  `item_name`            VARCHAR(255)   DEFAULT NULL            COMMENT '项目名称',
+  `quantity`             DECIMAL(10, 2) DEFAULT NULL            COMMENT '数量',
+  `unit_price`           DECIMAL(10, 2) DEFAULT NULL            COMMENT '单价',
+  `amount`               DECIMAL(10, 2) DEFAULT NULL            COMMENT '金额',
+  `charge_item_type`     VARCHAR(20)    DEFAULT NULL            COMMENT '收费项目类型',
+  `created_at`           DATETIME       DEFAULT NULL            COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_charge_pre_order_id` (`charge_pre_order_id`),
+  CONSTRAINT `fk_charge_item_pre_order` FOREIGN KEY (`charge_pre_order_id`) REFERENCES `charge_pre_order` (`id`),
+  CONSTRAINT `fk_charge_item_order_item` FOREIGN KEY (`order_item_id`) REFERENCES `medical_order_item` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='收费前置单明细';
+
 SET FOREIGN_KEY_CHECKS = 1;

@@ -33,8 +33,6 @@ public class Post extends BaseEntity {
 
     private Integer sort;
 
-    private Integer sort;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
     private Role role;
