@@ -21,9 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -44,7 +42,7 @@ class PatientControllerTest {
 
     @BeforeEach
     void setUp() {
-        when(messageInterpolator.interpolate(any(), any())).thenReturn("mock error");
+        lenient().when(messageInterpolator.interpolate(any(), any())).thenReturn("mock error");
         PatientController controller = new PatientController(patientService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler(messageInterpolator))

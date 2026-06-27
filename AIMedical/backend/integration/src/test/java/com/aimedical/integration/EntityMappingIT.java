@@ -62,6 +62,7 @@ class EntityMappingIT {
         User testUser = new User();
         testUser.setUsername("test_pa_user");
         testUser.setPassword("pwd123");
+        testUser.setNickname("过敏测试用户");
         testUser.setUserType(UserType.PATIENT);
         entityManager.persist(testUser);
         entityManager.flush();
@@ -97,6 +98,7 @@ class EntityMappingIT {
         User testUser = new User();
         testUser.setUsername("test_patient_avatar");
         testUser.setPassword("pwd123");
+        testUser.setNickname("头像测试用户");
         testUser.setUserType(UserType.PATIENT);
         entityManager.persist(testUser);
         entityManager.flush();
@@ -555,6 +557,7 @@ class EntityMappingIT {
         User compositeUser = new User();
         compositeUser.setUsername("test_composite_patient");
         compositeUser.setPassword("pwd123");
+        compositeUser.setNickname("综合测试用户");
         compositeUser.setUserType(UserType.PATIENT);
         entityManager.persist(compositeUser);
         entityManager.flush();
