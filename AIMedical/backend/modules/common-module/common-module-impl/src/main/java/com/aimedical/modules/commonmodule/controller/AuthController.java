@@ -12,6 +12,7 @@ import com.aimedical.modules.commonmodule.service.AuthService;
 
 import jakarta.validation.Valid;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@Profile("phase1")
 @RequestMapping("/api/auth")
 public class AuthController {
 
