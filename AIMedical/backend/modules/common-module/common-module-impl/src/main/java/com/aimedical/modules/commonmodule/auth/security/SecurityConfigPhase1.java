@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -18,6 +17,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -65,7 +69,7 @@ public class SecurityConfigPhase1 {
         http
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .cors(Customizer.withDefaults())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint(new RestAuthenticationEntryPoint(messageInterpolator))
                 .accessDeniedHandler(new RestAccessDeniedHandler(messageInterpolator)))
@@ -76,12 +80,14 @@ public class SecurityConfigPhase1 {
                     .requestMatchers("/api/auth/logout").authenticated()
                     .requestMatchers("/api/auth/**").authenticated()
                     .requestMatchers("/api/menu/**").authenticated()
+                    .requestMatchers("/api/patient/register").permitAll()
+                    .requestMatchers("/api/patient/login").permitAll()
+                    .requestMatchers("/api/patient/**").hasRole("PATIENT")
                     .requestMatchers("/api/ping").permitAll()
                     .requestMatchers("/actuator/health").permitAll()
                     .requestMatchers("/actuator/info").permitAll()
                     .requestMatchers("/actuator/**").denyAll()
-                    .requestMatchers("/swagger-ui/**").denyAll()
-                    .requestMatchers("/v3/api-docs/**").denyAll()
+                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/doc.html").permitAll()
                     .requestMatchers("/error").permitAll();
                 if (h2ConsoleEnabled) {
                     auth.requestMatchers("/h2-console/**").permitAll();
@@ -95,5 +101,18 @@ public class SecurityConfigPhase1 {
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterAfter(passwordChangeCheckFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:5174", "http://localhost:5175"));
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 }

@@ -15,7 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Component
+@Component("applicationJwtTokenProvider")
 public class JwtTokenProvider implements TokenProvider {
 
     private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);

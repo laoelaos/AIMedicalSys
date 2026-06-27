@@ -4,6 +4,7 @@
 -- =============================================
 
 SET NAMES utf8mb4;
+SET REFERENTIAL_INTEGRITY FALSE;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ---------------------------------------------
@@ -521,3 +522,4 @@ CREATE TABLE `sys_token` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='令牌表';
 
 SET FOREIGN_KEY_CHECKS = 1;
+SET REFERENTIAL_INTEGRITY TRUE;
