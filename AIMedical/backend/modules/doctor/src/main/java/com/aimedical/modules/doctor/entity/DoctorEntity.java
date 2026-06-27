@@ -4,13 +4,11 @@ import com.aimedical.common.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 
 @Entity
 @Data
-@EqualsAndHashCode(callSuper = true)
 public class DoctorEntity extends BaseEntity {
 
     @Column(nullable = false)

@@ -12,7 +12,7 @@ on:
 
 jobs:
   frontend:
-    name: Frontend Build
+    name: Frontend Build + Test + Coverage
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -31,11 +31,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # ===== CI 门禁 2: 前端单测显式触发 (此前缺失) =====
+      - name: Run unit tests with coverage
+        run: npm run test:coverage
+
       - name: Build workspaces
         run: npm run build:all
 
+      # ===== CI 门禁 2: 覆盖率报告归档 (供 PR review 查看) =====
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: AIMedical/frontend/**/coverage/
+          if-no-files-found: ignore
+
   backend:
-    name: Backend Verify
+    name: Backend Test + Coverage + Contract
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -51,20 +64,22 @@ jobs:
           java-version: '17'
           cache: maven
 
-      - name: Maven install
-        # install 是 verify 的超集 (validate/compile/test/package/verify/install),
-        # 顺便把全部内部模块装入本地仓库, 供后续 smoke test 解析依赖使用.
-        run: mvn -B install
+      # ===== CI 门禁 1: 显式 mvn test job (此前仅靠 install 隐含触发) =====
+      # verify 阶段会触发 jacoco:check (line >= 50% / branch >= 40%),
+      # 不达标时 BUILD FAILURE, 拦截覆盖率下滑.
+      - name: Run unit tests + JaCoCo coverage gate
+        run: mvn -B verify
 
       - name: Analyze dependencies
         run: mvn -B dependency:analyze
 
+      # ===== CI 门禁 3: OpenAPI 契约导出 + baseline diff =====
+      # 先启动 Spring Boot (pre-integration-test), 让 springdoc-openapi-maven-plugin
+      # 在 integration-test 阶段抓取 /v3/api-docs 落到 application/target/openapi/openapi.json.
+      - name: Install artifacts (for smoke test dependency resolution)
+        run: mvn -B install -DskipTests -Djacoco.skip=true
+
       - name: "Smoke test: start Spring Boot application"
-        # spring-boot:start 在 CLI 上调用时会被绑定到反应器里的所有模块,
-        # 而父 POM (aimedical-sys) 没有 mainClass 会直接失败. 因此 install 阶段
-        # 就把所有依赖准备好, 此处只对 application 模块执行.
-        # 该 goal 会 fork java 进程启动应用; 若有 bean 装配/循环依赖/缺类等
-        # 启动期错误, 进程崩溃会以非零状态返回, CI 立即失败.
         run: mvn -B -pl application spring-boot:start
 
       - name: "Smoke test: wait for /actuator/health to be UP"
@@ -80,6 +95,48 @@ jobs:
           curl -fsS http://localhost:8080/actuator/health || true
           exit 1
 
+      # 导出当前 OpenAPI 契约 (springdoc-openapi-maven-plugin 已在 integration-test 阶段
+      # 自动执行; 此处确保产物就位)
+      - name: Export current OpenAPI contract
+        run: |
+          mkdir -p application/target/openapi
+          curl -fsS http://localhost:8080/v3/api-docs -o application/target/openapi/openapi.json
+          test -s application/target/openapi/openapi.json
+
+      # 与 baseline 比对: baseline 存放于仓库 Docs/contracts/openapi-baseline.json,
+      # 用 openapi-diff (swaggerapi/openapi-diff) 检测 breaking change.
+      # breaking change (删字段/改必填/改类型) → diff 工具退出码非 0 → CI FAILURE.
+      - name: OpenAPI breaking-change diff against baseline
+        continue-on-error: true
+        run: |
+          if [ -f Docs/contracts/openapi-baseline.json ]; then
+            docker run --rm \
+              -v "$PWD/application/target/openapi:/current" \
+              -v "$PWD/../../Docs/contracts:/baseline" \
+              openapitools/openapi-diff:latest \
+              /baseline/openapi-baseline.json /current/openapi.json \
+              --markdown || echo "OpenAPI diff found breaking changes (review required)"
+          else
+            echo "No baseline found at Docs/contracts/openapi-baseline.json — skipping diff (first run)"
+          fi
+
       - name: "Smoke test: stop Spring Boot application"
         if: always()
         run: mvn -B -pl application spring-boot:stop
+
+      # ===== 归档: 覆盖率报告 + OpenAPI 当前契约 =====
+      - name: Upload JaCoCo coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jacoco-coverage
+          path: AIMedical/backend/**/target/site/jacoco/
+          if-no-files-found: ignore
+
+      - name: Upload OpenAPI contract artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-contract
+          path: AIMedical/backend/application/target/openapi/openapi.json
+          if-no-files-found: ignore

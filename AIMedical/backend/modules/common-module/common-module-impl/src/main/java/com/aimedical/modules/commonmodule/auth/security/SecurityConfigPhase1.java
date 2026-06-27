@@ -81,7 +81,11 @@ public class SecurityConfigPhase1 {
                     .requestMatchers("/actuator/info").permitAll()
                     .requestMatchers("/actuator/**").denyAll()
                     .requestMatchers("/swagger-ui/**").denyAll()
-                    .requestMatchers("/v3/api-docs/**").denyAll()
+                    // OpenAPI JSON contract export is needed for CI baseline diff.
+                    // Production profile disables springdoc.api-docs.enabled, so the
+                    // /v3/api-docs endpoint is not exposed there. Permitting here keeps
+                    // dev/CI contract export functional without affecting prod.
+                    .requestMatchers("/v3/api-docs", "/v3/api-docs/**").permitAll()
                     .requestMatchers("/error").permitAll();
                 if (h2ConsoleEnabled) {
                     auth.requestMatchers("/h2-console/**").permitAll();
