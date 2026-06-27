@@ -1,14 +1,19 @@
 package com.aimedical.modules.commonmodule.controller;
 
 import com.aimedical.common.result.Result;
-import com.aimedical.modules.commonmodule.jwt.JwtUtil;
 import com.aimedical.modules.commonmodule.dto.request.LoginRequest;
+import com.aimedical.modules.commonmodule.dto.request.PasswordChangeRequest;
 import com.aimedical.modules.commonmodule.dto.request.ProfileUpdateRequest;
+import com.aimedical.modules.commonmodule.dto.request.RefreshTokenRequest;
 import com.aimedical.modules.commonmodule.dto.response.LoginResponse;
-import com.aimedical.modules.commonmodule.dto.response.UserInfoResponse;
+import com.aimedical.modules.commonmodule.dto.response.TokenRefreshResponse;
+import com.aimedical.modules.commonmodule.auth.UserInfoResponse;
 import com.aimedical.modules.commonmodule.service.AuthService;
 
 import jakarta.validation.Valid;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,95 +23,47 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * 认证控制器
- *
- * <p>提供用户认证相关的REST API接口。
- *
- * @author AIMedical Team
- * @version 1.0.0
- */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private final AuthService authService;
-    private final JwtUtil jwtUtil;
 
-    public AuthController(AuthService authService, JwtUtil jwtUtil) {
+    public AuthController(AuthService authService) {
         this.authService = authService;
-        this.jwtUtil = jwtUtil;
     }
 
-    /**
-     * 用户登录
-     *
-     * @param request 登录请求
-     * @return 登录响应
-     */
     @PostMapping("/login")
     public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse response = authService.login(request);
         return Result.success(response);
     }
 
-    /**
-     * 用户登出
-     *
-     * @param authHeader Authorization请求头
-     * @return 成功响应
-     */
     @PostMapping("/logout")
-    public Result<Void> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+    public Result<Void> logout(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestBody(required = false) RefreshTokenRequest refreshTokenRequest) {
         String token = extractToken(authHeader);
         if (token != null) {
-            authService.logout(token);
+            authService.logout(token, refreshTokenRequest != null ? refreshTokenRequest.refreshToken() : null);
         }
         return Result.success(null);
     }
 
-    /**
-     * 刷新令牌
-     *
-     * @param authHeader Authorization请求头
-     * @return 新的登录响应
-     */
     @PostMapping("/refresh")
-    public Result<LoginResponse> refresh(@RequestHeader(value = "Authorization", required = false) String authHeader) {
-        String token = extractToken(authHeader);
-        if (token == null) {
-            return Result.fail("UNAUTHORIZED", "未提供令牌");
-        }
-        LoginResponse response = authService.refreshToken(token);
+    public Result<TokenRefreshResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        TokenRefreshResponse response = authService.refreshToken(request.refreshToken());
         return Result.success(response);
     }
 
-    /**
-     * 获取当前用户信息
-     *
-     * @param authHeader Authorization请求头
-     * @return 用户信息响应
-     */
     @GetMapping("/me")
-    public Result<UserInfoResponse> me(@RequestHeader(value = "Authorization", required = false) String authHeader) {
-        String token = extractToken(authHeader);
-        if (token == null) {
-            return Result.fail("UNAUTHORIZED", "未提供令牌");
-        }
-        UserInfoResponse response = authService.getCurrentUser(token);
+    public Result<UserInfoResponse> me() {
+        Long userId = getCurrentUserId();
+        UserInfoResponse response = authService.getCurrentUser(userId);
         return Result.success(response);
     }
 
-    /**
-     * 编辑当前用户个人资料
-     *
-     * <p>仅允许修改昵称、手机号、邮箱等非敏感字段。
-     *
-     * @param authHeader Authorization请求头
-     * @param request 个人资料更新请求
-     * @return 更新后的用户信息响应
-     */
-    @PutMapping("/me")
+    @PutMapping("/profile")
     public Result<UserInfoResponse> updateMe(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @Valid @RequestBody ProfileUpdateRequest request) {
@@ -118,15 +75,32 @@ public class AuthController {
         return Result.success(response);
     }
 
-    /**
-     * 从Authorization头中提取JWT令牌
-     *
-     * <p>使用JwtUtil统一的静态方法提取token，确保只有正确格式的Bearer token才会被处理。
-     *
-     * @param authHeader Authorization请求头
-     * @return JWT令牌，如果无效则返回null
-     */
+    @PutMapping("/password")
+    public Result<Void> changePassword(
+            @Valid @RequestBody PasswordChangeRequest request) {
+        Long userId = getCurrentUserId();
+        authService.changePassword(userId, request.oldPassword(), request.newPassword());
+        return Result.success(null);
+    }
+
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new IllegalStateException("无法从SecurityContext获取用户ID");
+        }
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof Long) {
+            return (Long) principal;
+        }
+        if (principal instanceof Integer) {
+            return ((Integer) principal).longValue();
+        }
+        throw new IllegalStateException("无法从SecurityContext获取用户ID");
+    }
+
     private String extractToken(String authHeader) {
-        return JwtUtil.extractToken(authHeader, jwtUtil.getTokenType());
+        if (authHeader == null || authHeader.isEmpty()) return null;
+        if (authHeader.startsWith("Bearer ")) return authHeader.substring(7);
+        return null;
     }
 }

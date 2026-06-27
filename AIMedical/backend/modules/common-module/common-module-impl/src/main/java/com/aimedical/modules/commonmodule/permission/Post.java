@@ -24,6 +24,7 @@ public class Post extends BaseEntity {
 
     private String description;
 
+    @Column(nullable = false)
     private Boolean enabled = true;
 
     private Integer sort;
@@ -36,7 +37,7 @@ public class Post extends BaseEntity {
     @JoinTable(name = "post_function",
             joinColumns = @JoinColumn(name = "post_id"),
             inverseJoinColumns = @JoinColumn(name = "function_id"))
-    private Set<Function> functions;
+    private Set<PermissionFunction> functions;
 
     @ManyToMany(mappedBy = "posts", fetch = FetchType.LAZY)
     private Set<User> users;
@@ -89,11 +90,11 @@ public class Post extends BaseEntity {
         this.role = role;
     }
 
-    public Set<Function> getFunctions() {
+    public Set<PermissionFunction> getFunctions() {
         return functions;
     }
 
-    public void setFunctions(Set<Function> functions) {
+    public void setFunctions(Set<PermissionFunction> functions) {
         this.functions = functions;
     }
 

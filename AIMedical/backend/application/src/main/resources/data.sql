@@ -16,10 +16,10 @@ DELETE FROM sys_function;
 DELETE FROM sys_role;
 
 -- 插入角色数据
-INSERT INTO sys_role (id, code, name, description, enabled, deleted, created_at, updated_at) VALUES
-(1, 'ADMIN', '系统管理员', '拥有系统全部权限', true, false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
-(2, 'DOCTOR', '医生', '医生角色，拥有医生端功能权限', true, false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
-(3, 'PATIENT', '患者', '患者角色，拥有患者端功能权限', true, false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+INSERT INTO sys_role (id, code, name, description, enabled, sort, deleted, created_at, updated_at) VALUES
+(1, 'ADMIN', '系统管理员', '拥有系统全部权限', true, 1, false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
+(2, 'DOCTOR', '医生', '医生角色，拥有医生端功能权限', true, 2, false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
+(3, 'PATIENT', '患者', '患者角色，拥有患者端功能权限', true, 3, false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
 -- 插入岗位数据
 INSERT INTO sys_post (id, code, name, description, enabled, sort, role_id, deleted, created_at, updated_at) VALUES
@@ -40,10 +40,10 @@ INSERT INTO sys_function (id, code, name, description, enabled, deleted, created
 
 -- 插入用户数据（密码使用BCrypt加密，统一密码为：password123）
 -- BCrypt password123: $2a$10$S2kRnxEIV3e8UuvncH3cGuOhu1XSdaVJuwg9f3T6gfPmWeJsFOCYq
-INSERT INTO sys_user (id, username, password, nickname, phone, email, enabled, user_type, deleted, created_at, updated_at) VALUES
-(1, 'admin', '$2a$10$S2kRnxEIV3e8UuvncH3cGuOhu1XSdaVJuwg9f3T6gfPmWeJsFOCYq', '系统管理员', '13800138001', 'admin@aimedical.com', true, 'ADMIN', false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
-(2, 'doctor001', '$2a$10$S2kRnxEIV3e8UuvncH3cGuOhu1XSdaVJuwg9f3T6gfPmWeJsFOCYq', '张医生', '13800138002', 'doctor001@aimedical.com', true, 'DOCTOR', false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
-(3, 'patient001', '$2a$10$S2kRnxEIV3e8UuvncH3cGuOhu1XSdaVJuwg9f3T6gfPmWeJsFOCYq', '李患者', '13800138003', 'patient001@aimedical.com', true, 'PATIENT', false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+INSERT INTO sys_user (id, username, password, nickname, phone, email, enabled, password_change_required, token_version, user_type, deleted, created_at, updated_at) VALUES
+(1, 'admin', '$2a$10$S2kRnxEIV3e8UuvncH3cGuOhu1XSdaVJuwg9f3T6gfPmWeJsFOCYq', '系统管理员', '13800138001', 'admin@aimedical.com', true, false, 0, 'ADMIN', false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
+(2, 'doctor001', '$2a$10$S2kRnxEIV3e8UuvncH3cGuOhu1XSdaVJuwg9f3T6gfPmWeJsFOCYq', '张医生', '13800138002', 'doctor001@aimedical.com', true, false, 0, 'DOCTOR', false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
+(3, 'patient001', '$2a$10$S2kRnxEIV3e8UuvncH3cGuOhu1XSdaVJuwg9f3T6gfPmWeJsFOCYq', '李患者', '13800138003', 'patient001@aimedical.com', true, false, 0, 'PATIENT', false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
 -- 插入用户角色关联
 INSERT INTO user_role (user_id, role_id) VALUES

@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard-container">
     <h1>医生端仪表盘</h1>
-    <p class="welcome-text">欢迎，{{ authStore.user?.realName || '医生' }}</p>
+    <p class="welcome-text">欢迎，{{ authStore.user?.real_name || '医生' }}</p>
     <p class="placeholder-hint">Phase 1 占位页面 — 功能开发中</p>
   </div>
 </template>

@@ -3,11 +3,12 @@ package com.aimedical.modules.commonmodule.controller;
 import com.aimedical.common.exception.BusinessException;
 import com.aimedical.common.exception.GlobalErrorCode;
 import com.aimedical.common.result.Result;
+import com.aimedical.modules.commonmodule.auth.UserInfoResponse;
 import com.aimedical.modules.commonmodule.dto.request.LoginRequest;
+import com.aimedical.modules.commonmodule.dto.request.PasswordChangeRequest;
+import com.aimedical.modules.commonmodule.dto.request.RefreshTokenRequest;
 import com.aimedical.modules.commonmodule.dto.response.LoginResponse;
-import com.aimedical.modules.commonmodule.dto.response.UserInfoResponse;
-import com.aimedical.modules.commonmodule.jwt.JwtConfig;
-import com.aimedical.modules.commonmodule.jwt.JwtUtil;
+import com.aimedical.modules.commonmodule.dto.response.TokenRefreshResponse;
 import com.aimedical.modules.commonmodule.service.AuthService;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -17,23 +18,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.Collections;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-/**
- * AuthController纯单元测试
- *
- * <p>不依赖Spring容器，直接测试Controller方法逻辑。
- * 注意：Service层在失败场景抛出BusinessException而非返回null，
- * 因此测试用例覆盖成功路径与BusinessException抛出路径。
- *
- * @author AIMedical Team
- * @version 1.0.0
- */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AuthController测试")
 class AuthControllerTest {
@@ -41,34 +35,20 @@ class AuthControllerTest {
     @Mock
     private AuthService authService;
 
-    private JwtUtil jwtUtil;
     private AuthController authController;
 
     private LoginResponse mockLoginResponse;
+    private UserInfoResponse mockUserInfo;
 
     @BeforeEach
     void setUp() {
-        // 创建真实的JwtUtil实例
-        JwtConfig jwtConfig = new JwtConfig();
-        jwtConfig.setSecret("AIMedicalSysJwtSecretKey2026Phase1DevelopmentTestSecretKey");
-        jwtConfig.setExpiration(86400L);
-        jwtConfig.setTokenType("Bearer");
-        jwtUtil = new JwtUtil(jwtConfig);
+        authController = new AuthController(authService);
 
-        authController = new AuthController(authService, jwtUtil);
+        mockUserInfo = new UserInfoResponse(1L, "testuser", "测试用户",
+                null, null, "DOCTOR", null, Set.of());
 
-        UserInfoResponse userInfo = new UserInfoResponse();
-        userInfo.setId(1L);
-        userInfo.setUsername("testuser");
-        userInfo.setRealName("测试用户");
-        userInfo.setRole("DOCTOR");
-        userInfo.setPermissions(Collections.emptyList());
-
-        mockLoginResponse = new LoginResponse();
-        mockLoginResponse.setToken("mock-jwt-token");
-        mockLoginResponse.setTokenType("Bearer");
-        mockLoginResponse.setExpiresIn(86400L);
-        mockLoginResponse.setUser(userInfo);
+        mockLoginResponse = new LoginResponse(1L, "testuser", "mock-jwt-token", null,
+                "Bearer", 86400L, false, mockUserInfo);
     }
 
     @Nested
@@ -80,31 +60,23 @@ class AuthControllerTest {
         void shouldReturnSuccessWhenLoginSucceeds() {
             when(authService.login(any(LoginRequest.class))).thenReturn(mockLoginResponse);
 
-            LoginRequest request = new LoginRequest();
-            request.setUsername("testuser");
-            request.setPassword("password123");
-
+            var request = new LoginRequest("testuser", "password123");
             Result<LoginResponse> result = authController.login(request);
 
             assertEquals("SUCCESS", result.getCode());
             assertEquals("成功", result.getMessage());
-            assertEquals("mock-jwt-token", result.getData().getToken());
-            assertEquals("Bearer", result.getData().getTokenType());
+            assertEquals("mock-jwt-token", result.getData().accessToken());
+            assertEquals("Bearer", result.getData().tokenType());
             verify(authService, times(1)).login(any(LoginRequest.class));
         }
 
         @Test
         @DisplayName("登录失败抛出BusinessException（用户名或密码错误）")
         void shouldThrowBusinessExceptionWhenLoginFails() {
-            // Service层从不返回null，而是抛出BusinessException
             when(authService.login(any(LoginRequest.class)))
                     .thenThrow(new BusinessException(GlobalErrorCode.UNAUTHORIZED, "用户名或密码错误"));
 
-            LoginRequest request = new LoginRequest();
-            request.setUsername("testuser");
-            request.setPassword("wrongpassword");
-
-            // Controller直接抛出BusinessException，由GlobalExceptionHandler处理
+            var request = new LoginRequest("testuser", "wrongpassword");
             assertThrows(BusinessException.class, () -> authController.login(request));
             verify(authService, times(1)).login(any(LoginRequest.class));
         }
@@ -117,22 +89,52 @@ class AuthControllerTest {
         @Test
         @DisplayName("登出成功返回SUCCESS")
         void shouldReturnSuccessWhenLogoutSucceeds() {
-            doNothing().when(authService).logout(any());
+            doNothing().when(authService).logout(any(), any());
 
-            Result<Void> result = authController.logout("Bearer mock-token");
+            Result<Void> result = authController.logout("Bearer mock-token", null);
 
             assertEquals("SUCCESS", result.getCode());
             assertEquals("成功", result.getMessage());
-            verify(authService, times(1)).logout("mock-token");
+            verify(authService, times(1)).logout(eq("mock-token"), isNull());
         }
 
         @Test
         @DisplayName("无token登出也返回SUCCESS（静默处理）")
         void shouldReturnSuccessEvenWhenNoToken() {
-            Result<Void> result = authController.logout(null);
+            Result<Void> result = authController.logout(null, null);
 
             assertEquals("SUCCESS", result.getCode());
-            verify(authService, never()).logout(any());
+            verify(authService, never()).logout(any(), any());
+        }
+
+        @Test
+        @DisplayName("空字符串token登出返回SUCCESS（静默处理）")
+        void shouldReturnSuccessWhenEmptyToken() {
+            Result<Void> result = authController.logout("", null);
+
+            assertEquals("SUCCESS", result.getCode());
+            verify(authService, never()).logout(any(), any());
+        }
+
+        @Test
+        @DisplayName("非Bearer前缀token登出返回SUCCESS（静默处理）")
+        void shouldReturnSuccessWhenNonBearerToken() {
+            Result<Void> result = authController.logout("Basic abc123", null);
+
+            assertEquals("SUCCESS", result.getCode());
+            verify(authService, never()).logout(any(), any());
+        }
+
+        @Test
+        @DisplayName("带refreshTokenRequest的登出应透传refreshToken给service")
+        void shouldPassRefreshTokenWhenProvided() {
+            doNothing().when(authService).logout(any(), any());
+
+            var refreshRequest = new RefreshTokenRequest("some-refresh-token");
+            Result<Void> result = authController.logout("Bearer mock-token", refreshRequest);
+
+            assertEquals("SUCCESS", result.getCode());
+            verify(authService, times(1)).logout(eq("mock-token"), eq("some-refresh-token"));
         }
     }
 
@@ -143,32 +145,25 @@ class AuthControllerTest {
         @Test
         @DisplayName("刷新token成功返回SUCCESS")
         void shouldReturnSuccessWhenRefreshSucceeds() {
-            when(authService.refreshToken("mock-token")).thenReturn(mockLoginResponse);
+            var mockRefreshResponse = new TokenRefreshResponse("new-token", null, "Bearer", 86400L);
+            when(authService.refreshToken("valid-refresh-token")).thenReturn(mockRefreshResponse);
 
-            Result<LoginResponse> result = authController.refresh("Bearer mock-token");
+            var request = new RefreshTokenRequest("valid-refresh-token");
+            Result<TokenRefreshResponse> result = authController.refresh(request);
 
             assertEquals("SUCCESS", result.getCode());
-            assertEquals("mock-jwt-token", result.getData().getToken());
-            verify(authService, times(1)).refreshToken("mock-token");
+            assertEquals("new-token", result.getData().accessToken());
+            verify(authService, times(1)).refreshToken("valid-refresh-token");
         }
 
         @Test
         @DisplayName("无效token抛出BusinessException（令牌无效）")
         void shouldThrowBusinessExceptionWhenInvalidToken() {
-            // Service层对无效token抛出BusinessException而非返回null
             when(authService.refreshToken("invalid-token"))
                     .thenThrow(new BusinessException(GlobalErrorCode.UNAUTHORIZED, "令牌无效"));
 
-            assertThrows(BusinessException.class, () -> authController.refresh("Bearer invalid-token"));
-        }
-
-        @Test
-        @DisplayName("无token返回UNAUTHORIZED")
-        void shouldReturnUnauthorizedWhenNoToken() {
-            Result<LoginResponse> result = authController.refresh(null);
-
-            assertEquals("UNAUTHORIZED", result.getCode());
-            assertEquals("未提供令牌", result.getMessage());
+            var request = new RefreshTokenRequest("invalid-token");
+            assertThrows(BusinessException.class, () -> authController.refresh(request));
         }
     }
 
@@ -179,37 +174,111 @@ class AuthControllerTest {
         @Test
         @DisplayName("获取当前用户成功返回SUCCESS")
         void shouldReturnSuccessWhenGetCurrentUserSucceeds() {
-            UserInfoResponse userInfo = new UserInfoResponse();
-            userInfo.setId(1L);
-            userInfo.setUsername("testuser");
-            userInfo.setRealName("测试用户");
-            userInfo.setRole("DOCTOR");
+            SecurityContext securityContext = mock(SecurityContext.class);
+            Authentication authentication = mock(Authentication.class);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getPrincipal()).thenReturn(1L);
+            SecurityContextHolder.setContext(securityContext);
 
-            when(authService.getCurrentUser("mock-token")).thenReturn(userInfo);
+            when(authService.getCurrentUser(1L)).thenReturn(mockUserInfo);
 
-            Result<UserInfoResponse> result = authController.me("Bearer mock-token");
+            Result<UserInfoResponse> result = authController.me();
 
             assertEquals("SUCCESS", result.getCode());
-            assertEquals("testuser", result.getData().getUsername());
+            assertEquals("testuser", result.getData().username());
+            verify(authService).getCurrentUser(1L);
         }
 
         @Test
-        @DisplayName("无效token抛出BusinessException（令牌无效）")
-        void shouldThrowBusinessExceptionWhenInvalidToken() {
-            // Service层对无效token抛出BusinessException而非返回null
-            when(authService.getCurrentUser("invalid-token"))
-                    .thenThrow(new BusinessException(GlobalErrorCode.UNAUTHORIZED, "令牌无效"));
+        @DisplayName("SecurityContext无Authentication时抛出IllegalStateException")
+        void shouldThrowWhenNoAuthentication() {
+            SecurityContext securityContext = mock(SecurityContext.class);
+            when(securityContext.getAuthentication()).thenReturn(null);
+            SecurityContextHolder.setContext(securityContext);
 
-            assertThrows(BusinessException.class, () -> authController.me("Bearer invalid-token"));
+            assertThrows(IllegalStateException.class, () -> authController.me());
+        }
+
+        @Test
+        @DisplayName("principal类型非Long/Integer时抛出IllegalStateException")
+        void shouldThrowWhenPrincipalTypeInvalid() {
+            SecurityContext securityContext = mock(SecurityContext.class);
+            Authentication authentication = mock(Authentication.class);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getPrincipal()).thenReturn("not-a-number");
+            SecurityContextHolder.setContext(securityContext);
+
+            assertThrows(IllegalStateException.class, () -> authController.me());
+        }
+    }
+
+    @Nested
+    @DisplayName("PUT /api/auth/profile")
+    class UpdateMeTests {
+
+        @Test
+        @DisplayName("更新个人资料成功返回SUCCESS")
+        void shouldReturnSuccessWhenUpdateProfileSucceeds() {
+            when(authService.updateProfile(anyString(), any()))
+                    .thenReturn(mockUserInfo);
+
+            var request = new com.aimedical.modules.commonmodule.dto.request.ProfileUpdateRequest(
+                    "新昵称", null, null);
+            Result<UserInfoResponse> result = authController.updateMe("Bearer mock-token", request);
+
+            assertEquals("SUCCESS", result.getCode());
+            verify(authService, times(1)).updateProfile(anyString(), any());
         }
 
         @Test
         @DisplayName("无token返回UNAUTHORIZED")
         void shouldReturnUnauthorizedWhenNoToken() {
-            Result<UserInfoResponse> result = authController.me(null);
+            var request = new com.aimedical.modules.commonmodule.dto.request.ProfileUpdateRequest(
+                    "昵称", null, null);
+            Result<UserInfoResponse> result = authController.updateMe(null, request);
 
             assertEquals("UNAUTHORIZED", result.getCode());
             assertEquals("未提供令牌", result.getMessage());
+        }
+    }
+
+    @Nested
+    @DisplayName("PUT /api/auth/password")
+    class ChangePasswordTests {
+
+        @Test
+        @DisplayName("密码修改端点返回SUCCESS")
+        void shouldReturnSuccessForChangePassword() {
+            SecurityContext securityContext = mock(SecurityContext.class);
+            Authentication authentication = mock(Authentication.class);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getPrincipal()).thenReturn(1L);
+            SecurityContextHolder.setContext(securityContext);
+
+            doNothing().when(authService).changePassword(anyLong(), anyString(), anyString());
+
+            var request = new PasswordChangeRequest("oldPass", "newPass123");
+            Result<Void> result = authController.changePassword(request);
+
+            assertEquals("SUCCESS", result.getCode());
+            verify(authService).changePassword(1L, "oldPass", "newPass123");
+        }
+
+        @Test
+        @DisplayName("密码修改失败抛出BusinessException（旧密码不正确）")
+        void shouldThrowBusinessExceptionWhenChangePasswordFails() {
+            SecurityContext securityContext = mock(SecurityContext.class);
+            Authentication authentication = mock(Authentication.class);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getPrincipal()).thenReturn(1L);
+            SecurityContextHolder.setContext(securityContext);
+
+            doThrow(new BusinessException(GlobalErrorCode.PASSWORD_MISMATCH))
+                    .when(authService).changePassword(anyLong(), anyString(), anyString());
+
+            var request = new PasswordChangeRequest("wrongOldPass", "newPass123");
+            assertThrows(BusinessException.class, () -> authController.changePassword(request));
+            verify(authService).changePassword(1L, "wrongOldPass", "newPass123");
         }
     }
 }

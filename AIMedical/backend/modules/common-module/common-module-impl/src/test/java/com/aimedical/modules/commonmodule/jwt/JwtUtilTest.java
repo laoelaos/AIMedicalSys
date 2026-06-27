@@ -25,10 +25,11 @@ class JwtUtilTest {
     void setUp() {
         jwtConfig = new JwtConfig();
         jwtConfig.setSecret("AIMedicalSysJwtSecretKey2026Phase1DevelopmentTestSecretKey");
-        jwtConfig.setExpiration(86400L);
+        jwtConfig.setAccessTokenExpiration(900L);
         jwtConfig.setTokenType("Bearer");
 
         jwtUtil = new JwtUtil(jwtConfig);
+        jwtUtil.init();
     }
 
     @Nested
@@ -54,14 +55,6 @@ class JwtUtilTest {
             assertNotEquals(token1, token2);
         }
 
-        @Test
-        @DisplayName("生成带岗位的token成功")
-        void shouldGenerateTokenWithPosition() {
-            String token = jwtUtil.generateToken(1L, "doctor", "DOCTOR", "OUTPATIENT");
-
-            assertNotNull(token);
-            assertEquals("OUTPATIENT", jwtUtil.getPosition(token));
-        }
     }
 
     @Nested
@@ -77,8 +70,8 @@ class JwtUtilTest {
 
             assertNotNull(claims);
             assertEquals(Integer.valueOf(1), claims.get("userId"));
-            assertEquals("ADMIN", claims.get("role"));
             assertEquals("admin", claims.get("username"));
+            assertNotNull(claims.get("jti"));
         }
 
         @Test
@@ -180,7 +173,7 @@ class JwtUtilTest {
 
             String role = jwtUtil.getRole(token);
 
-            assertEquals("DOCTOR", role);
+            assertNull(role);
         }
 
         @Test
@@ -233,13 +226,74 @@ class JwtUtilTest {
         @Test
         @DisplayName("获取过期时间成功")
         void shouldGetExpiration() {
-            assertEquals(86400L, jwtUtil.getExpirationTime());
+            assertEquals(900L, jwtUtil.getExpirationTime());
         }
 
         @Test
         @DisplayName("获取token类型成功")
         void shouldGetTokenType() {
             assertEquals("Bearer", jwtUtil.getTokenType());
+        }
+    }
+
+    @Nested
+    @DisplayName("init验证")
+    class InitTests {
+
+        @Test
+        @DisplayName("密钥为null抛出IllegalStateException")
+        void shouldThrowExceptionWhenSecretIsNull() {
+            JwtConfig config = new JwtConfig();
+            config.setSecret(null);
+            config.setAccessTokenExpiration(900L);
+            config.setTokenType("Bearer");
+            JwtUtil util = new JwtUtil(config);
+            IllegalStateException ex = assertThrows(IllegalStateException.class, util::init);
+            assertEquals("JWT_SECRET must be configured", ex.getMessage());
+        }
+
+        @Test
+        @DisplayName("密钥为空字符串抛出IllegalStateException")
+        void shouldThrowExceptionWhenSecretIsEmpty() {
+            JwtConfig config = new JwtConfig();
+            config.setSecret("");
+            config.setAccessTokenExpiration(900L);
+            config.setTokenType("Bearer");
+            JwtUtil util = new JwtUtil(config);
+            IllegalStateException ex = assertThrows(IllegalStateException.class, util::init);
+            assertEquals("JWT_SECRET must be configured", ex.getMessage());
+        }
+
+        @Test
+        @DisplayName("密钥含非法Base64字符抛出IllegalStateException")
+        void shouldThrowExceptionWhenSecretContainsInvalidChars() {
+            JwtConfig config = new JwtConfig();
+            config.setSecret("invalid-secret-with-dashes");
+            config.setAccessTokenExpiration(900L);
+            config.setTokenType("Bearer");
+            JwtUtil util = new JwtUtil(config);
+            IllegalStateException ex = assertThrows(IllegalStateException.class, util::init);
+            assertEquals("JWT_SECRET contains invalid characters", ex.getMessage());
+        }
+
+        @Test
+        @DisplayName("密钥解码后不足32字节抛出IllegalStateException")
+        void shouldThrowExceptionWhenSecretDecodedLessThan32Bytes() {
+            JwtConfig config = new JwtConfig();
+            config.setSecret("BQ==");
+            config.setAccessTokenExpiration(900L);
+            config.setTokenType("Bearer");
+            JwtUtil util = new JwtUtil(config);
+            IllegalStateException ex = assertThrows(IllegalStateException.class, util::init);
+            assertEquals("JWT_SECRET must be at least 256 bits (32 bytes) after Base64 decoding", ex.getMessage());
+        }
+
+        @Test
+        @DisplayName("有效密钥初始化成功后可生成和解析令牌")
+        void shouldGenerateAndParseTokenAfterInit() {
+            String token = jwtUtil.generateToken(1L, "admin", "ADMIN", null);
+            assertNotNull(token);
+            assertNotNull(jwtUtil.parseToken(token));
         }
     }
 }

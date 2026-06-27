@@ -87,7 +87,7 @@ export function createAuthStore(options: AuthStoreOptions) {
         // 透传后端返回的错误信息
         return { success: false, errorMessage: response.message || '登录失败，请检查用户名和密码' }
       }
-      saveToken(response.token)
+      saveToken(response.access_token)
       saveUser(response.user)
       return { success: true }
     }
@@ -109,7 +109,7 @@ export function createAuthStore(options: AuthStoreOptions) {
         clearAuthData()
         return false
       }
-      saveToken(response.token)
+      saveToken(response.access_token)
       saveUser(response.user)
       return true
     }

@@ -39,6 +39,12 @@ class PostTest {
     }
 
     @Test
+    void shouldDefaultEnabledIsTrue() {
+        Post post = new Post();
+        assertTrue(post.getEnabled());
+    }
+
+    @Test
     void shouldSetAndGetEnabled() {
         Post post = new Post();
         post.setEnabled(true);
@@ -58,8 +64,8 @@ class PostTest {
     @Test
     void shouldSetAndGetFunctions() {
         Post post = new Post();
-        Set<Function> functions = new HashSet<>();
-        functions.add(new Function());
+        Set<PermissionFunction> functions = new HashSet<>();
+        functions.add(new PermissionFunction());
         post.setFunctions(functions);
         assertEquals(1, post.getFunctions().size());
     }

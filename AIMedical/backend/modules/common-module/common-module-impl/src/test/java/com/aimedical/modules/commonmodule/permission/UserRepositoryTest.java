@@ -10,9 +10,13 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -28,6 +32,9 @@ class UserRepositoryTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Test
     void shouldBeInterface() {
@@ -71,5 +78,65 @@ class UserRepositoryTest {
                      "WHERE UPPER(TABLE_NAME) = 'SYS_USER' AND UPPER(COLUMN_NAME) = 'PASSWORD'";
         String nullable = jdbcTemplate.queryForObject(sql, String.class);
         assertEquals("NO", nullable);
+    }
+
+    @Test
+    void shouldFindByUsernameReturnOptional() throws NoSuchMethodException {
+        Method method = UserRepository.class.getMethod("findByUsername", String.class);
+        assertEquals(Optional.class, method.getReturnType());
+    }
+
+    @Test
+    void shouldFindByUsernameReturnUserWhenExists() {
+        User user = new User();
+        user.setUsername("finduser");
+        user.setPassword("pwd123");
+        user.setNickname("查找用户");
+        user.setUserType(UserType.ADMIN);
+        em.persistAndFlush(user);
+
+        Optional<User> found = userRepository.findByUsername("finduser");
+        assertTrue(found.isPresent());
+        assertEquals("finduser", found.get().getUsername());
+    }
+
+    @Test
+    void shouldFindByUsernameReturnEmptyWhenNotFound() {
+        Optional<User> found = userRepository.findByUsername("nonexistent");
+        assertFalse(found.isPresent());
+    }
+
+    @Test
+    void shouldHaveFindWithDetailsForMenuByIdMethod() throws NoSuchMethodException {
+        Method method = UserRepository.class.getMethod("findWithDetailsForMenuById", Long.class);
+        assertEquals(Optional.class, method.getReturnType());
+    }
+
+    @Test
+    void shouldHaveEntityGraphAnnotationOnFindWithDetailsForMenuById() throws NoSuchMethodException {
+        Method method = UserRepository.class.getMethod("findWithDetailsForMenuById", Long.class);
+        EntityGraph annotation = method.getAnnotation(EntityGraph.class);
+        assertNotNull(annotation);
+        assertArrayEquals(new String[]{"roles", "posts", "posts.functions"}, annotation.attributePaths());
+    }
+
+    @Test
+    void shouldFindWithDetailsForMenuByIdReturnUserWhenExists() {
+        User user = new User();
+        user.setUsername("menufinduser");
+        user.setPassword("pwd123");
+        user.setNickname("菜单查找用户");
+        user.setUserType(UserType.ADMIN);
+        em.persistAndFlush(user);
+
+        Optional<User> found = userRepository.findWithDetailsForMenuById(user.getId());
+        assertTrue(found.isPresent());
+        assertEquals(user.getId(), found.get().getId());
+    }
+
+    @Test
+    void shouldFindWithDetailsForMenuByIdReturnEmptyWhenNotFound() {
+        Optional<User> found = userRepository.findWithDetailsForMenuById(99999L);
+        assertFalse(found.isPresent());
     }
 }

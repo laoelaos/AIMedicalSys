@@ -1,43 +1,42 @@
 package com.aimedical.modules.commonmodule.dto.request;
 
-import com.aimedical.common.base.MenuType;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import jakarta.validation.constraints.Size;
 
-/**
- * 更新菜单请求DTO
- *
- * <p>用于更新菜单的请求参数，所有字段均为可选。
- *
- * @author AIMedical Team
- * @version 1.0.0
- */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class MenuUpdateRequest {
+
+    private Long id;
 
     @Size(max = 50, message = "菜单名称长度不能超过50")
     private String name;
 
-    @Size(max = 100, message = "菜单编码长度不能超过100")
-    private String code;
-
-    @Size(max = 255, message = "描述长度不能超过255")
-    private String description;
+    @Size(max = 100, message = "菜单权限标识长度不能超过100")
+    private String permission;
 
     private Long parentId;
 
     @Size(max = 255, message = "路径长度不能超过255")
     private String path;
 
+    @Size(max = 100, message = "组件路径长度不能超过100")
+    private String component;
+
     @Size(max = 100, message = "图标长度不能超过100")
     private String icon;
 
-    private MenuType type;
-
-    private Integer sortOrder;
+    private Integer sort;
 
     private Boolean visible;
 
-    private Boolean enabled;
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getName() {
         return name;
@@ -47,20 +46,12 @@ public class MenuUpdateRequest {
         this.name = name;
     }
 
-    public String getCode() {
-        return code;
+    public String getPermission() {
+        return permission;
     }
 
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
+    public void setPermission(String permission) {
+        this.permission = permission;
     }
 
     public Long getParentId() {
@@ -79,6 +70,14 @@ public class MenuUpdateRequest {
         this.path = path;
     }
 
+    public String getComponent() {
+        return component;
+    }
+
+    public void setComponent(String component) {
+        this.component = component;
+    }
+
     public String getIcon() {
         return icon;
     }
@@ -87,20 +86,12 @@ public class MenuUpdateRequest {
         this.icon = icon;
     }
 
-    public MenuType getType() {
-        return type;
+    public Integer getSort() {
+        return sort;
     }
 
-    public void setType(MenuType type) {
-        this.type = type;
-    }
-
-    public Integer getSortOrder() {
-        return sortOrder;
-    }
-
-    public void setSortOrder(Integer sortOrder) {
-        this.sortOrder = sortOrder;
+    public void setSort(Integer sort) {
+        this.sort = sort;
     }
 
     public Boolean getVisible() {
@@ -109,13 +100,5 @@ public class MenuUpdateRequest {
 
     public void setVisible(Boolean visible) {
         this.visible = visible;
-    }
-
-    public Boolean getEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(Boolean enabled) {
-        this.enabled = enabled;
     }
 }

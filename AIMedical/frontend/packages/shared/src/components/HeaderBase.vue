@@ -4,7 +4,7 @@
       <span class="app-title">{{ title }}</span>
     </div>
     <div class="header-right">
-      <span class="user-name">{{ user?.realName || fallbackName }}</span>
+      <span class="user-name">{{ user?.real_name || fallbackName }}</span>
       <button class="logout-btn" @click="handleLogout">退出登录</button>
     </div>
   </div>
@@ -28,8 +28,8 @@ const props = defineProps<{
   title: string
   /** 未登录用户名时的 fallback 文字（如 "管理员"） */
   fallbackName: string
-  /** 用户信息对象（realName 字段用于显示） */
-  user?: { realName?: string } | null
+  /** 用户信息对象（real_name 字段用于显示） */
+  user?: { real_name?: string } | null
 }>()
 
 const emit = defineEmits<{

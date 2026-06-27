@@ -96,4 +96,34 @@ class UserTest {
         user.setRoles(roles);
         assertEquals(2, user.getRoles().size());
     }
+
+    @Test
+    void shouldDefaultPasswordChangeRequiredIsFalse() {
+        User user = new User();
+        assertFalse(user.getPasswordChangeRequired());
+    }
+
+    @Test
+    void shouldSetAndGetPasswordChangeRequired() {
+        User user = new User();
+        user.setPasswordChangeRequired(true);
+        assertTrue(user.getPasswordChangeRequired());
+        user.setPasswordChangeRequired(false);
+        assertFalse(user.getPasswordChangeRequired());
+    }
+
+    @Test
+    void shouldDefaultTokenVersionIsZero() {
+        User user = new User();
+        assertEquals(0, user.getTokenVersion().intValue());
+    }
+
+    @Test
+    void shouldSetAndGetTokenVersion() {
+        User user = new User();
+        user.setTokenVersion(5);
+        assertEquals(5, user.getTokenVersion().intValue());
+        user.setTokenVersion(100);
+        assertEquals(100, user.getTokenVersion().intValue());
+    }
 }

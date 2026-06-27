@@ -2,6 +2,7 @@ package com.aimedical.modules.commonmodule.jwt;
 
 import jakarta.annotation.PostConstruct;
 
+import java.util.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -28,9 +29,14 @@ public class JwtConfig {
     private String secret;
 
     /**
-     * 令牌过期时间（秒），默认24小时
+     * Access Token 过期时间（秒），默认15分钟
      */
-    private long expiration = 86400L;
+    private long accessTokenExpiration = 900L;
+
+    /**
+     * Refresh Token 过期时间（秒），默认7天
+     */
+    private long refreshTokenExpiration = 604800L;
 
     /**
      * 令牌类型
@@ -47,9 +53,15 @@ public class JwtConfig {
                 "JWT密钥未配置！请通过环境变量 JWT_SECRET 或配置项 jwt.secret 提供密钥。"
             );
         }
-        if (secret.length() < 32) {
+        byte[] keyBytes;
+        try {
+            keyBytes = Base64.getUrlDecoder().decode(secret);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("JWT secret is not a valid Base64 string: " + e.getMessage());
+        }
+        if (keyBytes.length < 32) {
             throw new IllegalStateException(
-                "JWT密钥长度必须至少32个字符以确保安全性。当前长度: " + secret.length()
+                "JWT密钥解码后字节长度必须至少32字节（256位）。当前解码后长度: " + keyBytes.length
             );
         }
     }
@@ -62,12 +74,20 @@ public class JwtConfig {
         this.secret = secret;
     }
 
-    public long getExpiration() {
-        return expiration;
+    public long getAccessTokenExpiration() {
+        return accessTokenExpiration;
     }
 
-    public void setExpiration(long expiration) {
-        this.expiration = expiration;
+    public void setAccessTokenExpiration(long accessTokenExpiration) {
+        this.accessTokenExpiration = accessTokenExpiration;
+    }
+
+    public long getRefreshTokenExpiration() {
+        return refreshTokenExpiration;
+    }
+
+    public void setRefreshTokenExpiration(long refreshTokenExpiration) {
+        this.refreshTokenExpiration = refreshTokenExpiration;
     }
 
     public String getTokenType() {

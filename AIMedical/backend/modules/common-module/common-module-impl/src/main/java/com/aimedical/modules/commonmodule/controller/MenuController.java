@@ -3,6 +3,7 @@ package com.aimedical.modules.commonmodule.controller;
 import com.aimedical.common.result.Result;
 import com.aimedical.modules.commonmodule.dto.request.MenuCreateRequest;
 import com.aimedical.modules.commonmodule.dto.request.MenuUpdateRequest;
+import com.aimedical.common.exception.GlobalErrorCode;
 import com.aimedical.modules.commonmodule.dto.response.MenuResponse;
 import com.aimedical.modules.commonmodule.service.MenuService;
 
@@ -10,14 +11,14 @@ import java.util.List;
 
 import jakarta.validation.Valid;
 
+import com.aimedical.modules.commonmodule.auth.CurrentUser;
+
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,9 +44,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class MenuController {
 
     private final MenuService menuService;
+    private final CurrentUser currentUser;
 
-    public MenuController(MenuService menuService) {
+    public MenuController(MenuService menuService, CurrentUser currentUser) {
         this.menuService = menuService;
+        this.currentUser = currentUser;
     }
 
     /**
@@ -114,9 +117,12 @@ public class MenuController {
      * @param request 更新菜单请求
      * @return 更新后的菜单信息
      */
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public Result<MenuResponse> update(@PathVariable Long id, @Valid @RequestBody MenuUpdateRequest request) {
+        if (request.getId() != null && !request.getId().equals(id)) {
+            return Result.fail(GlobalErrorCode.PARAM_INVALID);
+        }
         MenuResponse menu = menuService.updateMenu(id, request);
         if (menu == null) {
             return Result.fail("MENU_NOT_FOUND", "菜单不存在");
@@ -146,14 +152,10 @@ public class MenuController {
      * @return 当前用户ID
      */
     private Long getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Object principal = authentication.getPrincipal();
-        if (principal instanceof Long) {
-            return (Long) principal;
+        Long userId = currentUser.getUserId();
+        if (userId == null) {
+            throw new IllegalStateException("无法从SecurityContext获取用户ID");
         }
-        if (principal instanceof Integer) {
-            return ((Integer) principal).longValue();
-        }
-        throw new IllegalStateException("无法从SecurityContext获取用户ID");
+        return userId;
     }
 }

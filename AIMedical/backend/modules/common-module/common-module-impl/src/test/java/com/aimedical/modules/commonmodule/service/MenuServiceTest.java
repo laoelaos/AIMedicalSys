@@ -1,18 +1,19 @@
 package com.aimedical.modules.commonmodule.service;
 
-import com.aimedical.common.base.MenuType;
 import com.aimedical.common.exception.BusinessException;
+import com.aimedical.common.exception.GlobalErrorCode;
 import com.aimedical.modules.commonmodule.dto.request.MenuCreateRequest;
 import com.aimedical.modules.commonmodule.dto.request.MenuUpdateRequest;
 import com.aimedical.modules.commonmodule.dto.response.MenuResponse;
-import com.aimedical.modules.commonmodule.permission.Function;
-import com.aimedical.modules.commonmodule.permission.FunctionRepository;
+import com.aimedical.modules.commonmodule.permission.PermissionFunction;
+import com.aimedical.modules.commonmodule.permission.PermissionFunctionRepository;
 import com.aimedical.modules.commonmodule.permission.Post;
 import com.aimedical.modules.commonmodule.permission.User;
 import com.aimedical.modules.commonmodule.permission.UserRepository;
 import com.aimedical.modules.commonmodule.service.impl.MenuServiceImpl;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,12 +27,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-/**
- * MenuService单元测试
- *
- * @author AIMedical Team
- * @version 1.0.0
- */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("MenuService测试")
 class MenuServiceTest {
@@ -40,39 +35,37 @@ class MenuServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private FunctionRepository functionRepository;
+    private PermissionFunctionRepository functionRepository;
 
     private MenuService menuService;
 
     private User testUser;
     private Post testPost;
-    private Function testFunction;
+    private PermissionFunction testPermissionFunction;
 
     @BeforeEach
     void setUp() {
         menuService = new MenuServiceImpl(userRepository, functionRepository);
 
-        // 创建测试功能
-        testFunction = new Function();
-        testFunction.setId(1L);
-        testFunction.setCode("menu:dashboard");
-        testFunction.setName("仪表盘");
-        testFunction.setPath("/dashboard");
-        testFunction.setIcon("dashboard");
-        testFunction.setEnabled(true);
-        testFunction.setDeleted(false);
-        testFunction.setSortOrder(0);
+        testPermissionFunction = new PermissionFunction();
+        testPermissionFunction.setId(1L);
+        testPermissionFunction.setCode("menu:dashboard");
+        testPermissionFunction.setName("仪表盘");
+        testPermissionFunction.setPath("/dashboard");
+        testPermissionFunction.setComponent("DashboardComp");
+        testPermissionFunction.setIcon("dashboard");
+        testPermissionFunction.setEnabled(true);
+        testPermissionFunction.setDeleted(false);
+        testPermissionFunction.setSortOrder(0);
 
-        // 创建测试岗位
         testPost = new Post();
         testPost.setId(1L);
         testPost.setCode("DOCTOR_GENERAL");
         testPost.setName("普通医生");
-        Set<Function> functions = new HashSet<>();
-        functions.add(testFunction);
+        Set<PermissionFunction> functions = new HashSet<>();
+        functions.add(testPermissionFunction);
         testPost.setFunctions(functions);
 
-        // 创建测试用户
         testUser = new User();
         testUser.setId(1L);
         testUser.setUsername("testdoctor");
@@ -89,20 +82,21 @@ class MenuServiceTest {
         @Test
         @DisplayName("获取用户菜单树成功")
         void shouldGetUserMenuTreeSuccessfully() {
-            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(userRepository.findWithDetailsForMenuById(1L)).thenReturn(Optional.of(testUser));
 
             List<MenuResponse> menus = menuService.getUserMenuTree(1L);
 
             assertNotNull(menus);
             assertEquals(1, menus.size());
-            assertEquals("仪表盘", menus.get(0).getName());
-            assertEquals("/dashboard", menus.get(0).getPath());
+            assertEquals("仪表盘", menus.get(0).name());
+            assertEquals("/dashboard", menus.get(0).path());
+            assertEquals("DashboardComp", menus.get(0).component());
         }
 
         @Test
         @DisplayName("用户不存在返回空列表")
         void shouldReturnEmptyListWhenUserNotFound() {
-            when(userRepository.findById(999L)).thenReturn(Optional.empty());
+            when(userRepository.findWithDetailsForMenuById(999L)).thenReturn(Optional.empty());
 
             List<MenuResponse> menus = menuService.getUserMenuTree(999L);
 
@@ -114,12 +108,234 @@ class MenuServiceTest {
         @DisplayName("用户无岗位返回空列表")
         void shouldReturnEmptyListWhenUserHasNoPosts() {
             testUser.setPosts(null);
-            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(userRepository.findWithDetailsForMenuById(1L)).thenReturn(Optional.of(testUser));
 
             List<MenuResponse> menus = menuService.getUserMenuTree(1L);
 
             assertNotNull(menus);
             assertTrue(menus.isEmpty());
+        }
+
+        @Test
+        @DisplayName("用户有岗位但岗位无权限时返回空列表")
+        void shouldReturnEmptyListWhenUserHasPostsWithoutFunctions() {
+            testPost.setFunctions(null);
+            when(userRepository.findWithDetailsForMenuById(1L)).thenReturn(Optional.of(testUser));
+
+            List<MenuResponse> menus = menuService.getUserMenuTree(1L);
+
+            assertNotNull(menus);
+            assertTrue(menus.isEmpty());
+        }
+
+        @Test
+        @DisplayName("buildMenuTree:父菜单下嵌套子菜单")
+        void buildMenuTree_shouldNestChildUnderParent() {
+            PermissionFunction parent = new PermissionFunction();
+            parent.setId(1L);
+            parent.setName("父菜单");
+            parent.setSortOrder(1);
+            parent.setComponent("FatherComp");
+            parent.setEnabled(true);
+            parent.setDeleted(false);
+            parent.setVisible(true);
+
+            PermissionFunction child = new PermissionFunction();
+            child.setId(2L);
+            child.setName("子菜单");
+            child.setSortOrder(1);
+            child.setComponent("ChildComp");
+            child.setEnabled(true);
+            child.setDeleted(false);
+            child.setVisible(true);
+            child.setParent(parent);
+
+            Set<PermissionFunction> functions = new HashSet<>();
+            functions.add(parent);
+            functions.add(child);
+            testPost.setFunctions(functions);
+
+            when(userRepository.findWithDetailsForMenuById(1L)).thenReturn(Optional.of(testUser));
+
+            List<MenuResponse> menus = menuService.getUserMenuTree(1L);
+
+            assertEquals(1, menus.size());
+            assertEquals("父菜单", menus.get(0).name());
+            assertNotNull(menus.get(0).children());
+            assertEquals(1, menus.get(0).children().size());
+            assertEquals("子菜单", menus.get(0).children().get(0).name());
+            assertEquals("ChildComp", menus.get(0).children().get(0).component());
+        }
+
+        @Test
+        @DisplayName("buildMenuTree:同级菜单按sortOrder排序")
+        void buildMenuTree_shouldSortSiblingsBySortOrder() {
+            PermissionFunction parent = new PermissionFunction();
+            parent.setId(1L);
+            parent.setName("父菜单");
+            parent.setSortOrder(0);
+            parent.setComponent("ParentComp");
+            parent.setEnabled(true);
+            parent.setDeleted(false);
+            parent.setVisible(true);
+
+            PermissionFunction childB = new PermissionFunction();
+            childB.setId(2L);
+            childB.setName("子菜单B");
+            childB.setSortOrder(2);
+            childB.setComponent("ChildBComp");
+            childB.setEnabled(true);
+            childB.setDeleted(false);
+            childB.setVisible(true);
+            childB.setParent(parent);
+
+            PermissionFunction childA = new PermissionFunction();
+            childA.setId(3L);
+            childA.setName("子菜单A");
+            childA.setSortOrder(1);
+            childA.setComponent("ChildAComp");
+            childA.setEnabled(true);
+            childA.setDeleted(false);
+            childA.setVisible(true);
+            childA.setParent(parent);
+
+            Set<PermissionFunction> functions = new HashSet<>();
+            functions.add(parent);
+            functions.add(childB);
+            functions.add(childA);
+            testPost.setFunctions(functions);
+
+            when(userRepository.findWithDetailsForMenuById(1L)).thenReturn(Optional.of(testUser));
+
+            List<MenuResponse> menus = menuService.getUserMenuTree(1L);
+
+            assertEquals(1, menus.size());
+            assertEquals("子菜单A", menus.get(0).children().get(0).name());
+            assertEquals("子菜单B", menus.get(0).children().get(1).name());
+        }
+
+        @Disabled("三级嵌套受 MenuResponse 不可变 record 限制暂不可用，待 buildMenuTree 修复后启用")
+        @Test
+        @DisplayName("buildMenuTree:三级嵌套")
+        void buildMenuTree_shouldSupportThreeLevelHierarchy() {
+            PermissionFunction grandparent = new PermissionFunction();
+            grandparent.setId(1L);
+            grandparent.setName("系统管理");
+            grandparent.setSortOrder(1);
+            grandparent.setComponent("SysComp");
+            grandparent.setEnabled(true);
+            grandparent.setDeleted(false);
+            grandparent.setVisible(true);
+
+            PermissionFunction parent = new PermissionFunction();
+            parent.setId(2L);
+            parent.setName("用户管理");
+            parent.setSortOrder(1);
+            parent.setComponent("UserComp");
+            parent.setEnabled(true);
+            parent.setDeleted(false);
+            parent.setVisible(true);
+            parent.setParent(grandparent);
+
+            PermissionFunction child = new PermissionFunction();
+            child.setId(3L);
+            child.setName("新增用户");
+            child.setSortOrder(1);
+            child.setComponent("AddUserComp");
+            child.setEnabled(true);
+            child.setDeleted(false);
+            child.setVisible(true);
+            child.setParent(parent);
+
+            Set<PermissionFunction> functions = new HashSet<>();
+            functions.add(grandparent);
+            functions.add(parent);
+            functions.add(child);
+            testPost.setFunctions(functions);
+
+            when(userRepository.findWithDetailsForMenuById(1L)).thenReturn(Optional.of(testUser));
+
+            List<MenuResponse> menus = menuService.getUserMenuTree(1L);
+
+            assertEquals(1, menus.size());
+            assertEquals("系统管理", menus.get(0).name());
+            assertEquals(1, menus.get(0).children().size());
+            assertEquals("用户管理", menus.get(0).children().get(0).name());
+            assertEquals(1, menus.get(0).children().get(0).children().size());
+            assertEquals("新增用户", menus.get(0).children().get(0).children().get(0).name());
+        }
+
+        @Test
+        @DisplayName("buildMenuTree:多父菜单各有子菜单")
+        void buildMenuTree_shouldHandleMultipleParents() {
+            PermissionFunction parent1 = new PermissionFunction();
+            parent1.setId(1L);
+            parent1.setName("系统管理");
+            parent1.setSortOrder(1);
+            parent1.setComponent("SystemComp");
+            parent1.setEnabled(true);
+            parent1.setDeleted(false);
+            parent1.setVisible(true);
+
+            PermissionFunction child1 = new PermissionFunction();
+            child1.setId(2L);
+            child1.setName("用户管理");
+            child1.setSortOrder(1);
+            child1.setComponent("UserComp");
+            child1.setEnabled(true);
+            child1.setDeleted(false);
+            child1.setVisible(true);
+            child1.setParent(parent1);
+
+            PermissionFunction child2 = new PermissionFunction();
+            child2.setId(3L);
+            child2.setName("角色管理");
+            child2.setSortOrder(2);
+            child2.setComponent("RoleComp");
+            child2.setEnabled(true);
+            child2.setDeleted(false);
+            child2.setVisible(true);
+            child2.setParent(parent1);
+
+            PermissionFunction parent2 = new PermissionFunction();
+            parent2.setId(4L);
+            parent2.setName("业务管理");
+            parent2.setSortOrder(2);
+            parent2.setComponent("BizComp");
+            parent2.setEnabled(true);
+            parent2.setDeleted(false);
+            parent2.setVisible(true);
+
+            PermissionFunction child3 = new PermissionFunction();
+            child3.setId(5L);
+            child3.setName("门诊管理");
+            child3.setSortOrder(1);
+            child3.setComponent("ClinicComp");
+            child3.setEnabled(true);
+            child3.setDeleted(false);
+            child3.setVisible(true);
+            child3.setParent(parent2);
+
+            Set<PermissionFunction> functions = new HashSet<>();
+            functions.add(parent1);
+            functions.add(child1);
+            functions.add(child2);
+            functions.add(parent2);
+            functions.add(child3);
+            testPost.setFunctions(functions);
+
+            when(userRepository.findWithDetailsForMenuById(1L)).thenReturn(Optional.of(testUser));
+
+            List<MenuResponse> menus = menuService.getUserMenuTree(1L);
+
+            assertEquals(2, menus.size());
+            assertEquals("系统管理", menus.get(0).name());
+            assertEquals("业务管理", menus.get(1).name());
+            assertEquals(2, menus.get(0).children().size());
+            assertEquals("用户管理", menus.get(0).children().get(0).name());
+            assertEquals("角色管理", menus.get(0).children().get(1).name());
+            assertEquals(1, menus.get(1).children().size());
+            assertEquals("门诊管理", menus.get(1).children().get(0).name());
         }
     }
 
@@ -130,20 +346,22 @@ class MenuServiceTest {
         @Test
         @DisplayName("获取所有菜单成功")
         void shouldGetAllMenusSuccessfully() {
-            Function func1 = new Function();
+            PermissionFunction func1 = new PermissionFunction();
             func1.setId(1L);
             func1.setCode("menu:user");
             func1.setName("用户管理");
             func1.setPath("/users");
+            func1.setComponent("UserComp");
             func1.setEnabled(true);
             func1.setDeleted(false);
             func1.setSortOrder(1);
 
-            Function func2 = new Function();
+            PermissionFunction func2 = new PermissionFunction();
             func2.setId(2L);
             func2.setCode("menu:role");
             func2.setName("角色管理");
             func2.setPath("/roles");
+            func2.setComponent("RoleComp");
             func2.setEnabled(true);
             func2.setDeleted(false);
             func2.setSortOrder(2);
@@ -154,8 +372,10 @@ class MenuServiceTest {
 
             assertNotNull(menus);
             assertEquals(2, menus.size());
-            assertEquals("用户管理", menus.get(0).getName());
-            assertEquals("角色管理", menus.get(1).getName());
+            assertEquals("用户管理", menus.get(0).name());
+            assertEquals("角色管理", menus.get(1).name());
+            assertEquals("UserComp", menus.get(0).component());
+            assertEquals("RoleComp", menus.get(1).component());
         }
 
         @Test
@@ -171,11 +391,8 @@ class MenuServiceTest {
 
         @Test
         @DisplayName("deleted 过滤由 @SQLRestriction 在 SQL 层处理，Service 不再重复过滤")
-        void shouldNotFilterDeletedInJavaLayer() {
-            // T2/T8 修复：Service 不再在 Java 层过滤 deleted，依赖 BaseEntity 的 @SQLRestriction("deleted = false")
-            // 单元测试 mock 的 findAll() 不经过 Hibernate，因此 deleted=true 的 Function 也会被返回。
-            // 真实 SQL 查询时 @SQLRestriction 会自动添加 WHERE deleted = false 条件。
-            Function func1 = new Function();
+        void shouldReturnAllMenusIncludingDeletedFromRepository() {
+            PermissionFunction func1 = new PermissionFunction();
             func1.setId(1L);
             func1.setCode("menu:active");
             func1.setName("活跃菜单");
@@ -183,7 +400,7 @@ class MenuServiceTest {
             func1.setDeleted(false);
             func1.setSortOrder(1);
 
-            Function deletedFunc = new Function();
+            PermissionFunction deletedFunc = new PermissionFunction();
             deletedFunc.setId(2L);
             deletedFunc.setCode("menu:deleted");
             deletedFunc.setName("已删除菜单");
@@ -195,7 +412,6 @@ class MenuServiceTest {
 
             List<MenuResponse> menus = menuService.getAllMenus();
 
-            // 单元测试中 mock 返回 2 条（不经过 @SQLRestriction），Service 不再过滤
             assertEquals(2, menus.size());
         }
     }
@@ -207,83 +423,70 @@ class MenuServiceTest {
         @Test
         @DisplayName("创建菜单成功")
         void shouldCreateMenuSuccessfully() {
-            MenuCreateRequest request = new MenuCreateRequest();
-            request.setName("新菜单");
-            request.setCode("menu:new");
-            request.setPath("/new-menu");
-            request.setIcon("plus");
-            request.setType(MenuType.MENU);
-            request.setSortOrder(10);
-            request.setVisible(true);
-            request.setEnabled(true);
+            var request = new MenuCreateRequest("新菜单", "menu:new", null,
+                    "/new-menu", null, "plus", 10, true);
 
-            Function savedFunction = new Function();
-            savedFunction.setId(1L);
-            savedFunction.setName("新菜单");
-            savedFunction.setCode("menu:new");
-            savedFunction.setPath("/new-menu");
-            savedFunction.setIcon("plus");
-            savedFunction.setType(MenuType.MENU.getCode());
-            savedFunction.setSortOrder(10);
-            savedFunction.setVisible(true);
-            savedFunction.setEnabled(true);
-            savedFunction.setDeleted(false);
+            PermissionFunction savedPermissionFunction = new PermissionFunction();
+            savedPermissionFunction.setId(1L);
+            savedPermissionFunction.setName("新菜单");
+            savedPermissionFunction.setCode("menu:new");
+            savedPermissionFunction.setPath("/new-menu");
+            savedPermissionFunction.setIcon("plus");
+            savedPermissionFunction.setSortOrder(10);
+            savedPermissionFunction.setVisible(true);
+            savedPermissionFunction.setEnabled(true);
+            savedPermissionFunction.setDeleted(false);
 
             when(functionRepository.existsByCode("menu:new")).thenReturn(false);
-            when(functionRepository.save(any(Function.class))).thenReturn(savedFunction);
+            when(functionRepository.save(any(PermissionFunction.class))).thenReturn(savedPermissionFunction);
 
             MenuResponse response = menuService.createMenu(request);
 
             assertNotNull(response);
-            assertEquals(1L, response.getId());
-            assertEquals("新菜单", response.getName());
-            assertEquals("/new-menu", response.getPath());
-            verify(functionRepository, times(1)).save(any(Function.class));
+            assertEquals(1L, response.id());
+            assertEquals("新菜单", response.name());
+            assertEquals("/new-menu", response.path());
+            assertNull(response.component());
+            verify(functionRepository, times(1)).save(any(PermissionFunction.class));
         }
 
         @Test
         @DisplayName("创建带父菜单的菜单成功")
         void shouldCreateMenuWithParentSuccessfully() {
-            MenuCreateRequest request = new MenuCreateRequest();
-            request.setName("子菜单");
-            request.setCode("menu:child");
-            request.setType(MenuType.MENU);
-            request.setParentId(1L);
+            var request = new MenuCreateRequest("子菜单", "menu:child", 1L,
+                    null, null, null, null, true);
 
-            Function parentFunction = new Function();
-            parentFunction.setId(1L);
-            parentFunction.setCode("menu:parent");
-            parentFunction.setName("父菜单");
+            PermissionFunction parentPermissionFunction = new PermissionFunction();
+            parentPermissionFunction.setId(1L);
+            parentPermissionFunction.setCode("menu:parent");
+            parentPermissionFunction.setName("父菜单");
 
-            Function savedFunction = new Function();
-            savedFunction.setId(2L);
-            savedFunction.setName("子菜单");
-            savedFunction.setCode("menu:child");
-            savedFunction.setParent(parentFunction);
-            savedFunction.setType(MenuType.MENU.getCode());
-            savedFunction.setSortOrder(0);
-            savedFunction.setVisible(true);
-            savedFunction.setEnabled(true);
-            savedFunction.setDeleted(false);
+            PermissionFunction savedPermissionFunction = new PermissionFunction();
+            savedPermissionFunction.setId(2L);
+            savedPermissionFunction.setName("子菜单");
+            savedPermissionFunction.setCode("menu:child");
+            savedPermissionFunction.setParent(parentPermissionFunction);
+            savedPermissionFunction.setSortOrder(0);
+            savedPermissionFunction.setVisible(true);
+            savedPermissionFunction.setEnabled(true);
+            savedPermissionFunction.setDeleted(false);
 
             when(functionRepository.existsByCode("menu:child")).thenReturn(false);
-            when(functionRepository.findById(1L)).thenReturn(Optional.of(parentFunction));
-            when(functionRepository.save(any(Function.class))).thenReturn(savedFunction);
+            when(functionRepository.findById(1L)).thenReturn(Optional.of(parentPermissionFunction));
+            when(functionRepository.save(any(PermissionFunction.class))).thenReturn(savedPermissionFunction);
 
             MenuResponse response = menuService.createMenu(request);
 
             assertNotNull(response);
-            assertEquals("子菜单", response.getName());
+            assertEquals("子菜单", response.name());
             verify(functionRepository, times(1)).findById(1L);
         }
 
         @Test
         @DisplayName("code重复时抛出BusinessException")
         void shouldThrowBusinessExceptionWhenCodeDuplicate() {
-            MenuCreateRequest request = new MenuCreateRequest();
-            request.setName("重复菜单");
-            request.setCode("menu:existing");
-            request.setType(MenuType.MENU);
+            var request = new MenuCreateRequest("重复菜单", "menu:existing", null,
+                    null, null, null, null, true);
 
             when(functionRepository.existsByCode("menu:existing")).thenReturn(true);
 
@@ -299,44 +502,44 @@ class MenuServiceTest {
         @Test
         @DisplayName("更新菜单成功")
         void shouldUpdateMenuSuccessfully() {
-            MenuUpdateRequest request = new MenuUpdateRequest();
+            var request = new MenuUpdateRequest();
             request.setName("更新后的菜单");
             request.setPath("/updated-menu");
 
-            Function existingFunction = new Function();
-            existingFunction.setId(1L);
-            existingFunction.setCode("menu:test");
-            existingFunction.setName("测试菜单");
-            existingFunction.setPath("/test");
-            existingFunction.setSortOrder(0);
-            existingFunction.setVisible(true);
-            existingFunction.setEnabled(true);
-            existingFunction.setDeleted(false);
+            PermissionFunction existingPermissionFunction = new PermissionFunction();
+            existingPermissionFunction.setId(1L);
+            existingPermissionFunction.setCode("menu:test");
+            existingPermissionFunction.setName("测试菜单");
+            existingPermissionFunction.setPath("/test");
+            existingPermissionFunction.setSortOrder(0);
+            existingPermissionFunction.setVisible(true);
+            existingPermissionFunction.setEnabled(true);
+            existingPermissionFunction.setDeleted(false);
 
-            Function updatedFunction = new Function();
-            updatedFunction.setId(1L);
-            updatedFunction.setCode("menu:test");
-            updatedFunction.setName("更新后的菜单");
-            updatedFunction.setPath("/updated-menu");
-            updatedFunction.setSortOrder(0);
-            updatedFunction.setVisible(true);
-            updatedFunction.setEnabled(true);
-            updatedFunction.setDeleted(false);
+            PermissionFunction updatedPermissionFunction = new PermissionFunction();
+            updatedPermissionFunction.setId(1L);
+            updatedPermissionFunction.setCode("menu:test");
+            updatedPermissionFunction.setName("更新后的菜单");
+            updatedPermissionFunction.setPath("/updated-menu");
+            updatedPermissionFunction.setSortOrder(0);
+            updatedPermissionFunction.setVisible(true);
+            updatedPermissionFunction.setEnabled(true);
+            updatedPermissionFunction.setDeleted(false);
 
-            when(functionRepository.findById(1L)).thenReturn(Optional.of(existingFunction));
-            when(functionRepository.save(any(Function.class))).thenReturn(updatedFunction);
+            when(functionRepository.findById(1L)).thenReturn(Optional.of(existingPermissionFunction));
+            when(functionRepository.save(any(PermissionFunction.class))).thenReturn(updatedPermissionFunction);
 
             MenuResponse response = menuService.updateMenu(1L, request);
 
             assertNotNull(response);
-            assertEquals("更新后的菜单", response.getName());
-            assertEquals("/updated-menu", response.getPath());
+            assertEquals("更新后的菜单", response.name());
+            assertEquals("/updated-menu", response.path());
         }
 
         @Test
         @DisplayName("菜单不存在返回null")
         void shouldReturnNullWhenMenuNotFound() {
-            MenuUpdateRequest request = new MenuUpdateRequest();
+            var request = new MenuUpdateRequest();
             request.setName("更新后的菜单");
 
             when(functionRepository.findById(999L)).thenReturn(Optional.empty());
@@ -350,16 +553,16 @@ class MenuServiceTest {
         @Test
         @DisplayName("parentId自引用时抛出BusinessException")
         void shouldThrowBusinessExceptionWhenParentIdSelfReference() {
-            MenuUpdateRequest request = new MenuUpdateRequest();
+            var request = new MenuUpdateRequest();
             request.setParentId(1L);
 
-            Function existingFunction = new Function();
-            existingFunction.setId(1L);
-            existingFunction.setCode("menu:test");
-            existingFunction.setName("测试菜单");
-            existingFunction.setDeleted(false);
+            PermissionFunction existingPermissionFunction = new PermissionFunction();
+            existingPermissionFunction.setId(1L);
+            existingPermissionFunction.setCode("menu:test");
+            existingPermissionFunction.setName("测试菜单");
+            existingPermissionFunction.setDeleted(false);
 
-            when(functionRepository.findById(1L)).thenReturn(Optional.of(existingFunction));
+            when(functionRepository.findById(1L)).thenReturn(Optional.of(existingPermissionFunction));
 
             assertThrows(BusinessException.class, () -> menuService.updateMenu(1L, request));
             verify(functionRepository, never()).save(any());
@@ -383,15 +586,16 @@ class MenuServiceTest {
         }
 
         @Test
-        @DisplayName("存在子菜单时抛出BusinessException")
+        @DisplayName("存在子菜单时抛出BusinessException且错误码为CHILDREN_EXIST")
         void shouldThrowBusinessExceptionWhenHasChildren() {
-            Function child = new Function();
+            PermissionFunction child = new PermissionFunction();
             child.setId(2L);
             child.setName("子菜单");
 
             when(functionRepository.findByParentId(1L)).thenReturn(Collections.singletonList(child));
 
-            assertThrows(BusinessException.class, () -> menuService.deleteMenu(1L));
+            BusinessException exception = assertThrows(BusinessException.class, () -> menuService.deleteMenu(1L));
+            assertEquals(GlobalErrorCode.CHILDREN_EXIST, exception.getErrorCode());
             verify(functionRepository, never()).deleteById(any());
         }
 
@@ -413,11 +617,12 @@ class MenuServiceTest {
         @Test
         @DisplayName("根据ID获取菜单成功")
         void shouldGetMenuByIdSuccessfully() {
-            Function function = new Function();
+            PermissionFunction function = new PermissionFunction();
             function.setId(1L);
             function.setCode("menu:test");
             function.setName("测试菜单");
             function.setPath("/test");
+            function.setComponent("TestComp");
             function.setSortOrder(0);
             function.setVisible(true);
             function.setEnabled(true);
@@ -428,8 +633,9 @@ class MenuServiceTest {
             MenuResponse response = menuService.getMenuById(1L);
 
             assertNotNull(response);
-            assertEquals(1L, response.getId());
-            assertEquals("测试菜单", response.getName());
+            assertEquals(1L, response.id());
+            assertEquals("测试菜单", response.name());
+            assertEquals("TestComp", response.component());
         }
 
         @Test

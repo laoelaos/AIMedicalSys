@@ -8,11 +8,14 @@ import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 
-import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
+
+import jakarta.annotation.PostConstruct;
 
 import javax.crypto.SecretKey;
 
@@ -35,8 +38,26 @@ public class JwtUtil {
 
     private final JwtConfig jwtConfig;
 
+    private SecretKey secretKey;
+
     public JwtUtil(JwtConfig jwtConfig) {
         this.jwtConfig = jwtConfig;
+    }
+
+    @PostConstruct
+    public void init() {
+        String secret = jwtConfig.getSecret();
+        if (secret == null || secret.isEmpty()) {
+            throw new IllegalStateException("JWT_SECRET must be configured");
+        }
+        if (!secret.matches("^[A-Za-z0-9+/]+=*$")) {
+            throw new IllegalStateException("JWT_SECRET contains invalid characters");
+        }
+        byte[] keyBytes = Base64.getDecoder().decode(secret);
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException("JWT_SECRET must be at least 256 bits (32 bytes) after Base64 decoding");
+        }
+        this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
     /**
@@ -48,25 +69,22 @@ public class JwtUtil {
      * @param position 岗位类型（可为空）
      * @return JWT令牌字符串
      */
+    @Deprecated
     public String generateToken(Long userId, String username, String role, String position) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("username", username);
-        claims.put("role", role);
-        if (position != null) {
-            claims.put("position", position);
-        }
+        claims.put("jti", UUID.randomUUID().toString());
 
-        SecretKey key = Keys.hmacShaKeyFor(jwtConfig.getSecret().getBytes(StandardCharsets.UTF_8));
         Date now = new Date();
-        Date expiration = new Date(now.getTime() + jwtConfig.getExpiration() * 1000);
+        Date expiration = new Date(now.getTime() + jwtConfig.getAccessTokenExpiration() * 1000);
 
         return Jwts.builder()
                 .claims(claims)
                 .subject(username)
                 .issuedAt(now)
                 .expiration(expiration)
-                .signWith(key)
+                .signWith(this.secretKey)
                 .compact();
     }
 
@@ -84,9 +102,8 @@ public class JwtUtil {
      * @throws IllegalArgumentException 令牌为空或无效
      */
     public Claims parseToken(String token) {
-        SecretKey key = Keys.hmacShaKeyFor(jwtConfig.getSecret().getBytes(StandardCharsets.UTF_8));
         return Jwts.parser()
-                .verifyWith(key)
+                .verifyWith(this.secretKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
@@ -208,7 +225,7 @@ public class JwtUtil {
      * @return 过期时间
      */
     public Long getExpirationTime() {
-        return jwtConfig.getExpiration();
+        return jwtConfig.getAccessTokenExpiration();
     }
 
     /**

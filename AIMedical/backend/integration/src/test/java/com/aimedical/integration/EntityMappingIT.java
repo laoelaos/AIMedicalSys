@@ -5,7 +5,7 @@ import com.aimedical.modules.admin.entity.TokenStore;
 import com.aimedical.modules.admin.entity.dict.DictData;
 import com.aimedical.modules.admin.entity.dict.DictType;
 import com.aimedical.modules.commonmodule.api.UserType;
-import com.aimedical.modules.commonmodule.permission.Function;
+import com.aimedical.modules.commonmodule.permission.PermissionFunction;
 import com.aimedical.modules.commonmodule.permission.Post;
 import com.aimedical.modules.commonmodule.permission.Role;
 import com.aimedical.modules.commonmodule.permission.User;
@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.hibernate.PropertyValueException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * - HealthProfile 的 height_cm / weight_kg / bmi 精度
  * - PatientEntity.avatarUrl 长度 (500)
  * - DoctorEntity.consultationFee DECIMAL(10,2)
- * - Function.type → MenuType 枚举映射
+ * - PermissionFunction.type → MenuType 枚举映射
  * - DictData ↔ DictType @ManyToOne 关系
  * - TokenStore.token 唯一索引与长度 (768)
  */
@@ -136,11 +137,11 @@ class EntityMappingIT {
         assertEquals(0, new BigDecimal("200.00").compareTo(found.getConsultationFee()));
     }
 
-    // ==================== Function + MenuType ====================
+    // ==================== PermissionFunction + MenuType ====================
 
     @Test
     void function_shouldMapMenuTypeEnum() {
-        Function function = new Function();
+        PermissionFunction function = new PermissionFunction();
         function.setCode("test:menu");
         function.setName("测试菜单");
         function.setType(MenuType.MENU.getCode());
@@ -149,13 +150,13 @@ class EntityMappingIT {
         entityManager.persist(function);
         entityManager.flush();
 
-        Function found = entityManager.find(Function.class, function.getId());
+        PermissionFunction found = entityManager.find(PermissionFunction.class, function.getId());
         assertEquals(MenuType.MENU.getCode(), found.getType());
     }
 
     @Test
     void function_shouldPersistDirectoryType() {
-        Function dir = new Function();
+        PermissionFunction dir = new PermissionFunction();
         dir.setCode("test:directory");
         dir.setName("测试目录");
         dir.setType(MenuType.DIRECTORY.getCode());
@@ -164,7 +165,7 @@ class EntityMappingIT {
         entityManager.persist(dir);
         entityManager.flush();
 
-        Function found = entityManager.find(Function.class, dir.getId());
+        PermissionFunction found = entityManager.find(PermissionFunction.class, dir.getId());
         assertEquals(MenuType.DIRECTORY.getCode(), found.getType());
     }
 
@@ -385,6 +386,54 @@ class EntityMappingIT {
         assertEquals(UserType.PATIENT, found.getUserType());
     }
 
+    @Test
+    void user_shouldMapPasswordChangeRequired() {
+        // 验证默认值为 false
+        User user = new User();
+        user.setUsername("test_pcr_default");
+        user.setPassword("pwd123");
+        user.setNickname("测试PCR默认");
+        user.setUserType(UserType.ADMIN);
+
+        entityManager.persist(user);
+        entityManager.flush();
+
+        User found = entityManager.find(User.class, user.getId());
+        assertFalse(found.getPasswordChangeRequired());
+
+        // 设置为 true 后持久化并正确读取
+        found.setPasswordChangeRequired(true);
+        entityManager.flush();
+        entityManager.clear();
+
+        User reloaded = entityManager.find(User.class, user.getId());
+        assertTrue(reloaded.getPasswordChangeRequired());
+    }
+
+    @Test
+    void user_shouldMapTokenVersion() {
+        // 验证默认值为 0
+        User user = new User();
+        user.setUsername("test_tv_default");
+        user.setPassword("pwd123");
+        user.setNickname("测试TV默认");
+        user.setUserType(UserType.ADMIN);
+
+        entityManager.persist(user);
+        entityManager.flush();
+
+        User found = entityManager.find(User.class, user.getId());
+        assertEquals(Integer.valueOf(0), found.getTokenVersion());
+
+        // 递增后持久化并正确读取
+        found.setTokenVersion(1);
+        entityManager.flush();
+        entityManager.clear();
+
+        User reloaded = entityManager.find(User.class, user.getId());
+        assertEquals(Integer.valueOf(1), reloaded.getTokenVersion());
+    }
+
     // ==================== Role ====================
 
     @Test
@@ -441,6 +490,18 @@ class EntityMappingIT {
         assertEquals("test_post_otm", found.getPosts().iterator().next().getCode());
     }
 
+    @Test
+    void role_shouldRejectNullEnabled() {
+        Role role = new Role();
+        role.setCode("test_role_null_enabled");
+        role.setEnabled(null);
+
+        assertThrows(PropertyValueException.class, () -> {
+            entityManager.persist(role);
+            entityManager.flush();
+        });
+    }
+
     // ==================== Post ====================
 
     @Test
@@ -468,7 +529,7 @@ class EntityMappingIT {
 
     @Test
     void post_shouldMapManyToManyFunctions() {
-        Function function = new Function();
+        PermissionFunction function = new PermissionFunction();
         function.setCode("test_func_post_m2m");
         function.setName("测试功能M2M");
         function.setType(MenuType.BUTTON.getCode());

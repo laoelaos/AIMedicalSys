@@ -94,3 +94,6 @@ cache/
 启动后端.bat
 启动前端.bat
 启动全部.bat
+
+# Reserved Windows filename
+nul

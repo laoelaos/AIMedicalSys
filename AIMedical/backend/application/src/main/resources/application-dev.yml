@@ -26,7 +26,7 @@ spring:
     show-sql: true
 
 jwt:
-  secret: dev-secret-key-for-local-development-only-please-change-in-production
+  secret: ZGV2LXNlY3JldC1rZXktZm9yLWxvY2FsLWRldmVsb3BtZW50LW9ubHktcGxlYXNlLWNoYW5nZS1pbi1wcm9kdWN0aW9u
   expiration: 86400
 
 ai:

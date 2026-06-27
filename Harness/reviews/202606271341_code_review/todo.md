@@ -1,0 +1,42 @@
+# 待办事项
+
+---
+
+- [ ] T001: AuthController 直接使用 SecurityContextHolder 而非注入 CurrentUser — 来源：R1-A，位置：`AuthController.java:86-99`
+- [ ] T002: AuthController.logout() 安全审计在 Token 过期时丢失用户身份 — 来源：R1-A，位置：`AuthController.java:42-50`
+- [ ] T003: JwtConfig.validate() 使用标准 Base64 解码器而非 URL-safe — 来源：R1-A，位置：`JwtConfig.java:58`
+- [ ] T004: LoginResponse.expiresIn 传入毫秒值而非秒值 — 来源：R1-A，位置：`AuthServiceImpl.java:171`
+- [ ] T005: UserConverter.resolveRole() 使用 Role::getEnabled 方法引用可能 NPE — 来源：R1-A，位置：`UserConverter.java:41`
+- [ ] T006: refreshTimestamps 缺少 ScheduledExecutorService 定期清理 — 来源：R1-A，位置：`AuthServiceImpl.java:68`
+- [ ] T007: refreshTimestamps 使用 ConcurrentHashMap.compute() 抛出 BusinessException — 来源：R1-A，位置：`AuthServiceImpl.java:272-287`
+- [ ] T008: 异常刷新检测位置与设计描述不完全一致 — 来源：R1-A，位置：`AuthServiceImpl.java:272-287`
+- [ ] T009: CurrentUserImpl 的 getUsername()/getUserType() 每次调用均查库 — 来源：R1-A，位置：`CurrentUserImpl.java:29-44`
+- [ ] T010: GlobalExceptionHandler.resolveHttpStatus 缺少密码相关错误码映射 — 来源：R1-B，位置：`GlobalExceptionHandler.java:47-71`
+- [ ] T011: JwtAuthenticationFilter 权限收集存在 N+1 潜在问题 — 来源：R1-B，位置：`JwtAuthenticationFilter.java:118-129`
+- [ ] T012: BCryptPasswordEncoder 未显式 strength 参数 — 来源：R1-B，位置：`SecurityConfigPhase1.java:33`
+- [ ] T013: SecurityConfigPhase1CoexistenceTest 未覆盖异常处理器注入 — 来源：R1-B，位置：`SecurityConfigPhase1CoexistenceTest.java:31-41`
+- [ ] T014: User.java passwordChangeRequired 缺少 columnDefinition 指定 — 来源：R1-C，位置：`User.java:51`
+- [ ] T015: SlidingWindowCounter.cleanup() 存在 TOCTOU 竞态条件 — 来源：R1-C，位置：`SlidingWindowCounter.java:52`
+- [ ] T016: PermissionFunction.sortOrder 字段与 schema 列名不匹配 — 来源：R1-C，位置：`PermissionFunction.java:33`
+- [ ] T017: AuthServiceTest 存在重复测试方法 (login deleted) — 来源：R2-A，位置：`AuthServiceTest.java:266,291`
+- [ ] T018: JwtTokenProviderTest 缺乏篡改 Token 测试 — 来源：R2-A，位置：`JwtTokenProviderTest.java`
+- [ ] T019: UserFacadeImplTest 使用真实 UserConverter 而非 Mock — 来源：R2-A，位置：`UserFacadeImplTest.java:26`
+- [ ] T020: DebugJwtTest.java 为 main 方法调试类而非单元测试 — 来源：R2-A，位置：`jwt/DebugJwtTest.java`
+- [ ] T021: AuthServiceTest 中无效 mock：deleted 测试的 passwordEncoder 返回值未被消费 — 来源：R2-A，位置：`AuthServiceTest.java:272`
+- [ ] T022: AuthServiceTest changePassword 测试未覆盖失败路径 clearChangeRequired 验证 — 来源：R2-A，位置：`AuthServiceTest.java:806-830`
+- [ ] T023: MenuServiceTest 三级嵌套菜单测试被 @Disabled — 来源：R2-A，位置：`MenuServiceTest.java:217`
+- [ ] T024: JwtAuthenticationFilterTest 存在重复测试用例 (refresh type vs invalid token) — 来源：R2-B，位置：`JwtAuthenticationFilterTest.java:78-93`
+- [ ] T025: SecurityConfigPhase1CoexistenceTest 未验证实际 Filter 链共存行为 — 来源：R2-B，位置：`SecurityConfigPhase1CoexistenceTest.java:19-41`
+- [ ] T026: MenuControllerTest 缺少 /tree 和 /all 端点测试 — 来源：R2-B，位置：`MenuControllerTest.java`
+- [ ] T027: AuthControllerTest 缺少 refresh 失败场景的 BusinessException 测试 — 来源：R2-B，位置：`AuthControllerTest.java`
+- [ ] T028: MenuUpdateRequestTest 缺少 @Size 约束验证测试 — 来源：R2-B，位置：`MenuUpdateRequestTest.java`
+- [ ] T029: GlobalRateLimitFilterTest 未验证 Response Content-Type 含 charset=UTF-8 — 来源：R2-B，位置：`GlobalRateLimitFilterTest.java:156`
+- [ ] T030: PasswordPolicyImplTest 缺少 null password 测试 — 来源：R2-C，位置：`PasswordPolicyImplTest.java:46-48`
+- [ ] T031: PasswordPolicyImplTest 缺少长度边界测试 — 来源：R2-C，位置：`PasswordPolicyImplTest.java:15-24`
+- [ ] T032: InMemoryRateLimitGuardTest.shouldAllowAfterWindowExpiry 造成测试缓慢 — 来源：R2-C，位置：`InMemoryRateLimitGuardTest.java:57`
+- [ ] T033: PermissionFunctionTest 缺少多个字段的 getter/setter 验证 — 来源：R2-C，位置：`PermissionFunctionTest.java`
+- [ ] T034: PostTest 缺少 sort 字段验证 — 来源：R2-C，位置：`PostTest.java`
+- [ ] T035: UserTest 缺少 enabled 默认值验证 — 来源：R2-C，位置：`UserTest.java:56-63`
+- [ ] T036: SlidingWindowCounterTest 缺少清理逻辑的显式验证 — 来源：R2-C，位置：`SlidingWindowCounterTest.java`
+- [ ] T037: GlobalErrorCodeTest.shouldHaveExpectedConstants 枚举数量硬编码 — 来源：R2-C，位置：`GlobalErrorCodeTest.java:11`
+- [ ] T038: GlobalRateLimitFilter 缺少 response.setCharacterEncoding("UTF-8") — 来源：R2-B，位置：`GlobalRateLimitFilter.java:55`

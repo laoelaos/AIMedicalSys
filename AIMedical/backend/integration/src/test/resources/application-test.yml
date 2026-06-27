@@ -21,7 +21,7 @@ spring:
 
 # JWT测试配置 - 使用固定的测试密钥
 jwt:
-  secret: test-secret-key-for-integration-tests-minimum-32-chars
+  secret: dGVzdC1zZWNyZXQta2V5LWZvci1pbnRlZ3JhdGlvbi10ZXN0cy1taW4tMzI=
   expiration: 86400
 
 # 日志配置
