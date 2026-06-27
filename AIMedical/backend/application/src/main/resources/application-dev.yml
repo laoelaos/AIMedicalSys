@@ -1,0 +1,49 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:aimedical;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  sql:
+    init:
+      encoding: UTF-8
+      mode: always
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+    show-sql: true
+
+jwt:
+  secret: ZGV2LXNlY3JldC1rZXktZm9yLWxvY2FsLWRldmVsb3BtZW50LW9ubHktcGxlYXNlLWNoYW5nZS1pbi1wcm9kdWN0aW9u
+  expiration: 86400
+
+ai:
+  mock:
+    enabled: true
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

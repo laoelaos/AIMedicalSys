@@ -16,6 +16,11 @@ import lombok.Setter;
 
 import java.util.Set;
 
+/**
+ * 用户实体
+ *
+ * <p>系统用户，支持多种用户类型（管理员/医生/患者）。
+ */
 @Entity
 @Table(name = "sys_user")
 @Getter
@@ -25,15 +30,36 @@ public class User extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String username;
 
+    @Column(nullable = false)
     private String password;
 
+    @Column(nullable = false)
     private String nickname;
 
     private String phone;
 
     private String email;
 
-    private Boolean enabled;
+    @Column(nullable = false)
+    private Boolean enabled = true;
+
+    /**
+     * 是否必须修改密码
+     *
+     * <p>true 表示首次登录或被管理员标记密码过期，需在 PasswordChangeCheckFilter
+     * 阶段强制走 /api/auth/password 流程；默认 false。
+     */
+    @Column(nullable = false)
+    private Boolean passwordChangeRequired = false;
+
+    /**
+     * 令牌版本号
+     *
+     * <p>Refresh Token 刷新时与 claims 中的 tokenVersion 比对，不一致即拒绝；
+     * 密码变更后递增（+1），使已签发的旧 Refresh Token 即时失效。默认 0。
+     */
+    @Column(nullable = false)
+    private Integer tokenVersion = 0;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

@@ -2,7 +2,7 @@ spring:
   application:
     name: aimedical-sys
   profiles:
-    active: phase0,dev
+    active: phase1,dev
 
   datasource:
     url: jdbc:mysql://localhost:3306/aimedical?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true

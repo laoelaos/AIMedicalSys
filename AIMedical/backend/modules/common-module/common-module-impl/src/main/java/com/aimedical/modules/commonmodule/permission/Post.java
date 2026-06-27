@@ -1,6 +1,7 @@
 package com.aimedical.modules.commonmodule.permission;
 
 import com.aimedical.common.base.BaseEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -27,7 +28,10 @@ public class Post extends BaseEntity {
 
     private String description;
 
-    private Boolean enabled;
+    @Column(nullable = false)
+    private Boolean enabled = true;
+
+    private Integer sort;
 
     private Integer sort;
 
@@ -35,11 +39,11 @@ public class Post extends BaseEntity {
     @JoinColumn(name = "role_id")
     private Role role;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "post_function",
             joinColumns = @JoinColumn(name = "post_id"),
             inverseJoinColumns = @JoinColumn(name = "function_id"))
-    private Set<Function> functions;
+    private Set<PermissionFunction> functions;
 
     @ManyToMany(mappedBy = "posts", fetch = FetchType.LAZY)
     private Set<User> users;

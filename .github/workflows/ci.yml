@@ -51,8 +51,35 @@ jobs:
           java-version: '17'
           cache: maven
 
-      - name: Maven verify
-        run: mvn -B verify
+      - name: Maven install
+        # install 是 verify 的超集 (validate/compile/test/package/verify/install),
+        # 顺便把全部内部模块装入本地仓库, 供后续 smoke test 解析依赖使用.
+        run: mvn -B install
 
       - name: Analyze dependencies
         run: mvn -B dependency:analyze
+
+      - name: "Smoke test: start Spring Boot application"
+        # spring-boot:start 在 CLI 上调用时会被绑定到反应器里的所有模块,
+        # 而父 POM (aimedical-sys) 没有 mainClass 会直接失败. 因此 install 阶段
+        # 就把所有依赖准备好, 此处只对 application 模块执行.
+        # 该 goal 会 fork java 进程启动应用; 若有 bean 装配/循环依赖/缺类等
+        # 启动期错误, 进程崩溃会以非零状态返回, CI 立即失败.
+        run: mvn -B -pl application spring-boot:start
+
+      - name: "Smoke test: wait for /actuator/health to be UP"
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/actuator/health 2>/dev/null | grep -q '"status":"UP"'; then
+              echo "Application is UP after ${i} attempts"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Application failed to become healthy within 120s"
+          curl -fsS http://localhost:8080/actuator/health || true
+          exit 1
+
+      - name: "Smoke test: stop Spring Boot application"
+        if: always()
+        run: mvn -B -pl application spring-boot:stop

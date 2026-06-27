@@ -1,0 +1,31 @@
+# 集成测试配置
+# 此文件仅用于测试环境，提供必要的测试配置
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  h2:
+    console:
+      enabled: false
+  sql:
+    init:
+      mode: never
+
+# JWT测试配置 - 使用固定的测试密钥
+jwt:
+  secret: dGVzdC1zZWNyZXQta2V5LWZvci1pbnRlZ3JhdGlvbi10ZXN0cy1taW4tMzI=
+  expiration: 86400
+
+# 日志配置
+logging:
+  level:
+    root: WARN
+    com.aimedical: DEBUG

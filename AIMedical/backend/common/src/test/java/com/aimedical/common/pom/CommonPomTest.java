@@ -51,8 +51,17 @@ class CommonPomTest {
     }
 
     @Test
-    void dependencyCountShouldBeExactlyFive() throws Exception {
-        assertEquals(5, doc.getDocumentElement()
-            .getElementsByTagName("dependency").getLength());
+    void shouldContainLombokAsOptional() throws Exception {
+        assertTrue(exists("/project/dependencies/dependency[artifactId='lombok' and optional='true']"));
+    }
+
+    @Test
+    void shouldContainValidationStarterAsOptional() throws Exception {
+        assertTrue(exists("/project/dependencies/dependency[artifactId='spring-boot-starter-validation' and optional='true']"));
+    }
+
+    @Test
+    void shouldContainH2WithTestScope() throws Exception {
+        assertEquals("test", xpath("/project/dependencies/dependency[artifactId='h2']/scope"));
     }
 }

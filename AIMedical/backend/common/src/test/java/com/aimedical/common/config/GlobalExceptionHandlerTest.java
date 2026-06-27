@@ -4,6 +4,7 @@ import com.aimedical.common.exception.BusinessException;
 import com.aimedical.common.exception.ErrorCode;
 import com.aimedical.common.exception.GlobalErrorCode;
 import com.aimedical.common.result.Result;
+import com.aimedical.common.util.SimpleMessageInterpolator;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class GlobalExceptionHandlerTest {
 
-    private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    private final GlobalExceptionHandler handler = new GlobalExceptionHandler(new SimpleMessageInterpolator());
 
     private static final ErrorCode TEST_ERROR = new ErrorCode() {
         @Override
@@ -35,6 +36,18 @@ class GlobalExceptionHandlerTest {
         }
     };
 
+    private static final ErrorCode NUMBERED_TEMPLATE = new ErrorCode() {
+        @Override
+        public String getCode() {
+            return "NUM_ERR";
+        }
+
+        @Override
+        public String getMessage() {
+            return "订单{0}已过期，剩余{1}天";
+        }
+    };
+
     @Test
     void shouldHandleBusinessExceptionWith400() {
         BusinessException ex = new BusinessException(TEST_ERROR);
@@ -45,6 +58,144 @@ class GlobalExceptionHandlerTest {
         assertEquals("BIZ_ERR", body.getCode());
         assertEquals("业务异常", body.getMessage());
         assertNull(body.getData());
+    }
+
+    @Test
+    void shouldInterpolateAccountLockedMessage() {
+        BusinessException ex = new BusinessException(GlobalErrorCode.ACCOUNT_LOCKED, "30分钟");
+        ResponseEntity<Result<Void>> response = handler.handleBusinessException(ex);
+        assertEquals(HttpStatusCode.valueOf(429), response.getStatusCode());
+        Result<Void> body = response.getBody();
+        assertNotNull(body);
+        assertEquals("ACCOUNT_LOCKED", body.getCode());
+        assertEquals("账户已锁定，请30分钟后重试", body.getMessage());
+        assertNull(body.getData());
+    }
+
+    @Test
+    void shouldReturn429ForRateLimited() {
+        BusinessException ex = new BusinessException(GlobalErrorCode.RATE_LIMITED);
+        ResponseEntity<Result<Void>> response = handler.handleBusinessException(ex);
+        assertEquals(HttpStatusCode.valueOf(429), response.getStatusCode());
+        Result<Void> body = response.getBody();
+        assertNotNull(body);
+        assertEquals("RATE_LIMITED", body.getCode());
+        assertEquals("登录尝试过于频繁，请稍后重试", body.getMessage());
+        assertNull(body.getData());
+    }
+
+    @Test
+    void shouldReturn401ForTokenRefreshFailed() {
+        BusinessException ex = new BusinessException(GlobalErrorCode.TOKEN_REFRESH_FAILED);
+        ResponseEntity<Result<Void>> response = handler.handleBusinessException(ex);
+        assertEquals(HttpStatusCode.valueOf(401), response.getStatusCode());
+        Result<Void> body = response.getBody();
+        assertNotNull(body);
+        assertEquals("TOKEN_REFRESH_FAILED", body.getCode());
+        assertEquals("令牌刷新失败，请重新登录", body.getMessage());
+        assertNull(body.getData());
+    }
+
+    @Test
+    void shouldHandleBusinessExceptionWithEmptyArgs() {
+        BusinessException ex = new BusinessException(TEST_ERROR, new Object[0]);
+        ResponseEntity<Result<Void>> response = handler.handleBusinessException(ex);
+        assertEquals(HttpStatusCode.valueOf(400), response.getStatusCode());
+        Result<Void> body = response.getBody();
+        assertNotNull(body);
+        assertEquals("业务异常", body.getMessage());
+        assertNull(body.getData());
+    }
+
+    @Test
+    void shouldHandleBusinessExceptionWithNumberedPlaceholder() {
+        BusinessException ex = new BusinessException(NUMBERED_TEMPLATE, "ORD-001", "3");
+        ResponseEntity<Result<Void>> response = handler.handleBusinessException(ex);
+        Result<Void> body = response.getBody();
+        assertNotNull(body);
+        assertEquals("NUM_ERR", body.getCode());
+        assertEquals("订单ORD-001已过期，剩余3天", body.getMessage());
+    }
+
+    @Test
+    void shouldInterpolateAccountLockedMessage_logsOriginalTemplate() {
+        Logger logger = (Logger) LoggerFactory.getLogger(GlobalExceptionHandler.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            BusinessException ex = new BusinessException(GlobalErrorCode.ACCOUNT_LOCKED, "30分钟");
+            handler.handleBusinessException(ex);
+            assertEquals(1, appender.list.size());
+            assertEquals(Level.WARN, appender.list.get(0).getLevel());
+            String logMsg = appender.list.get(0).getFormattedMessage();
+            assertTrue(logMsg.contains("ACCOUNT_LOCKED"));
+            assertTrue(logMsg.contains("{锁定时间}"));
+        } finally {
+            appender.stop();
+            logger.detachAppender(appender);
+        }
+    }
+
+    @Test
+    void shouldLogOriginalTemplateWhenNoArgs() {
+        Logger logger = (Logger) LoggerFactory.getLogger(GlobalExceptionHandler.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            BusinessException ex = new BusinessException(TEST_ERROR);
+            handler.handleBusinessException(ex);
+            assertEquals(1, appender.list.size());
+            assertEquals(Level.WARN, appender.list.get(0).getLevel());
+            String logMsg = appender.list.get(0).getFormattedMessage();
+            assertTrue(logMsg.contains("BIZ_ERR"));
+            assertTrue(logMsg.contains("业务异常"));
+        } finally {
+            appender.stop();
+            logger.detachAppender(appender);
+        }
+    }
+
+    @Test
+    void shouldLogOriginalTemplateWithNumberedPlaceholders() {
+        Logger logger = (Logger) LoggerFactory.getLogger(GlobalExceptionHandler.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            BusinessException ex = new BusinessException(NUMBERED_TEMPLATE, "ORD-001", "3");
+            handler.handleBusinessException(ex);
+            assertEquals(1, appender.list.size());
+            assertEquals(Level.WARN, appender.list.get(0).getLevel());
+            String logMsg = appender.list.get(0).getFormattedMessage();
+            assertTrue(logMsg.contains("NUM_ERR"));
+            assertTrue(logMsg.contains("{0}"));
+            assertTrue(logMsg.contains("{1}"));
+        } finally {
+            appender.stop();
+            logger.detachAppender(appender);
+        }
+    }
+
+    @Test
+    void shouldLogOriginalTemplateForRateLimited() {
+        Logger logger = (Logger) LoggerFactory.getLogger(GlobalExceptionHandler.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            BusinessException ex = new BusinessException(GlobalErrorCode.RATE_LIMITED);
+            handler.handleBusinessException(ex);
+            assertEquals(1, appender.list.size());
+            assertEquals(Level.WARN, appender.list.get(0).getLevel());
+            String logMsg = appender.list.get(0).getFormattedMessage();
+            assertTrue(logMsg.contains("RATE_LIMITED"));
+            assertTrue(logMsg.contains("登录尝试过于频繁，请稍后重试"));
+        } finally {
+            appender.stop();
+            logger.detachAppender(appender);
+        }
     }
 
     @Test

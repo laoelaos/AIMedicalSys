@@ -1,0 +1,1 @@
+修复 @Docs\Diagnosis\impl\04_phase1B_report.md 里面提到的问题 项目：@AIMedical，OOD文档：@Docs\05_ood_phase1_B.md

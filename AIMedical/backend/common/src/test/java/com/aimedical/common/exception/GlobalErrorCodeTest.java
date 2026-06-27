@@ -8,11 +8,27 @@ class GlobalErrorCodeTest {
 
     @Test
     void shouldHaveExpectedConstants() {
-        assertEquals(4, GlobalErrorCode.values().length);
+        assertEquals(20, GlobalErrorCode.values().length);
         assertNotNull(GlobalErrorCode.valueOf("SUCCESS"));
         assertNotNull(GlobalErrorCode.valueOf("SYSTEM_ERROR"));
         assertNotNull(GlobalErrorCode.valueOf("PARAM_INVALID"));
         assertNotNull(GlobalErrorCode.valueOf("NOT_FOUND"));
+        assertNotNull(GlobalErrorCode.valueOf("UNAUTHORIZED"));
+        assertNotNull(GlobalErrorCode.valueOf("FORBIDDEN"));
+        assertNotNull(GlobalErrorCode.valueOf("LOGIN_FAILED"));
+        assertNotNull(GlobalErrorCode.valueOf("ACCOUNT_DISABLED"));
+        assertNotNull(GlobalErrorCode.valueOf("ACCOUNT_LOCKED"));
+        assertNotNull(GlobalErrorCode.valueOf("RATE_LIMITED"));
+        assertNotNull(GlobalErrorCode.valueOf("RATE_LIMITED_GLOBAL"));
+        assertNotNull(GlobalErrorCode.valueOf("PASSWORD_TOO_SHORT"));
+        assertNotNull(GlobalErrorCode.valueOf("PASSWORD_TOO_LONG"));
+        assertNotNull(GlobalErrorCode.valueOf("PASSWORD_WEAK"));
+        assertNotNull(GlobalErrorCode.valueOf("PASSWORD_CONTAINS_USERNAME"));
+        assertNotNull(GlobalErrorCode.valueOf("PASSWORD_COMMON"));
+        assertNotNull(GlobalErrorCode.valueOf("TOKEN_REFRESH_FAILED"));
+        assertNotNull(GlobalErrorCode.valueOf("PASSWORD_CHANGE_REQUIRED"));
+        assertNotNull(GlobalErrorCode.valueOf("CHILDREN_EXIST"));
+        assertNotNull(GlobalErrorCode.valueOf("PASSWORD_MISMATCH"));
     }
 
     @Test
