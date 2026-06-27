@@ -23,10 +23,10 @@ import java.util.List;
 @Setter
 public class PatientEntity extends BaseEntity {
 
-    @Column(name = "user_id", unique = true)
+    @Column(name = "user_id", unique = true, nullable = false)
     private Long userId;
 
-    @Column(length = 64)
+    @Column(nullable = false)
     private String realName;
 
     @Enumerated(EnumType.STRING)
@@ -38,7 +38,6 @@ public class PatientEntity extends BaseEntity {
 
     @Column(length = 20)
     private String phone;
-
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private com.aimedical.modules.commonmodule.permission.User user;

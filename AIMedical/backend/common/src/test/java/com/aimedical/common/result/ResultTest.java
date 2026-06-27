@@ -11,7 +11,7 @@ class ResultTest {
     void shouldCreateSuccessResultWithData() {
         Result<String> result = Result.success("hello");
         assertEquals("SUCCESS", result.getCode());
-        assertNull(result.getMessage());
+        assertEquals("成功", result.getMessage());
         assertEquals("hello", result.getData());
     }
 

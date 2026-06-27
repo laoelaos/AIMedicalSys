@@ -9,7 +9,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-@Profile("phase0")
+@Profile("phase0 & !phase1")
 public class SecurityConfigPhase0 {
 
     @Bean

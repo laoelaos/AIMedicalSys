@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
-import type { ApiResult, BusinessError } from '../types'
+import type { ApiResult, BusinessError, LoginRequest, LoginResponse, UserInfo, MenuItem } from '../types'
 import { getAccessToken, setTokens, clearTokens, getRefreshToken } from '../utils'
 
 const apiClient = axios.create({
@@ -28,9 +28,9 @@ apiClient.interceptors.response.use(
     }
     return body.data
   }) as Parameters<typeof apiClient.interceptors.response.use>[0],
-  async (error: { response?: AxiosResponse; config?: InternalAxiosRequestConfig & { _retry?: boolean } }) => {
+  async (error: { response?: AxiosResponse; config?: InternalAxiosRequestConfig & { _retry?: boolean }; code?: string; message?: string }) => {
     if (error.response === undefined) {
-      return Promise.resolve({ code: 'NETWORK_ERROR' as const, message: '网络不可达，请检查网络连接', isBusinessError: true as const })
+      return { code: 'NETWORK_ERROR' as const, message: '网络不可达，请检查网络连接', isBusinessError: true as const } as BusinessError
     }
 
     // Try refresh token on 401 (only once)
@@ -57,36 +57,62 @@ apiClient.interceptors.response.use(
         }
       }
       clearTokens()
-      return Promise.resolve({ code: 'UNAUTHORIZED' as const, message: '登录已过期，请重新登录', isBusinessError: true as const })
+      return { code: 'UNAUTHORIZED' as const, message: '登录已过期，请重新登录', isBusinessError: true as const } as BusinessError
     }
-    if (error.response.status === 403) {
-      return Promise.resolve({ code: 'FORBIDDEN' as const, message: '无权限访问', isBusinessError: true as const })
+
+    const status = error.response.status
+    if (status === 403) {
+      return { code: 'FORBIDDEN' as const, message: '无权限访问', isBusinessError: true as const } as BusinessError
     }
-    return Promise.resolve({ code: 'HTTP_ERROR' as const, message: `请求失败（${error.response.status}）`, isBusinessError: true as const })
+
+    // Backend business error body (GlobalExceptionHandler returns Result JSON)
+    const body = error.response.data as ApiResult<unknown> | undefined
+    if (body && body.code) {
+      return { code: body.code, message: body.message ?? `请求失败（${status}）`, isBusinessError: true as const } as BusinessError
+    }
+    return { code: 'HTTP_ERROR' as const, message: `请求失败（${status}）`, isBusinessError: true as const } as BusinessError
   },
 )
 
+// ==================== API Wrappers (try-catch pattern) ====================
+
 export async function apiGet<T>(url: string, config?: AxiosRequestConfig): Promise<T | BusinessError> {
-  return apiClient.get(url, config) as Promise<T | BusinessError>
+  try {
+    return await apiClient.get(url, config) as T
+  } catch {
+    return { code: 'NETWORK_ERROR', message: '网络不可达，请检查网络连接', isBusinessError: true as const } as BusinessError
+  }
 }
 
 export async function apiPost<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T | BusinessError> {
-  return apiClient.post(url, data, config) as Promise<T | BusinessError>
+  try {
+    return await apiClient.post(url, data, config) as T
+  } catch {
+    return { code: 'NETWORK_ERROR', message: '网络不可达，请检查网络连接', isBusinessError: true as const } as BusinessError
+  }
 }
 
 export async function apiPut<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T | BusinessError> {
-  return apiClient.put(url, data, config) as Promise<T | BusinessError>
+  try {
+    return await apiClient.put(url, data, config) as T
+  } catch {
+    return { code: 'NETWORK_ERROR', message: '网络不可达，请检查网络连接', isBusinessError: true as const } as BusinessError
+  }
 }
 
 export async function apiDelete<T>(url: string, config?: AxiosRequestConfig): Promise<T | BusinessError> {
-  return apiClient.delete(url, config) as Promise<T | BusinessError>
+  try {
+    return await apiClient.delete(url, config) as T
+  } catch {
+    return { code: 'NETWORK_ERROR', message: '网络不可达，请检查网络连接', isBusinessError: true as const } as BusinessError
+  }
 }
 
 export { apiClient }
 
-// ==================== Auth API ====================
+// ==================== Auth API (Patient-centric, fork) ====================
 
-import type { LoginRequest, RegisterRequest, TokenResponse, CurrentUserResponse } from '../types'
+import type { RegisterRequest, TokenResponse, CurrentUserResponse } from '../types'
 import { setTokens as saveTokens } from '../utils'
 
 export async function loginApi(req: LoginRequest): Promise<TokenResponse | BusinessError> {
@@ -117,7 +143,7 @@ export async function logoutApi(): Promise<void | BusinessError> {
   return result
 }
 
-// ==================== Patient API ====================
+// ==================== Patient API (fork) ====================
 
 import type {
   PatientProfile, PatientProfileUpdateRequest,
@@ -196,4 +222,83 @@ export async function updateMedication(id: number, req: MedicationHistoryRequest
 }
 export async function deleteMedication(id: number): Promise<void | BusinessError> {
   return apiDelete<void>(`/patient/health-record/medications/${id}`)
+}
+
+// ==================== Upstream: Token Helpers ====================
+
+/**
+ * 设置认证令牌
+ */
+export function setAuthToken(token: string): void {
+  apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`
+}
+
+/**
+ * 清除认证令牌
+ */
+export function clearAuthToken(): void {
+  delete apiClient.defaults.headers.common['Authorization']
+}
+
+// ==================== Upstream: Doctor/Admin Auth & Menu API ====================
+
+import type { DoctorLoginRequest } from '../types'
+
+/**
+ * 认证相关API (Doctor/Admin)
+ */
+export const authApi = {
+  /**
+   * 用户登录 (Doctor/Admin)
+   */
+  login: (request: DoctorLoginRequest): Promise<LoginResponse | BusinessError> => {
+    return apiPost<LoginResponse>('/auth/login', request)
+  },
+
+  /**
+   * 用户登出
+   */
+  logout: (): Promise<void | BusinessError> => {
+    return apiPost<void>('/auth/logout')
+  },
+
+  /**
+   * 刷新令牌
+   */
+  refresh: (): Promise<LoginResponse | BusinessError> => {
+    return apiPost<LoginResponse>('/auth/refresh')
+  },
+
+  /**
+   * 获取当前用户信息
+   */
+  me: (): Promise<UserInfo | BusinessError> => {
+    return apiGet<UserInfo>('/auth/me')
+  },
+
+  /**
+   * 编辑当前用户个人资料（昵称、手机号、邮箱）
+   */
+  updateMe: (data: { nickname?: string; phone?: string; email?: string }): Promise<UserInfo | BusinessError> => {
+    return apiPut<UserInfo>('/auth/me', data)
+  },
+}
+
+/**
+ * 菜单相关API
+ */
+export const menuApi = {
+  /**
+   * 获取当前用户菜单树
+   */
+  tree: (): Promise<MenuItem[] | BusinessError> => {
+    return apiGet<MenuItem[]>('/menu/tree')
+  },
+
+  /**
+   * 获取所有菜单（管理员）
+   */
+  all: (): Promise<MenuItem[] | BusinessError> => {
+    return apiGet<MenuItem[]>('/menu/all')
+  },
 }

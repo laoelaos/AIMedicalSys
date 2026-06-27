@@ -1,6 +1,7 @@
 package com.aimedical.modules.commonmodule.permission;
 
 import com.aimedical.common.base.BaseEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -9,15 +10,11 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.util.Set;
 
 @Entity
 @Table(name = "sys_post")
-@Getter
-@Setter
 public class Post extends BaseEntity {
 
     @Column(nullable = false, unique = true)
@@ -27,6 +24,7 @@ public class Post extends BaseEntity {
 
     private String description;
 
+    @Column(nullable = false)
     private Boolean enabled = true;
 
     private Integer sort;
@@ -35,16 +33,76 @@ public class Post extends BaseEntity {
     @JoinColumn(name = "role_id")
     private Role role;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "post_function",
             joinColumns = @JoinColumn(name = "post_id"),
             inverseJoinColumns = @JoinColumn(name = "function_id"))
-    private Set<Function> functions;
+    private Set<PermissionFunction> functions;
 
     @ManyToMany(mappedBy = "posts", fetch = FetchType.LAZY)
     private Set<User> users;
 
-    @Column(length = 500)
-    private String remark;
+    public String getCode() {
+        return code;
+    }
 
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public Integer getSort() {
+        return sort;
+    }
+
+    public void setSort(Integer sort) {
+        this.sort = sort;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public Set<PermissionFunction> getFunctions() {
+        return functions;
+    }
+
+    public void setFunctions(Set<PermissionFunction> functions) {
+        this.functions = functions;
+    }
+
+    public Set<User> getUsers() {
+        return users;
+    }
+
+    public void setUsers(Set<User> users) {
+        this.users = users;
+    }
 }

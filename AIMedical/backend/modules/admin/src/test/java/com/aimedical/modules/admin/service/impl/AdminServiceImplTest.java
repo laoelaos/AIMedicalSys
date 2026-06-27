@@ -22,8 +22,8 @@ class AdminServiceImplTest {
     }
 
     @Test
-    void shouldReturnNullMessage() {
+    void shouldReturnSuccessMessage() {
         Result<String> result = service.getPlaceholder();
-        assertNull(result.getMessage());
+        assertEquals("成功", result.getMessage());
     }
 }

@@ -75,4 +75,17 @@ class PatientServiceImplTest {
         when(authService.getCurrentUser()).thenThrow(new BusinessException(PatientErrorCode.PATIENT_LOGIN_FAILED));
         assertThrows(BusinessException.class, () -> service.getProfile());
     }
+
+    @Test
+    void shouldReturnPatientPlaceholderData() {
+        Result<String> result = service.getPlaceholder();
+        assertEquals("patient placeholder", result.getData());
+    }
+
+    @Test
+    void shouldReturnSuccessMessage() {
+        Result<String> result = service.getPlaceholder();
+        assertEquals("成功", result.getMessage());
+    }
+    }
 }

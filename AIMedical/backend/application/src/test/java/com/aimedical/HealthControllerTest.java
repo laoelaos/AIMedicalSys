@@ -1,6 +1,7 @@
 package com.aimedical;
 
 import com.aimedical.common.result.Result;
+import com.aimedical.HealthController;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,8 +23,8 @@ class HealthControllerTest {
     }
 
     @Test
-    void shouldReturnNullMessage() {
+    void shouldReturnSuccessMessage() {
         Result<String> result = controller.ping();
-        assertNull(result.getMessage());
+        assertEquals("成功", result.getMessage());
     }
 }

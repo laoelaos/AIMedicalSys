@@ -3,7 +3,6 @@ spring:
     name: aimedical-sys
   profiles:
     active: phase1,dev
-
   datasource:
     url: jdbc:mysql://localhost:3306/aimedical?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
@@ -34,11 +33,6 @@ spring:
 
 server:
   port: 8080
-  servlet:
-    encoding:
-      charset: UTF-8
-      enabled: true
-      force: true
 
 management:
   endpoints:
@@ -53,7 +47,10 @@ springdoc:
     path: /swagger-ui.html
     enabled: true
 
+# JWT配置
 jwt:
   secret: ${JWT_SECRET:aimedical-sys-jwt-secret-key-for-development-only-min-256bits}
   access-token-validity: 7200
   refresh-token-validity: 604800
+  access-token-expiration: 900
+  refresh-token-expiration: 604800
