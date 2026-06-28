@@ -3,6 +3,8 @@ package com.aimedical.modules.patient.entity;
 import com.aimedical.common.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -28,8 +30,9 @@ public class PatientAllergy extends BaseEntity {
     @Column(length = 50)
     private String reactionType;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private String severity;
+    private AllergySeverity severity;
 
     @Column(name = "occurred_at")
     private LocalDate occurredAt;

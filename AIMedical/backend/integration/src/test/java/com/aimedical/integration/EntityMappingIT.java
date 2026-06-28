@@ -11,6 +11,8 @@ import com.aimedical.modules.commonmodule.permission.Role;
 import com.aimedical.modules.commonmodule.permission.User;
 import com.aimedical.modules.doctor.entity.DoctorEntity;
 import com.aimedical.modules.patient.entity.Gender;
+import com.aimedical.modules.patient.entity.AllergySeverity;
+import com.aimedical.modules.patient.entity.DiseaseStatus;
 import com.aimedical.modules.patient.entity.PatientAllergy;
 import com.aimedical.modules.patient.entity.PatientChronicDisease;
 import com.aimedical.modules.patient.entity.PatientEntity;
@@ -82,7 +84,7 @@ class EntityMappingIT {
         allergy.setPatient(patient);
         allergy.setAllergen("青霉素");
         allergy.setReactionType("皮疹");
-        allergy.setSeverity("MILD");
+        allergy.setSeverity(AllergySeverity.MILD);
         allergy.setOccurredAt(LocalDate.of(2023, 5, 10));
 
         entityManager.persist(allergy);
@@ -576,14 +578,14 @@ class EntityMappingIT {
         PatientAllergy allergy = new PatientAllergy();
         allergy.setPatient(patient);
         allergy.setAllergen("花生");
-        allergy.setSeverity("SEVERE");
+        allergy.setSeverity(AllergySeverity.SEVERE);
         allergy.setOccurredAt(LocalDate.of(2020, 6, 1));
         entityManager.persist(allergy);
         entityManager.flush();
 
         PatientAllergy found = entityManager.find(PatientAllergy.class, allergy.getId());
         assertEquals("花生", found.getAllergen());
-        assertEquals("SEVERE", found.getSeverity());
+        assertEquals(AllergySeverity.SEVERE, found.getSeverity());
         assertEquals(LocalDate.of(2020, 6, 1), found.getOccurredAt());
         assertEquals(patient.getId(), found.getPatient().getId());
     }
@@ -597,7 +599,7 @@ class EntityMappingIT {
         PatientChronicDisease entity = new PatientChronicDisease();
         entity.setPatient(patient);
         entity.setDiseaseName("高血压");
-        entity.setCurrentStatus("STABLE");
+        entity.setCurrentStatus(DiseaseStatus.STABLE);
         entity.setDiagnosedAt(LocalDate.of(2022, 1, 15));
         entityManager.persist(entity);
         entityManager.flush();

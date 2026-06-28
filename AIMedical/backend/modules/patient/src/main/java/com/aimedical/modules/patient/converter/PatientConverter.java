@@ -28,6 +28,7 @@ public class PatientConverter {
         dto.setPhone(entity.getPhone());
         dto.setGender(entity.getGender() != null ? entity.getGender().getDesc() : null);
         dto.setEmergencyContact(entity.getEmergencyContact());
+        dto.setAvatarUrl(entity.getAvatarUrl());
         // Supplement with User data when available for fields not on PatientEntity
         if (entity.getUser() != null) {
             User user = entity.getUser();
@@ -43,7 +44,7 @@ public class PatientConverter {
         r.setId(entity.getId());
         r.setAllergen(entity.getAllergen());
         r.setReactionType(entity.getReactionType());
-        r.setSeverity(entity.getSeverity());
+        r.setSeverity(entity.getSeverity() != null ? entity.getSeverity().getCode() : null);
         r.setOccurredAt(entity.getOccurredAt() != null ? entity.getOccurredAt().format(DATE_FMT) : null);
         return r;
     }
@@ -53,7 +54,7 @@ public class PatientConverter {
         e.setPatient(patient);
         e.setAllergen(req.getAllergen());
         e.setReactionType(req.getReactionType());
-        e.setSeverity(req.getSeverity());
+        e.setSeverity(req.getSeverity() != null ? AllergySeverity.valueOf(req.getSeverity()) : null);
         e.setOccurredAt(parseDate(req.getOccurredAt()));
         return e;
     }
@@ -64,7 +65,7 @@ public class PatientConverter {
         r.setId(entity.getId());
         r.setDiseaseName(entity.getDiseaseName());
         r.setDiagnosedAt(entity.getDiagnosedAt() != null ? entity.getDiagnosedAt().format(DATE_FMT) : null);
-        r.setCurrentStatus(entity.getCurrentStatus());
+        r.setCurrentStatus(entity.getCurrentStatus() != null ? entity.getCurrentStatus().getCode() : null);
         return r;
     }
 
@@ -73,7 +74,7 @@ public class PatientConverter {
         e.setPatient(patient);
         e.setDiseaseName(req.getDiseaseName());
         e.setDiagnosedAt(parseDate(req.getDiagnosedAt()));
-        e.setCurrentStatus(req.getCurrentStatus());
+        e.setCurrentStatus(req.getCurrentStatus() != null ? DiseaseStatus.valueOf(req.getCurrentStatus()) : null);
         return e;
     }
 

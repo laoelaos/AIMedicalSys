@@ -10,6 +10,7 @@ public class PatientDto {
     private Integer age;
     private String email;
     private String emergencyContact;
+    private String avatarUrl;
 
     public Long getId() {
         return id;
@@ -74,4 +75,7 @@ public class PatientDto {
     public void setEmergencyContact(String emergencyContact) {
         this.emergencyContact = emergencyContact;
     }
+
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
 }

@@ -3,6 +3,8 @@ package com.aimedical.modules.patient.entity;
 import com.aimedical.common.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -28,6 +30,7 @@ public class PatientChronicDisease extends BaseEntity {
     @Column(name = "diagnosed_at")
     private LocalDate diagnosedAt;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private String currentStatus;
+    private DiseaseStatus currentStatus;
 }

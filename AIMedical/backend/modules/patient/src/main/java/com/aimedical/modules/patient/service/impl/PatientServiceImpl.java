@@ -112,24 +112,15 @@ public class PatientServiceImpl implements PatientService {
         PatientEntity patient = patientRepository.findByUserId(currentUser.getUserId())
                 .orElseGet(() -> createPatientProfile(currentUser.getUserId()));
 
-        if (request.getName() != null) {
-            patient.setRealName(request.getName());
-        }
-        if (request.getGender() != null) {
-            patient.setGender(Gender.fromLabel(request.getGender()));
-        }
-        if (request.getPhone() != null) {
-            patient.setPhone(request.getPhone());
-        }
+        // Delegate patient-entity field merging to converter (T1)
+        PatientConverter.mergeFromRequest(patient, request);
+        // User-entity fields (email/age) live on sys_user, handle separately
         if (request.getEmail() != null || request.getAge() != null) {
             User user = userRepository.findById(currentUser.getUserId())
                     .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_NOT_FOUND));
             if (request.getEmail() != null) user.setEmail(request.getEmail());
             if (request.getAge() != null) user.setAge(request.getAge());
             userRepository.save(user);
-        }
-        if (request.getEmergencyContact() != null) {
-            patient.setEmergencyContact(request.getEmergencyContact());
         }
         patientRepository.save(patient);
         return Result.success(PatientConverter.toDto(patient));
@@ -168,7 +159,7 @@ public class PatientServiceImpl implements PatientService {
         }
         entity.setAllergen(request.getAllergen());
         entity.setReactionType(request.getReactionType());
-        entity.setSeverity(request.getSeverity());
+        entity.setSeverity(request.getSeverity() != null ? AllergySeverity.valueOf(request.getSeverity()) : null);
         entity.setOccurredAt(parseDate(request.getOccurredAt()));
         entity = allergyRepo.save(entity);
         return Result.success(PatientConverter.toAllergyResponse(entity));
@@ -208,7 +199,7 @@ public class PatientServiceImpl implements PatientService {
         }
         entity.setDiseaseName(request.getDiseaseName());
         entity.setDiagnosedAt(parseDate(request.getDiagnosedAt()));
-        entity.setCurrentStatus(request.getCurrentStatus());
+        entity.setCurrentStatus(request.getCurrentStatus() != null ? DiseaseStatus.valueOf(request.getCurrentStatus()) : null);
         entity = chronicRepo.save(entity);
         return Result.success(PatientConverter.toChronicResponse(entity));
     }
