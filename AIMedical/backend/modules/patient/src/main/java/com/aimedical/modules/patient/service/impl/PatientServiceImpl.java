@@ -367,6 +367,11 @@ public class PatientServiceImpl implements PatientService {
 
     private static LocalDate parseDate(String dateStr) {
         if (dateStr == null || dateStr.isBlank()) return null;
-        return LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        try {
+            return LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        } catch (java.time.format.DateTimeParseException e) {
+            log.warn("Invalid date format: {}", dateStr);
+            return null;
+        }
     }
 }

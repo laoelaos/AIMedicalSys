@@ -171,6 +171,10 @@ public class PatientConverter {
 
     private static LocalDate parseDate(String dateStr) {
         if (dateStr == null || dateStr.isBlank()) return null;
-        return LocalDate.parse(dateStr, DATE_FMT);
+        try {
+            return LocalDate.parse(dateStr, DATE_FMT);
+        } catch (java.time.format.DateTimeParseException e) {
+            return null;
+        }
     }
 }

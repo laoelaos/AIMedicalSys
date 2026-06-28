@@ -233,10 +233,10 @@ function statusLabel(s: string) {
 }
 
 // Open dialogs
-function openAllergyDialog() { dialogType.value = 'allergy'; dialogTitle.value = '添加过敏史'; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
-function openChronicDialog() { dialogType.value = 'chronic'; dialogTitle.value = '添加慢病史'; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
-function openFamilyDialog() { dialogType.value = 'family'; dialogTitle.value = '添加家族史'; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
-function openSurgeryDialog() { dialogType.value = 'surgery'; dialogTitle.value = '添加手术史'; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
+function openAllergyDialog() { dialogType.value = 'allergy'; dialogTitle.value = '添加过敏史'; editingId.value = null; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
+function openChronicDialog() { dialogType.value = 'chronic'; dialogTitle.value = '添加慢病史'; editingId.value = null; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
+function openFamilyDialog() { dialogType.value = 'family'; dialogTitle.value = '添加家族史'; editingId.value = null; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
+function openSurgeryDialog() { dialogType.value = 'surgery'; dialogTitle.value = '添加手术史'; editingId.value = null; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
 function openMedicationDialog() { dialogType.value = 'medication'; dialogTitle.value = '添加用药史'; editingId.value = null; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
 
 // Edit functions — pre-fill form with existing record data for update

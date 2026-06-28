@@ -125,7 +125,10 @@ export function createAuthStore(options: AuthStoreOptions) {
     async function fetchCurrentUser(): Promise<boolean> {
       const response = await authApi.me()
       if (isBusinessError(response)) {
-        clearAuthData()
+        // Only clear auth data on 401/token-invalid errors; transient failures are recoverable
+        if (response.code === 'UNAUTHORIZED' || response.code === 'AUTH_TOKEN_INVALID') {
+          clearAuthData()
+        }
         return false
       }
       saveUser(response)
