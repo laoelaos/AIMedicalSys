@@ -96,6 +96,7 @@ const editRules = {
   gender: [{ pattern: /^(男|女|未知)?$/, message: '性别必须为男、女或未知', trigger: 'change' }],
   age: [{ type: 'number', min: 0, max: 150, message: '年龄范围0-150', trigger: 'blur' }],
   email: [{ type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }],
+  phone: [{ pattern: /^1[3-9]\d{9}$/, message: '手机号格式不合法', trigger: 'blur' }],
 }
 
 onMounted(async () => {
@@ -111,6 +112,7 @@ onMounted(async () => {
 // Watch the dialog to pre-fill form
 watch(showEditDialog, (val) => {
   if (val && profile.value) {
+    editFormRef.value?.clearValidate()
     editForm.name = profile.value.name || ''
     editForm.phone = profile.value.phone || ''
     editForm.gender = profile.value.gender || ''

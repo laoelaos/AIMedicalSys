@@ -40,8 +40,8 @@ apiClient.interceptors.response.use(
         error.config._retry = true
         try {
           const refreshResponse = await axios.post<ApiResult<{ access_token: string; refresh_token: string }>>(
-            '/api/patient/refresh',
-            {},
+            '/api/auth/refresh',
+            { refresh_token: refreshToken },
             { headers: { Authorization: `Bearer ${refreshToken}` } }
           )
           const refreshBody = refreshResponse.data
@@ -251,22 +251,34 @@ export const authApi = {
   /**
    * 用户登录 (Doctor/Admin)
    */
-  login: (request: DoctorLoginRequest): Promise<LoginResponse | BusinessError> => {
-    return apiPost<LoginResponse>('/auth/login', request)
+  login: async (request: DoctorLoginRequest): Promise<LoginResponse | BusinessError> => {
+    const result = await apiPost<LoginResponse>('/auth/login', request)
+    if (result && !(result as BusinessError).isBusinessError) {
+      const resp = result as LoginResponse
+      setTokens(resp.access_token, resp.refresh_token)
+    }
+    return result
   },
 
   /**
    * 用户登出
    */
-  logout: (): Promise<void | BusinessError> => {
-    return apiPost<void>('/auth/logout')
+  logout: async (): Promise<void | BusinessError> => {
+    const result = await apiPost<void>('/auth/logout')
+    clearTokens()
+    return result
   },
 
   /**
    * 刷新令牌
    */
-  refresh: (): Promise<LoginResponse | BusinessError> => {
-    return apiPost<LoginResponse>('/auth/refresh')
+  refresh: async (): Promise<LoginResponse | BusinessError> => {
+    const result = await apiPost<LoginResponse>('/auth/refresh')
+    if (result && !(result as BusinessError).isBusinessError) {
+      const resp = result as LoginResponse
+      setTokens(resp.access_token, resp.refresh_token)
+    }
+    return result
   },
 
   /**

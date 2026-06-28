@@ -8,7 +8,6 @@ import com.aimedical.modules.commonmodule.dto.request.LoginRequest;
 import com.aimedical.modules.commonmodule.dto.request.PasswordChangeRequest;
 import com.aimedical.modules.commonmodule.dto.request.RefreshTokenRequest;
 import com.aimedical.modules.commonmodule.api.AuthService;
-import com.aimedical.modules.commonmodule.api.dto.TokenRefreshResponse;
 import com.aimedical.modules.commonmodule.api.dto.TokenResponse;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -47,8 +46,7 @@ class AuthControllerTest {
         mockUserInfo = new UserInfoResponse(1L, "testuser", "测试用户",
                 null, null, "DOCTOR", null, Set.of());
 
-        mockTokenResponse = new TokenResponse(1L, "testuser", "mock-jwt-token", null,
-                "Bearer", 86400L, false, mockUserInfo);
+        mockTokenResponse = new TokenResponse("mock-jwt-token", "mock-refresh-token", 86400L);
     }
 
     @Nested

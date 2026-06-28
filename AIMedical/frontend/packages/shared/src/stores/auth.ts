@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { authApi, setAuthToken, clearAuthToken } from '../api'
+import { setTokens, clearTokens } from '../utils'
 import type { UserInfo, DoctorLoginRequest, BusinessError } from '../types'
 
 export interface AuthStoreOptions {
@@ -31,23 +32,20 @@ export interface AuthStoreOptions {
  * @returns Pinia store
  */
 export function createAuthStore(options: AuthStoreOptions) {
-  const TOKEN_KEY = `aimedical_${options.appType}_token`
   const USER_KEY = `aimedical_${options.appType}_user`
 
   return defineStore(`auth_${options.appType}`, () => {
-    // 从localStorage初始化token和user
-    // 安全提示：localStorage 可被 XSS 读取，Phase2+ 将迁移到 httpOnly cookie
-    const token = ref<string>(localStorage.getItem(TOKEN_KEY) || '')
+    const token = ref<string>(localStorage.getItem('aimedical_access_token') || '')
     const storedUser = localStorage.getItem(USER_KEY)
     const user = ref<UserInfo | null>(storedUser ? JSON.parse(storedUser) : null)
     const isAuthenticated = computed(() => token.value !== '' && user.value !== null)
 
     /**
-     * 保存token到localStorage
+     * 保存token到localStorage (使用共享的System A密钥)
      */
-    function saveToken(newToken: string): void {
+    function saveToken(newToken: string, refreshToken?: string): void {
       token.value = newToken
-      localStorage.setItem(TOKEN_KEY, newToken)
+      setTokens(newToken, refreshToken || localStorage.getItem('aimedical_refresh_token') || '')
       setAuthToken(newToken)
     }
 
@@ -65,7 +63,7 @@ export function createAuthStore(options: AuthStoreOptions) {
     function clearAuthData(): void {
       token.value = ''
       user.value = null
-      localStorage.removeItem(TOKEN_KEY)
+      clearTokens()
       localStorage.removeItem(USER_KEY)
       clearAuthToken()
     }

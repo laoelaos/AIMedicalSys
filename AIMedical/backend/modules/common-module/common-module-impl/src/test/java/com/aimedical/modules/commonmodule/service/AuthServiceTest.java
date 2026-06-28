@@ -16,7 +16,7 @@ import com.aimedical.modules.commonmodule.auth.password.PasswordPolicy;
 import com.aimedical.modules.commonmodule.auth.rateLimit.RateLimitGuard;
 import com.aimedical.modules.commonmodule.api.dto.TokenResponse;
 import com.aimedical.modules.commonmodule.dto.request.LoginRequest;
-import com.aimedical.modules.commonmodule.dto.request.ProfileUpdateRequest;
+import com.aimedical.modules.commonmodule.api.dto.ProfileUpdateRequest;
 import com.aimedical.modules.commonmodule.dto.response.LoginResponse;
 import com.aimedical.modules.commonmodule.api.dto.TokenRefreshResponse;
 import com.aimedical.modules.commonmodule.permission.Role;
@@ -255,7 +255,8 @@ class AuthServiceTest {
 
         TokenResponse response = authService.authenticate("testuser", "password");
 
-        assertTrue(response.passwordChangeRequired());
+        assertNotNull(response.getAccessToken());
+        assertNotNull(response.getRefreshToken());
 
         ArgumentCaptor<SecurityAuditEvent> captor = ArgumentCaptor.forClass(SecurityAuditEvent.class);
         verify(securityAuditLogger).logAudit(captor.capture());
@@ -660,7 +661,7 @@ class AuthServiceTest {
 
     @Test
     void logout_shouldNotAuditWhenTokenNull() {
-        authService.logout(null, "some-refresh");
+        authService.logout(null);
 
         verify(securityAuditLogger, never()).logAudit(any());
         verify(tokenBlacklist, never()).add(any(), anyLong());
@@ -670,7 +671,7 @@ class AuthServiceTest {
     void logout_shouldNotAuditWhenTokenInvalid() {
         when(jwtTokenProvider.validateToken(anyString(), isNull())).thenReturn(null);
 
-        authService.logout("invalid-token", null);
+        authService.logout("invalid-token");
 
         verify(tokenBlacklist, never()).add(any(), anyLong());
 

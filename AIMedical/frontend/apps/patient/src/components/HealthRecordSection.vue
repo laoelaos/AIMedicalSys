@@ -226,11 +226,11 @@ function statusLabel(s: string) {
 }
 
 // Open dialogs
-function openAllergyDialog() { dialogType.value = 'allergy'; dialogTitle.value = '添加过敏史'; clearForm(); dialogVisible.value = true }
-function openChronicDialog() { dialogType.value = 'chronic'; dialogTitle.value = '添加慢病史'; clearForm(); dialogVisible.value = true }
-function openFamilyDialog() { dialogType.value = 'family'; dialogTitle.value = '添加家族史'; clearForm(); dialogVisible.value = true }
-function openSurgeryDialog() { dialogType.value = 'surgery'; dialogTitle.value = '添加手术史'; clearForm(); dialogVisible.value = true }
-function openMedicationDialog() { dialogType.value = 'medication'; dialogTitle.value = '添加用药史'; clearForm(); dialogVisible.value = true }
+function openAllergyDialog() { dialogType.value = 'allergy'; dialogTitle.value = '添加过敏史'; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
+function openChronicDialog() { dialogType.value = 'chronic'; dialogTitle.value = '添加慢病史'; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
+function openFamilyDialog() { dialogType.value = 'family'; dialogTitle.value = '添加家族史'; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
+function openSurgeryDialog() { dialogType.value = 'surgery'; dialogTitle.value = '添加手术史'; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
+function openMedicationDialog() { dialogType.value = 'medication'; dialogTitle.value = '添加用药史'; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
 
 function buildHealthFormRequest(): AllergyRequest | ChronicDiseaseRequest | FamilyHistoryRequest | SurgeryHistoryRequest | MedicationHistoryRequest {
   const f = healthForm
@@ -265,6 +265,9 @@ async function handleSaveHealthRecord() {
       result = await addSurgery(req as SurgeryHistoryRequest); break
     case 'medication':
       result = await addMedication(req as MedicationHistoryRequest); break
+    default:
+      ElMessage.error('未知的健康记录类型')
+      return
   }
   if ((result as BusinessError).isBusinessError) {
     ElMessage.error((result as BusinessError).message)
@@ -286,7 +289,7 @@ async function handleDeleteAllergy(id: number) {
       await loadSummary()
     }
   } catch {
-    // User cancelled
+    // User cancelled or dialog closed
   }
 }
 
@@ -301,7 +304,7 @@ async function handleDeleteChronic(id: number) {
       await loadSummary()
     }
   } catch {
-    // User cancelled
+    // User cancelled or dialog closed
   }
 }
 
@@ -316,7 +319,7 @@ async function handleDeleteFamily(id: number) {
       await loadSummary()
     }
   } catch {
-    // User cancelled
+    // User cancelled or dialog closed
   }
 }
 
@@ -331,7 +334,7 @@ async function handleDeleteSurgery(id: number) {
       await loadSummary()
     }
   } catch {
-    // User cancelled
+    // User cancelled or dialog closed
   }
 }
 
@@ -346,7 +349,7 @@ async function handleDeleteMedication(id: number) {
       await loadSummary()
     }
   } catch {
-    // User cancelled
+    // User cancelled or dialog closed
   }
 }
 
