@@ -65,4 +65,9 @@
             <scope>runtime</scope>
         </dependency>
     </dependencies>
+
+    <properties>
+        <jacoco.skip>false</jacoco.skip>
+        <jacoco.skip.check>false</jacoco.skip.check>
+    </properties>
 </project>

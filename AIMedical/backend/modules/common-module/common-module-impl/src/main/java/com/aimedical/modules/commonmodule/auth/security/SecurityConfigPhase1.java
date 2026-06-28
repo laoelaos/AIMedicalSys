@@ -87,7 +87,7 @@ public class SecurityConfigPhase1 {
                     .requestMatchers("/actuator/health").permitAll()
                     .requestMatchers("/actuator/info").permitAll()
                     .requestMatchers("/actuator/**").denyAll()
-                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/doc.html").permitAll()
+                    .requestMatchers("/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**", "/doc.html").permitAll()
                     .requestMatchers("/error").permitAll();
                 if (h2ConsoleEnabled) {
                     auth.requestMatchers("/h2-console/**").permitAll();

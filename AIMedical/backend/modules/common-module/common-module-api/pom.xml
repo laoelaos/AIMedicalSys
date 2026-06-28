@@ -30,4 +30,9 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <properties>
+        <jacoco.skip>false</jacoco.skip>
+        <jacoco.skip.check>true</jacoco.skip.check>
+    </properties>
 </project>

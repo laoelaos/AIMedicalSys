@@ -15,10 +15,10 @@ vi.mock('axios', () => {
         }),
       },
     },
-    get: vi.fn(() => Promise.resolve(null)),
-    post: vi.fn(() => Promise.resolve(null)),
-    put: vi.fn(() => Promise.resolve(null)),
-    delete: vi.fn(() => Promise.resolve(null)),
+    get: vi.fn(() => Promise.resolve({ data: { code: 'SUCCESS', data: null } })),
+    post: vi.fn(() => Promise.resolve({ data: { code: 'SUCCESS', data: null } })),
+    put: vi.fn(() => Promise.resolve({ data: { code: 'SUCCESS', data: null } })),
+    delete: vi.fn(() => Promise.resolve({ data: { code: 'SUCCESS', data: null } })),
   }
   return {
     default: {
@@ -38,82 +38,103 @@ describe('Success interceptor', () => {
     const handler = captured.success!
     const mockResponse = { data: { code: 'SUCCESS', data: { id: 1 } } }
     const result = handler(mockResponse)
-    expect(result).toEqual({ id: 1 })
+    expect(result.data).toEqual({ id: 1 })
   })
 
   it('unwraps nested data from SUCCESS response', () => {
     const handler = captured.success!
     const mockResponse = { data: { code: 'SUCCESS', data: { nested: 'value' } } }
     const result = handler(mockResponse)
-    expect(result).toEqual({ nested: 'value' })
+    expect(result.data).toEqual({ nested: 'value' })
   })
 
   it('unwraps array data from SUCCESS response', () => {
     const handler = captured.success!
     const mockResponse = { data: { code: 'SUCCESS', data: ['a', 'b'] } }
     const result = handler(mockResponse)
-    expect(result).toEqual(['a', 'b'])
+    expect(result.data).toEqual(['a', 'b'])
   })
 
-  it('returns BusinessError when code is not SUCCESS', () => {
+  it('rejects with BusinessError when code is not SUCCESS', async () => {
     const handler = captured.success!
     const mockResponse = { data: { code: 'BUSINESS_ERROR', message: '业务异常' } }
-    const result = handler(mockResponse)
-    expect(result).toEqual({ code: 'BUSINESS_ERROR', message: '业务异常', isBusinessError: true })
+    await expect(handler(mockResponse)).rejects.toEqual({
+      code: 'BUSINESS_ERROR',
+      message: '业务异常',
+      isBusinessError: true,
+    })
   })
 
-  it('returns BusinessError with empty message fallback when message is undefined', () => {
+  it('rejects with empty message fallback when message is undefined', async () => {
     const handler = captured.success!
     const mockResponse = { data: { code: 'UNKNOWN_ERROR' } }
-    const result = handler(mockResponse)
-    expect(result).toEqual({ code: 'UNKNOWN_ERROR', message: '', isBusinessError: true })
+    await expect(handler(mockResponse)).rejects.toEqual({
+      code: 'UNKNOWN_ERROR',
+      message: '',
+      isBusinessError: true,
+    })
   })
 })
 
 describe('Error interceptor', () => {
-  it('returns NETWORK_ERROR when error.response is undefined', async () => {
+  it('rejects with NETWORK_ERROR when error.response is undefined', async () => {
     const handler = captured.error!
     const error = { response: undefined }
-    const result = await handler(error)
-    expect(result).toEqual({ code: 'NETWORK_ERROR', message: '网络不可达，请检查网络连接', isBusinessError: true })
+    await expect(handler(error)).rejects.toEqual({
+      code: 'NETWORK_ERROR',
+      message: '网络不可达，请检查网络连接',
+      isBusinessError: true,
+    })
   })
 
-  it('returns UNAUTHORIZED for 401', async () => {
+  it('rejects with UNAUTHORIZED for 401', async () => {
     const handler = captured.error!
     const error = { response: { status: 401 } }
-    const result = await handler(error)
-    expect(result).toEqual({ code: 'UNAUTHORIZED', message: '登录已过期，请重新登录', isBusinessError: true })
+    await expect(handler(error)).rejects.toEqual({
+      code: 'UNAUTHORIZED',
+      message: '登录已过期，请重新登录',
+      isBusinessError: true,
+    })
   })
 
-  it('returns FORBIDDEN for 403', async () => {
+  it('rejects with FORBIDDEN for 403', async () => {
     const handler = captured.error!
     const error = { response: { status: 403 } }
-    const result = await handler(error)
-    expect(result).toEqual({ code: 'FORBIDDEN', message: '无权限访问', isBusinessError: true })
+    await expect(handler(error)).rejects.toEqual({
+      code: 'FORBIDDEN',
+      message: '无权限访问',
+      isBusinessError: true,
+    })
   })
 
-  it('returns HTTP_ERROR for 500', async () => {
+  it('rejects with HTTP_ERROR for 500', async () => {
     const handler = captured.error!
     const error = { response: { status: 500 } }
-    const result = await handler(error)
-    expect(result).toEqual({ code: 'HTTP_ERROR', message: '请求失败（500）', isBusinessError: true })
+    await expect(handler(error)).rejects.toEqual({
+      code: 'HTTP_ERROR',
+      message: '请求失败（500）',
+      isBusinessError: true,
+    })
   })
 
-  it('returns HTTP_ERROR for 404', async () => {
+  it('rejects with HTTP_ERROR for 404', async () => {
     const handler = captured.error!
     const error = { response: { status: 404 } }
-    const result = await handler(error)
-    expect(result).toEqual({ code: 'HTTP_ERROR', message: '请求失败（404）', isBusinessError: true })
+    await expect(handler(error)).rejects.toEqual({
+      code: 'HTTP_ERROR',
+      message: '请求失败（404）',
+      isBusinessError: true,
+    })
   })
 
-  it('returns resolved promise (not rejected)', async () => {
+  it('error handler returns rejected promise (not synchronously thrown)', async () => {
     const handler = captured.error!
     const error = { response: { status: 500 } }
     const result = handler(error)
-    await expect(result).resolves.toBeDefined()
+    await expect(result).rejects.toBeDefined()
   })
 
-  it('all branches return promise resolved with { code, message, isBusinessError } shape', async () => {
+  it('all branches reject with { code, message, isBusinessError } shape', async () => {
     const handler = captured.error!
     const errors = [
       { response: undefined },
@@ -122,12 +143,11 @@ describe('Error interceptor', () => {
       { response: { status: 502 } },
     ]
     for (const err of errors) {
-      const result = await handler(err)
-      expect(result).toHaveProperty('code')
-      expect(result).toHaveProperty('message')
-      expect(result).toHaveProperty('isBusinessError', true)
-      expect(typeof result.code).toBe('string')
-      expect(typeof result.message).toBe('string')
+      await expect(handler(err)).rejects.toMatchObject({
+        code: expect.any(String),
+        message: expect.any(String),
+        isBusinessError: true,
+      })
     }
   })
 })
@@ -144,8 +164,11 @@ describe('apiGet', () => {
     expect(apiClient.get).toHaveBeenCalledWith('/users', config)
   })
 
-  it('returns result after interceptor unwrapping', async () => {
-    const result = await apiGet<{ id: number }>('/users/1')
+  it('returns unwrapped data when interceptor processes SUCCESS', async () => {
+    vi.mocked(apiClient.get).mockImplementationOnce(async () =>
+      captured.success!({ data: { code: 'SUCCESS', data: null } } as never),
+    )
+    const result = await apiGet<null>('/users/1')
     expect(result).toBeNull()
   })
 })

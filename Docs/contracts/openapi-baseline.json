@@ -1,0 +1,9 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "智慧云脑诊疗平台 API",
+    "version": "0.0.1-baseline"
+  },
+  "paths": {},
+  "components": {}
+}
