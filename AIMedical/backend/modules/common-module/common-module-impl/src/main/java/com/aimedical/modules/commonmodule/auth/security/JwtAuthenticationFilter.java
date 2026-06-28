@@ -97,11 +97,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         request.setAttribute("passwordChangeRequired", user.getPasswordChangeRequired());
+        request.setAttribute("currentUserId", userId);
+        request.setAttribute("currentUsername", user.getUsername());
 
         Collection<SimpleGrantedAuthority> authorities = collectAuthorities(user);
 
         UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(userId, null, authorities);
+                new UsernamePasswordAuthenticationToken(user.getUsername(), null, authorities);
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         chain.doFilter(request, response);

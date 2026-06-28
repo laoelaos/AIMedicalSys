@@ -9,6 +9,7 @@ import com.aimedical.modules.commonmodule.auth.UserInfoResponse;
 import com.aimedical.modules.commonmodule.dto.request.LoginRequest;
 import com.aimedical.modules.commonmodule.dto.request.PasswordChangeRequest;
 import com.aimedical.modules.commonmodule.dto.request.RefreshTokenRequest;
+import com.aimedical.modules.commonmodule.permission.UserRepository;
 
 import jakarta.validation.Valid;
 
@@ -28,9 +29,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserRepository userRepository;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, UserRepository userRepository) {
         this.authService = authService;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/login")
@@ -89,11 +92,14 @@ public class AuthController {
                     com.aimedical.common.exception.GlobalErrorCode.UNAUTHORIZED, "未认证");
         }
         Object principal = authentication.getPrincipal();
-        if (principal instanceof Long) {
-            return (Long) principal;
-        }
-        if (principal instanceof Integer) {
-            return ((Integer) principal).longValue();
+        if (principal instanceof Long uid) return uid;
+        if (principal instanceof Integer uid) return uid.longValue();
+        // Principal is username (String) — look up userId
+        if (principal instanceof String username) {
+            return userRepository.findByUsername(username)
+                    .map(u -> u.getId())
+                    .orElseThrow(() -> new com.aimedical.common.exception.BusinessException(
+                            com.aimedical.common.exception.GlobalErrorCode.UNAUTHORIZED, "用户不存在"));
         }
         throw new com.aimedical.common.exception.BusinessException(
                 com.aimedical.common.exception.GlobalErrorCode.UNAUTHORIZED, "无法识别用户身份");
