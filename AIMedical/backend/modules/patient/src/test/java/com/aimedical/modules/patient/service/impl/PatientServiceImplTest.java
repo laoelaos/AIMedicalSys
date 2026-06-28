@@ -1,6 +1,7 @@
 package com.aimedical.modules.patient.service.impl;
 
 import com.aimedical.common.exception.BusinessException;
+import com.aimedical.modules.commonmodule.api.AuthErrorCode;
 import com.aimedical.modules.commonmodule.api.AuthService;
 import com.aimedical.modules.patient.exception.PatientErrorCode;
 import com.aimedical.modules.commonmodule.api.dto.CurrentUserResponse;
@@ -72,7 +73,7 @@ class PatientServiceImplTest {
 
     @Test
     void shouldFailLoginWithWrongCredentials() {
-        when(authService.getCurrentUser()).thenThrow(new BusinessException(PatientErrorCode.PATIENT_LOGIN_FAILED));
+        when(authService.getCurrentUser()).thenThrow(new BusinessException(AuthErrorCode.AUTH_LOGIN_FAILED));
         assertThrows(BusinessException.class, () -> service.getProfile());
     }
 
