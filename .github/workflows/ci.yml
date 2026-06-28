@@ -64,7 +64,25 @@ jobs:
           java-version: '17'
           cache: maven
 
-      # ===== CI 门禁 1: 显式 mvn test job (此前仅靠 install 隐含触发) =====
+      # ===== Guard: 确保有源码的子模块都显式启用了 JaCoCo =====
+      # 父 POM 默认 jacoco.skip=true, 子模块须覆盖为 false 才能生效;
+      # 此步骤在 mvn verify 之前快速检查, 避免静默缺失覆盖率门禁.
+      - name: "Guard: all modules with Java sources must enable JaCoCo"
+        run: |
+          status=0
+          for pom in */pom.xml modules/*/pom.xml; do
+            dir="${pom%/pom.xml}"
+            [ -d "$dir/src/main/java" ] || continue
+            if grep -q '<jacoco.skip>false</jacoco.skip>' "$pom"; then
+              echo "  PASS  $pom"
+            else
+              echo "  FAIL  $pom  (has src/main/java but missing <jacoco.skip>false</jacoco.skip>)"
+              status=1
+            fi
+          done
+          [ "$status" -eq 0 ] || exit 1
+
+      # ===== CI 门禁 1: 显式 mvn verify (含 jacoco:check) =====
       # verify 阶段会触发 jacoco:check (line >= 50% / branch >= 40%),
       # 不达标时 BUILD FAILURE, 拦截覆盖率下滑.
       - name: Run unit tests + JaCoCo coverage gate
