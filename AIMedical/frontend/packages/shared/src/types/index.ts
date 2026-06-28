@@ -49,6 +49,14 @@ export interface TokenResponse {
   expires_in: number
 }
 
+/** Backend TokenRefreshResponse record, serialized via Jackson SNAKE_CASE */
+export interface TokenRefreshResponse {
+  access_token: string
+  refresh_token: string
+  token_type: string
+  expires_in: number
+}
+
 export interface CurrentUserResponse {
   user_id: number
   username: string

@@ -98,6 +98,7 @@ public class PatientServiceImpl implements PatientService {
     // ==================== Profile ====================
 
     @Override
+    @Transactional(readOnly = true)
     public Result<PatientDto> getProfile() {
         CurrentUserResponse currentUser = authService.getCurrentUser();
         PatientEntity patient = patientRepository.findByUserId(currentUser.getUserId())
@@ -151,6 +152,7 @@ public class PatientServiceImpl implements PatientService {
     // ==================== Health Record ====================
 
     @Override
+    @Transactional(readOnly = true)
     public Result<HealthRecordSummaryResponse> getHealthRecord() {
         PatientEntity patient = getCurrentPatient();
         return Result.success(PatientConverter.toHealthRecordSummary(patient));

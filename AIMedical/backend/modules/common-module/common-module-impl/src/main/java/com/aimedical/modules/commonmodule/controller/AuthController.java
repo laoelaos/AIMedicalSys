@@ -84,8 +84,9 @@ public class AuthController {
 
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            throw new IllegalStateException("无法从SecurityContext获取用户ID");
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new com.aimedical.common.exception.BusinessException(
+                    com.aimedical.common.exception.GlobalErrorCode.UNAUTHORIZED, "未认证");
         }
         Object principal = authentication.getPrincipal();
         if (principal instanceof Long) {
@@ -94,7 +95,8 @@ public class AuthController {
         if (principal instanceof Integer) {
             return ((Integer) principal).longValue();
         }
-        throw new IllegalStateException("无法从SecurityContext获取用户ID");
+        throw new com.aimedical.common.exception.BusinessException(
+                com.aimedical.common.exception.GlobalErrorCode.UNAUTHORIZED, "无法识别用户身份");
     }
 
     private String extractToken(String authHeader) {

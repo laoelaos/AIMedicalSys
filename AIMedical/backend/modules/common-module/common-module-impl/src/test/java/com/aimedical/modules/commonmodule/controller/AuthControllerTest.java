@@ -11,6 +11,7 @@ import com.aimedical.modules.commonmodule.dto.request.LoginRequest;
 import com.aimedical.modules.commonmodule.dto.request.PasswordChangeRequest;
 import com.aimedical.modules.commonmodule.dto.request.RefreshTokenRequest;
 
+import com.aimedical.common.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -163,6 +164,7 @@ class AuthControllerTest {
             SecurityContext securityContext = mock(SecurityContext.class);
             Authentication authentication = mock(Authentication.class);
             when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.isAuthenticated()).thenReturn(true);
             when(authentication.getPrincipal()).thenReturn(1L);
             SecurityContextHolder.setContext(securityContext);
 
@@ -182,7 +184,7 @@ class AuthControllerTest {
             when(securityContext.getAuthentication()).thenReturn(null);
             SecurityContextHolder.setContext(securityContext);
 
-            assertThrows(IllegalStateException.class, () -> authController.me());
+            assertThrows(BusinessException.class, () -> authController.me());
         }
 
         @Test
@@ -191,10 +193,11 @@ class AuthControllerTest {
             SecurityContext securityContext = mock(SecurityContext.class);
             Authentication authentication = mock(Authentication.class);
             when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.isAuthenticated()).thenReturn(true);
             when(authentication.getPrincipal()).thenReturn("not-a-number");
             SecurityContextHolder.setContext(securityContext);
 
-            assertThrows(IllegalStateException.class, () -> authController.me());
+            assertThrows(BusinessException.class, () -> authController.me());
         }
     }
 
@@ -238,6 +241,7 @@ class AuthControllerTest {
             SecurityContext securityContext = mock(SecurityContext.class);
             Authentication authentication = mock(Authentication.class);
             when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.isAuthenticated()).thenReturn(true);
             when(authentication.getPrincipal()).thenReturn(1L);
             SecurityContextHolder.setContext(securityContext);
 
@@ -256,6 +260,7 @@ class AuthControllerTest {
             SecurityContext securityContext = mock(SecurityContext.class);
             Authentication authentication = mock(Authentication.class);
             when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.isAuthenticated()).thenReturn(true);
             when(authentication.getPrincipal()).thenReturn(1L);
             SecurityContextHolder.setContext(securityContext);
 

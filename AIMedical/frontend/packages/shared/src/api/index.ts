@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
-import type { ApiResult, BusinessError, LoginRequest, LoginResponse, UserInfo, MenuItem } from '../types'
+import type { ApiResult, BusinessError, LoginRequest, TokenResponse, TokenRefreshResponse, UserInfo, MenuItem } from '../types'
 import { getAccessToken, setTokens, clearTokens, getRefreshToken } from '../utils'
 
 const apiClient = axios.create({
@@ -115,7 +115,7 @@ export { apiClient }
 
 // ==================== Auth API (Patient-centric, fork) ====================
 
-import type { RegisterRequest, TokenResponse, CurrentUserResponse } from '../types'
+import type { RegisterRequest, CurrentUserResponse } from '../types'
 import { setTokens as saveTokens } from '../utils'
 
 export async function loginApi(req: LoginRequest): Promise<TokenResponse | BusinessError> {
@@ -253,11 +253,12 @@ import type { DoctorLoginRequest } from '../types'
 export const authApi = {
   /**
    * 用户登录 (Doctor/Admin)
+   * Backend returns TokenResponse (accessToken/refreshToken/expiresIn).
    */
-  login: async (request: DoctorLoginRequest): Promise<LoginResponse | BusinessError> => {
-    const result = await apiPost<LoginResponse>('/auth/login', request)
+  login: async (request: DoctorLoginRequest): Promise<TokenResponse | BusinessError> => {
+    const result = await apiPost<TokenResponse>('/auth/login', request)
     if (result && !(result as BusinessError).isBusinessError) {
-      const resp = result as LoginResponse
+      const resp = result as TokenResponse
       setTokens(resp.access_token, resp.refresh_token)
     }
     return result
@@ -273,12 +274,13 @@ export const authApi = {
   },
 
   /**
-   * 刷新令牌
+   * 刷新令牌 — sends refresh_token in body.
+   * Backend returns TokenRefreshResponse (accessToken/refreshToken/expiresIn).
    */
-  refresh: async (): Promise<LoginResponse | BusinessError> => {
-    const result = await apiPost<LoginResponse>('/auth/refresh')
+  refresh: async (refreshToken: string): Promise<TokenRefreshResponse | BusinessError> => {
+    const result = await apiPost<TokenRefreshResponse>('/auth/refresh', { refresh_token: refreshToken })
     if (result && !(result as BusinessError).isBusinessError) {
-      const resp = result as LoginResponse
+      const resp = result as TokenRefreshResponse
       setTokens(resp.access_token, resp.refresh_token)
     }
     return result
@@ -292,10 +294,11 @@ export const authApi = {
   },
 
   /**
-   * 编辑当前用户个人资料（昵称、手机号、邮箱）
+   * 编辑当前用户个人资料
+   * Backend maps to PUT /api/auth/profile
    */
   updateMe: (data: { nickname?: string; phone?: string; email?: string }): Promise<UserInfo | BusinessError> => {
-    return apiPut<UserInfo>('/auth/me', data)
+    return apiPut<UserInfo>('/auth/profile', data)
   },
 }
 

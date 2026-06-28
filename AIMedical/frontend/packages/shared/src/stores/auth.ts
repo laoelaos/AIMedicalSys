@@ -82,11 +82,14 @@ export function createAuthStore(options: AuthStoreOptions) {
     async function login(request: DoctorLoginRequest): Promise<{ success: boolean; errorMessage?: string }> {
       const response = await authApi.login(request)
       if (isBusinessError(response)) {
-        // 透传后端返回的错误信息
         return { success: false, errorMessage: response.message || '登录失败，请检查用户名和密码' }
       }
-      saveToken(response.access_token)
-      saveUser(response.user)
+      saveToken(response.access_token, response.refresh_token)
+      // Fetch user info separately (TokenResponse has no .user field)
+      const userInfo = await authApi.me()
+      if (!isBusinessError(userInfo)) {
+        saveUser(userInfo)
+      }
       return { success: true }
     }
 
@@ -99,16 +102,20 @@ export function createAuthStore(options: AuthStoreOptions) {
     }
 
     /**
-     * 刷新令牌
+     * 刷新令牌 — passes stored refresh token
      */
     async function refreshToken(): Promise<boolean> {
-      const response = await authApi.refresh()
+      const storedRefresh = localStorage.getItem('aimedical_refresh_token')
+      if (!storedRefresh) {
+        clearAuthData()
+        return false
+      }
+      const response = await authApi.refresh(storedRefresh)
       if (isBusinessError(response)) {
         clearAuthData()
         return false
       }
-      saveToken(response.access_token)
-      saveUser(response.user)
+      saveToken(response.access_token, response.refresh_token)
       return true
     }
 

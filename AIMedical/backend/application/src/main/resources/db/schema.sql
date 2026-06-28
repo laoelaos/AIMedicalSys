@@ -18,6 +18,8 @@ CREATE TABLE `sys_user` (
   `nickname`   VARCHAR(64)   NOT NULL                COMMENT '昵称',
   `phone`      VARCHAR(20)   DEFAULT NULL            COMMENT '手机号',
   `email`      VARCHAR(128)  DEFAULT NULL            COMMENT '邮箱',
+  `gender`     VARCHAR(10)   DEFAULT NULL            COMMENT '性别',
+  `age`        INT           DEFAULT NULL            COMMENT '年龄',
   `user_type`  VARCHAR(20)   NOT NULL                COMMENT '用户类型 ADMIN/DOCTOR/PATIENT',
   `enabled`    TINYINT(1)    NOT NULL DEFAULT 1      COMMENT '是否启用',
   `password_change_required` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '需要修改密码',
