@@ -30,6 +30,7 @@
         <dependency>
             <groupId>com.aimedical</groupId>
             <artifactId>patient</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

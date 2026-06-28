@@ -80,21 +80,6 @@
                 <artifactId>application</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <dependency>
-                <groupId>com.aimedical</groupId>
-                <artifactId>patient</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.aimedical</groupId>
-                <artifactId>doctor</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.aimedical</groupId>
-                <artifactId>admin</artifactId>
-                <version>${project.version}</version>
-            </dependency>
             <!-- External libraries -->
             <dependency>
                 <groupId>org.springdoc</groupId>

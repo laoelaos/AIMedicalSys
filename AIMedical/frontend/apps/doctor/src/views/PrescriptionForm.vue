@@ -5,7 +5,7 @@
         <h2>开具处方</h2>
       </template>
 
-      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="prescription-form">
+      <el-form :model="form" label-position="top" class="prescription-form">
         <el-form-item label="诊断">
           <el-input
             v-model="form.diagnosis"
@@ -113,7 +113,6 @@
 import { reactive, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
 import { doctorApi, isBusinessError } from '@aimedical/shared'
 import type { PrescriptionCreateRequest, PrescriptionItemRequest, BusinessError } from '@aimedical/shared'
 

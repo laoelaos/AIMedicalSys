@@ -8,7 +8,7 @@ class GlobalErrorCodeTest {
 
     @Test
     void shouldHaveExpectedConstants() {
-        assertEquals(20, GlobalErrorCode.values().length);
+        assertEquals(28, GlobalErrorCode.values().length);
         assertNotNull(GlobalErrorCode.valueOf("SUCCESS"));
         assertNotNull(GlobalErrorCode.valueOf("SYSTEM_ERROR"));
         assertNotNull(GlobalErrorCode.valueOf("PARAM_INVALID"));
@@ -29,6 +29,14 @@ class GlobalErrorCodeTest {
         assertNotNull(GlobalErrorCode.valueOf("PASSWORD_CHANGE_REQUIRED"));
         assertNotNull(GlobalErrorCode.valueOf("CHILDREN_EXIST"));
         assertNotNull(GlobalErrorCode.valueOf("PASSWORD_MISMATCH"));
+        assertNotNull(GlobalErrorCode.valueOf("PRESCRIPTION_NOT_FOUND"));
+        assertNotNull(GlobalErrorCode.valueOf("PRESCRIPTION_INVALID_STATE"));
+        assertNotNull(GlobalErrorCode.valueOf("PRESCRIPTION_NOT_AUDITABLE"));
+        assertNotNull(GlobalErrorCode.valueOf("MEDICAL_RECORD_NOT_FOUND"));
+        assertNotNull(GlobalErrorCode.valueOf("MEDICAL_RECORD_INVALID_STATE"));
+        assertNotNull(GlobalErrorCode.valueOf("CONSULTATION_NOT_FOUND"));
+        assertNotNull(GlobalErrorCode.valueOf("CONSULTATION_NOT_CALLABLE"));
+        assertNotNull(GlobalErrorCode.valueOf("AI_SERVICE_UNAVAILABLE"));
     }
 
     @Test
