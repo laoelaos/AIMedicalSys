@@ -44,6 +44,9 @@ public class PatientController {
     @Operation(summary = "刷新令牌")
     public Result<TokenResponse> refresh(@RequestHeader("Authorization") String authorization) {
         String token = extractBearerToken(authorization);
+        if (token == null) {
+            return Result.fail("UNAUTHORIZED", "未提供有效的Bearer令牌");
+        }
         return patientService.refresh(token);
     }
 
@@ -51,6 +54,9 @@ public class PatientController {
     @Operation(summary = "登出")
     public Result<Void> logout(@RequestHeader("Authorization") String authorization) {
         String token = extractBearerToken(authorization);
+        if (token == null) {
+            return Result.fail("UNAUTHORIZED", "未提供有效的Bearer令牌");
+        }
         return patientService.logout(token);
     }
 

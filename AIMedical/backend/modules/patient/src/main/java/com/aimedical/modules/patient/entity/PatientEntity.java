@@ -42,19 +42,21 @@ public class PatientEntity extends BaseEntity {
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private com.aimedical.modules.commonmodule.permission.User user;
 
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    // CascadeType excludes REMOVE to avoid physical deletes bypassing @SQLDelete on BaseEntity;
+    // child records are soft-deleted explicitly via Service-level repository.delete().
+    @OneToMany(mappedBy = "patient", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     private List<PatientAllergy> allergies = new ArrayList<>();
 
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "patient", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     private List<PatientChronicDisease> chronicDiseases = new ArrayList<>();
 
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "patient", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     private List<PatientFamilyHistory> familyHistories = new ArrayList<>();
 
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "patient", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     private List<PatientSurgeryHistory> surgeryHistories = new ArrayList<>();
 
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "patient", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     private List<PatientMedicationHistory> medicationHistories = new ArrayList<>();
 
     @Column(length = 2000)

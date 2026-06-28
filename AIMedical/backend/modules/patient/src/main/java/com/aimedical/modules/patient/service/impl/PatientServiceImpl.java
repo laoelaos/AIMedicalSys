@@ -102,7 +102,7 @@ public class PatientServiceImpl implements PatientService {
     public Result<PatientDto> getProfile() {
         CurrentUserResponse currentUser = authService.getCurrentUser();
         PatientEntity patient = patientRepository.findByUserId(currentUser.getUserId())
-                .orElseGet(() -> createPatientProfile(currentUser.getUserId()));
+                .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_NOT_FOUND));
         return Result.success(PatientConverter.toDto(patient));
     }
 
@@ -120,7 +120,7 @@ public class PatientServiceImpl implements PatientService {
             try {
                 patient.setGender(Gender.valueOf(mapGenderToEnum(request.getGender())));
             } catch (IllegalArgumentException e) {
-                // ignore invalid gender value
+                log.warn("Invalid gender value in updateProfile: {}", request.getGender());
             }
         }
         if (request.getPhone() != null) {
@@ -154,7 +154,9 @@ public class PatientServiceImpl implements PatientService {
     @Override
     @Transactional(readOnly = true)
     public Result<HealthRecordSummaryResponse> getHealthRecord() {
-        PatientEntity patient = getCurrentPatient();
+        CurrentUserResponse currentUser = authService.getCurrentUser();
+        PatientEntity patient = patientRepository.findByUserId(currentUser.getUserId())
+                .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_NOT_FOUND));
         return Result.success(PatientConverter.toHealthRecordSummary(patient));
     }
 
@@ -175,7 +177,7 @@ public class PatientServiceImpl implements PatientService {
         PatientAllergy entity = allergyRepo.findById(allergyId)
                 .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND));
         if (!entity.getPatient().getId().equals(patient.getId())) {
-            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND);
+            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_FORBIDDEN);
         }
         entity.setAllergen(request.getAllergen());
         entity.setReactionType(request.getReactionType());
@@ -192,7 +194,7 @@ public class PatientServiceImpl implements PatientService {
         PatientAllergy entity = allergyRepo.findById(allergyId)
                 .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND));
         if (!entity.getPatient().getId().equals(patient.getId())) {
-            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND);
+            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_FORBIDDEN);
         }
         allergyRepo.delete(entity);
         return Result.success(null);
@@ -215,7 +217,7 @@ public class PatientServiceImpl implements PatientService {
         PatientChronicDisease entity = chronicRepo.findById(id)
                 .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND));
         if (!entity.getPatient().getId().equals(patient.getId())) {
-            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND);
+            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_FORBIDDEN);
         }
         entity.setDiseaseName(request.getDiseaseName());
         entity.setDiagnosedAt(parseDate(request.getDiagnosedAt()));
@@ -231,7 +233,7 @@ public class PatientServiceImpl implements PatientService {
         PatientChronicDisease entity = chronicRepo.findById(id)
                 .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND));
         if (!entity.getPatient().getId().equals(patient.getId())) {
-            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND);
+            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_FORBIDDEN);
         }
         chronicRepo.delete(entity);
         return Result.success(null);
@@ -254,7 +256,7 @@ public class PatientServiceImpl implements PatientService {
         PatientFamilyHistory entity = familyRepo.findById(id)
                 .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND));
         if (!entity.getPatient().getId().equals(patient.getId())) {
-            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND);
+            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_FORBIDDEN);
         }
         entity.setRelationship(request.getRelationship());
         entity.setDiseaseName(request.getDiseaseName());
@@ -270,7 +272,7 @@ public class PatientServiceImpl implements PatientService {
         PatientFamilyHistory entity = familyRepo.findById(id)
                 .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND));
         if (!entity.getPatient().getId().equals(patient.getId())) {
-            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND);
+            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_FORBIDDEN);
         }
         familyRepo.delete(entity);
         return Result.success(null);
@@ -293,7 +295,7 @@ public class PatientServiceImpl implements PatientService {
         PatientSurgeryHistory entity = surgeryRepo.findById(id)
                 .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND));
         if (!entity.getPatient().getId().equals(patient.getId())) {
-            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND);
+            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_FORBIDDEN);
         }
         entity.setSurgeryName(request.getSurgeryName());
         entity.setSurgeryAt(parseDate(request.getSurgeryAt()));
@@ -309,7 +311,7 @@ public class PatientServiceImpl implements PatientService {
         PatientSurgeryHistory entity = surgeryRepo.findById(id)
                 .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND));
         if (!entity.getPatient().getId().equals(patient.getId())) {
-            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND);
+            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_FORBIDDEN);
         }
         surgeryRepo.delete(entity);
         return Result.success(null);
@@ -332,7 +334,7 @@ public class PatientServiceImpl implements PatientService {
         PatientMedicationHistory entity = medicationRepo.findById(id)
                 .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND));
         if (!entity.getPatient().getId().equals(patient.getId())) {
-            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND);
+            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_FORBIDDEN);
         }
         entity.setDrugName(request.getDrugName());
         entity.setReason(request.getReason());
@@ -349,7 +351,7 @@ public class PatientServiceImpl implements PatientService {
         PatientMedicationHistory entity = medicationRepo.findById(id)
                 .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND));
         if (!entity.getPatient().getId().equals(patient.getId())) {
-            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_NOT_FOUND);
+            throw new BusinessException(PatientErrorCode.PATIENT_HEALTH_RECORD_FORBIDDEN);
         }
         medicationRepo.delete(entity);
         return Result.success(null);
@@ -369,15 +371,16 @@ public class PatientServiceImpl implements PatientService {
         PatientEntity patient = new PatientEntity();
         patient.setUserId(user.getId());
         patient.setUser(user);
-        // Initialize patient profile fields from user data
-        patient.setRealName(user.getNickname());
+        // Initialize patient profile fields from user data; fallback nickname→username
+        patient.setRealName(user.getNickname() != null ? user.getNickname() : user.getUsername());
         patient.setPhone(user.getPhone());
-        if (user.getGender() != null) {
-            try {
-                patient.setGender(Gender.valueOf(user.getGender()));
-            } catch (IllegalArgumentException e) {
-                patient.setGender(Gender.UNKNOWN);
-            }
+        // T5: use mapGenderToEnum to handle Chinese values (男/女/未知) as well as enum codes
+        try {
+            patient.setGender(user.getGender() != null
+                    ? Gender.valueOf(mapGenderToEnum(user.getGender()))
+                    : Gender.UNKNOWN);
+        } catch (IllegalArgumentException e) {
+            patient.setGender(Gender.UNKNOWN);
         }
         return patientRepository.save(patient);
     }

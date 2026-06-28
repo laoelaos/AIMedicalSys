@@ -136,10 +136,6 @@ export async function registerApi(req: RegisterRequest): Promise<TokenResponse |
   return result
 }
 
-export async function refreshTokenApi(): Promise<TokenResponse | BusinessError> {
-  return apiPost<TokenResponse>('/patient/refresh')
-}
-
 export async function logoutApi(): Promise<void | BusinessError> {
   const result = await apiPost<void>('/patient/logout')
   clearTokens()

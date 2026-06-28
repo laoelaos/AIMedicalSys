@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { updatePatientProfile } from '@aimedical/shared'
@@ -80,7 +80,7 @@ const activeTab = ref('info')
 const showEditDialog = ref(false)
 const editFormRef = ref<FormInstance>()
 
-const profile = ref(auth.profile)
+const profile = computed(() => auth.profile)
 
 const editForm = reactive({
   name: '',
@@ -104,7 +104,7 @@ onMounted(async () => {
   if (!p) {
     ElMessage.error('获取个人信息失败')
   } else {
-    profile.value = p
+
   }
   loading.value = false
 })
@@ -137,7 +137,7 @@ async function handleUpdateProfile() {
     ElMessage.error((result as BusinessError).message)
   } else {
     const updated = result as PatientProfile
-    profile.value = updated
+
     // Use store method instead of direct mutation
     await auth.setProfile(updated)
     ElMessage.success('资料更新成功')

@@ -157,6 +157,22 @@ public class PatientConverter {
         return r;
     }
 
+    /**
+     * Apply non-null fields from request onto existing PatientEntity (T15).
+     */
+    public static void mergeFromRequest(PatientEntity patient, PatientProfileUpdateRequest request) {
+        if (request.getName() != null) patient.setRealName(request.getName());
+        if (request.getPhone() != null) patient.setPhone(request.getPhone());
+        if (request.getGender() != null) {
+            try {
+                patient.setGender(Gender.valueOf(request.getGender()));
+            } catch (IllegalArgumentException e) {
+                // leave unchanged on invalid gender
+            }
+        }
+        if (request.getEmergencyContact() != null) patient.setEmergencyContact(request.getEmergencyContact());
+    }
+
     private static LocalDate parseDate(String dateStr) {
         if (dateStr == null || dateStr.isBlank()) return null;
         return LocalDate.parse(dateStr, DATE_FMT);

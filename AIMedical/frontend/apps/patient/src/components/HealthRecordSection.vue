@@ -174,6 +174,7 @@ const summary = ref<HealthRecordSummary | null>(null)
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const dialogType = ref<'allergy'|'chronic'|'family'|'surgery'|'medication'>('allergy')
+const editingId = ref<number | null>(null)
 const healthFormRef = ref<FormInstance>()
 
 const healthForm = reactive<Record<string, string>>({
