@@ -1,8 +1,9 @@
 package com.aimedical.modules.registration.repository;
 
 import com.aimedical.modules.registration.entity.Registration;
-import com.aimedical.modules.registration.entity.RegistrationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -15,7 +16,10 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
 
     List<Registration> findByDoctorId(Long doctorId);
 
-    List<Registration> findByStatus(RegistrationStatus status);
+    List<Registration> findByStatus(String status);
 
     List<Registration> findByScheduledDate(LocalDate date);
+
+    @Query("SELECT COUNT(r) FROM Registration r WHERE r.scheduledDate = :date AND r.doctorId = :doctorId")
+    long countByScheduledDateAndDoctorId(@Param("date") LocalDate date, @Param("doctorId") Long doctorId);
 }

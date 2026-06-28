@@ -1,7 +1,6 @@
 package com.aimedical.modules.medicalorder.repository;
 
 import com.aimedical.modules.medicalorder.entity.MedicalOrder;
-import com.aimedical.modules.medicalorder.entity.OrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -15,5 +14,5 @@ public interface MedicalOrderRepository extends JpaRepository<MedicalOrder, Long
 
     Optional<MedicalOrder> findByOrderNo(String orderNo);
 
-    List<MedicalOrder> findByOrderStatus(OrderStatus status);
+    List<MedicalOrder> findByOrderStatus(String status);
 }

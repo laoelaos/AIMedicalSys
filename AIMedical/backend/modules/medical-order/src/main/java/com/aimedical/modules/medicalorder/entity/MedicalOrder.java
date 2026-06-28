@@ -13,27 +13,31 @@ import java.math.BigDecimal;
 @Data
 public class MedicalOrder extends BaseEntity {
 
+    @Column(name = "patient_id")
     private Long patientId;
 
+    @Column(name = "doctor_id")
     private Long doctorId;
 
+    @Column(name = "registration_id")
     private Long registrationId;
 
     @Column(length = 32, unique = true)
     private String orderNo;
 
-    @Column(length = 20)
+    @Column(name = "order_type", length = 20)
     private String orderType;
 
-    @Column(length = 20)
+    @Column(name = "order_status", length = 20)
     private String orderStatus = "DRAFT";
 
     @Column(columnDefinition = "TEXT")
     private String diagnosis;
 
-    @Column(precision = 10, scale = 2)
+    @Column(name = "total_amount", precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
+    @Column(name = "is_urgent")
     private Boolean isUrgent = false;
 
     @Column(length = 500)

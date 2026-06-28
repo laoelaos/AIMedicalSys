@@ -5,6 +5,7 @@ import com.aimedical.modules.medicalorder.dto.ChargePreOrderDTO;
 import com.aimedical.modules.medicalorder.dto.MedicalOrderDTO;
 import com.aimedical.modules.medicalorder.dto.MedicationOrderDTO;
 import com.aimedical.modules.medicalorder.service.MedicalOrderService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/medical-order")
+@RequestMapping("/api/medical-orders")
 public class MedicalOrderController {
 
     private final MedicalOrderService medicalOrderService;
@@ -26,7 +27,7 @@ public class MedicalOrderController {
     }
 
     @PostMapping
-    public Result<MedicalOrderDTO> createOrder(@RequestBody MedicalOrderDTO dto) {
+    public Result<MedicalOrderDTO> createOrder(@Valid @RequestBody MedicalOrderDTO dto) {
         return Result.success(medicalOrderService.createOrder(dto));
     }
 

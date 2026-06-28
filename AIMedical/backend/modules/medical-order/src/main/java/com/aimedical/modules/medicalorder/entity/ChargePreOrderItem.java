@@ -1,30 +1,22 @@
 package com.aimedical.modules.medicalorder.entity;
 
+import com.aimedical.common.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "charge_pre_order_item")
 @Data
-public class ChargePreOrderItem {
+public class ChargePreOrderItem extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
+    @Column(name = "charge_pre_order_id")
     private Long chargePreOrderId;
 
+    @Column(name = "order_item_id")
     private Long orderItemId;
 
     @Column(length = 255)

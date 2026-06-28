@@ -4,7 +4,11 @@ import com.aimedical.common.base.MenuType;
 import com.aimedical.modules.admin.entity.TokenStore;
 import com.aimedical.modules.admin.entity.dict.DictData;
 import com.aimedical.modules.admin.entity.dict.DictType;
+import com.aimedical.modules.commonmodule.api.UserType;
 import com.aimedical.modules.commonmodule.permission.PermissionFunction;
+import com.aimedical.modules.commonmodule.permission.Post;
+import com.aimedical.modules.commonmodule.permission.Role;
+import com.aimedical.modules.commonmodule.permission.User;
 import com.aimedical.modules.doctor.entity.DoctorEntity;
 import com.aimedical.modules.patient.entity.AllergyHistory;
 import com.aimedical.modules.patient.entity.HealthProfile;
@@ -14,12 +18,14 @@ import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -39,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @SpringBootTest(classes = com.aimedical.Application.class)
 @AutoConfigureTestDatabase
+@ActiveProfiles({"test", "phase1"})
 @Transactional
 class EntityMappingIT {
 
@@ -273,5 +280,195 @@ class EntityMappingIT {
         HealthProfile hpFound = entityManager.find(HealthProfile.class, hp.getId());
         assertEquals(0, new BigDecimal("165.0").compareTo(hpFound.getHeightCm()));
         assertEquals(0, new BigDecimal("20.2").compareTo(hpFound.getBmi()));
+    }
+
+    // ==================== User ====================
+
+    @Test
+    void user_shouldMapAllFields() {
+        User user = new User();
+        user.setUsername("testuser_entity_mapping");
+        user.setPassword("$2a$10$encryptedpasswordhashvalue");
+        user.setNickname("测试用户");
+        user.setPhone("13800001111");
+        user.setEmail("test@aimedical.com");
+        user.setUserType(UserType.ADMIN);
+        user.setEnabled(true);
+        user.setPasswordChangeRequired(false);
+        user.setTokenVersion(0);
+
+        entityManager.persist(user);
+        entityManager.flush();
+
+        User found = entityManager.find(User.class, user.getId());
+        assertNotNull(found);
+        assertEquals("testuser_entity_mapping", found.getUsername());
+        assertEquals("测试用户", found.getNickname());
+        assertEquals(UserType.ADMIN, found.getUserType());
+        assertTrue(found.getEnabled());
+        assertFalse(found.getPasswordChangeRequired());
+        assertEquals(0, found.getTokenVersion());
+    }
+
+    @Test
+    void user_shouldEnforceUsernameUnique() {
+        User user1 = new User();
+        user1.setUsername("unique_user_test");
+        user1.setPassword("$2a$10$encryptedpasswordhashvalue");
+        user1.setNickname("用户1");
+        user1.setUserType(UserType.DOCTOR);
+        entityManager.persist(user1);
+        entityManager.flush();
+
+        User user2 = new User();
+        user2.setUsername("unique_user_test");
+        user2.setPassword("$2a$10$encryptedpasswordhashvalue");
+        user2.setNickname("用户2");
+        user2.setUserType(UserType.PATIENT);
+
+        assertThrows(Exception.class, () -> {
+            entityManager.persist(user2);
+            entityManager.flush();
+        });
+    }
+
+    // ==================== Role ====================
+
+    @Test
+    void role_shouldMapAllFields() {
+        Role role = new Role();
+        role.setCode("test_role_mapping");
+        role.setName("测试角色");
+        role.setDescription("实体映射测试角色");
+        role.setEnabled(true);
+        role.setSort(1);
+
+        entityManager.persist(role);
+        entityManager.flush();
+
+        Role found = entityManager.find(Role.class, role.getId());
+        assertNotNull(found);
+        assertEquals("test_role_mapping", found.getCode());
+        assertEquals("测试角色", found.getName());
+        assertTrue(found.getEnabled());
+        assertEquals(1, found.getSort());
+    }
+
+    @Test
+    void role_shouldSetDefaultValuesOnPersist() {
+        Role role = new Role();
+        role.setCode("role_default_test");
+        role.setName("默认值测试");
+        // enabled 和 sort 未设置，@PrePersist 应设置默认值
+
+        entityManager.persist(role);
+        entityManager.flush();
+
+        Role found = entityManager.find(Role.class, role.getId());
+        assertTrue(found.getEnabled());
+        assertEquals(0, found.getSort());
+    }
+
+    @Test
+    void role_shouldEnforceCodeUnique() {
+        Role role1 = new Role();
+        role1.setCode("unique_role_code");
+        role1.setName("角色1");
+        entityManager.persist(role1);
+        entityManager.flush();
+
+        Role role2 = new Role();
+        role2.setCode("unique_role_code");
+        role2.setName("角色2");
+
+        assertThrows(Exception.class, () -> {
+            entityManager.persist(role2);
+            entityManager.flush();
+        });
+    }
+
+    // ==================== Post ====================
+
+    @Test
+    void post_shouldMapAllFields() {
+        Role role = new Role();
+        role.setCode("post_test_role");
+        role.setName("岗位测试角色");
+        entityManager.persist(role);
+        entityManager.flush();
+
+        Post post = new Post();
+        post.setCode("test_post_mapping");
+        post.setName("测试岗位");
+        post.setDescription("实体映射测试岗位");
+        post.setEnabled(true);
+        post.setSort(1);
+        post.setRole(role);
+
+        entityManager.persist(post);
+        entityManager.flush();
+
+        Post found = entityManager.find(Post.class, post.getId());
+        assertNotNull(found);
+        assertEquals("test_post_mapping", found.getCode());
+        assertEquals("测试岗位", found.getName());
+        assertTrue(found.getEnabled());
+        assertNotNull(found.getRole());
+        assertEquals("post_test_role", found.getRole().getCode());
+    }
+
+    @Test
+    void post_shouldEnforceCodeUnique() {
+        Post post1 = new Post();
+        post1.setCode("unique_post_code");
+        post1.setName("岗位1");
+        entityManager.persist(post1);
+        entityManager.flush();
+
+        Post post2 = new Post();
+        post2.setCode("unique_post_code");
+        post2.setName("岗位2");
+
+        assertThrows(Exception.class, () -> {
+            entityManager.persist(post2);
+            entityManager.flush();
+        });
+    }
+
+    // ==================== User-Role-Post 关联 ====================
+
+    @Test
+    void userRolePost_shouldMapManyToManyRelations() {
+        Role role = new Role();
+        role.setCode("user_role_rel_test");
+        role.setName("关联测试角色");
+        entityManager.persist(role);
+        entityManager.flush();
+
+        Post post = new Post();
+        post.setCode("user_post_rel_test");
+        post.setName("关联测试岗位");
+        post.setRole(role);
+        entityManager.persist(post);
+        entityManager.flush();
+
+        User user = new User();
+        user.setUsername("user_rel_test");
+        user.setPassword("$2a$10$encryptedpasswordhashvalue");
+        user.setNickname("关联测试用户");
+        user.setUserType(UserType.ADMIN);
+        user.setRoles(Set.of(role));
+        user.setPosts(Set.of(post));
+
+        entityManager.persist(user);
+        entityManager.flush();
+
+        User found = entityManager.find(User.class, user.getId());
+        assertNotNull(found.getRoles());
+        assertEquals(1, found.getRoles().size());
+        assertEquals("user_role_rel_test", found.getRoles().iterator().next().getCode());
+        assertNotNull(found.getPosts());
+        assertEquals(1, found.getPosts().size());
+        assertEquals("user_post_rel_test", found.getPosts().iterator().next().getCode());
     }
 }

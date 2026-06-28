@@ -13,17 +13,19 @@ import java.math.BigDecimal;
 @Data
 public class ChargePreOrder extends BaseEntity {
 
+    @Column(name = "order_id")
     private Long orderId;
 
+    @Column(name = "patient_id")
     private Long patientId;
 
-    @Column(length = 32, unique = true)
+    @Column(name = "charge_no", length = 32, unique = true)
     private String chargeNo;
 
-    @Column(precision = 10, scale = 2)
+    @Column(name = "total_amount", precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
-    @Column(length = 20)
+    @Column(name = "charge_status", length = 20)
     private String chargeStatus = "PENDING";
 
     @Column(length = 500)

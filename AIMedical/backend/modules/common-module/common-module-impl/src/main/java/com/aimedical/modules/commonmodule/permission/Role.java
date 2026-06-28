@@ -47,4 +47,14 @@ public class Role extends BaseEntity {
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
     private Set<User> users;
 
+    @PrePersist
+    private void validateBeforePersist() {
+        if (enabled == null) {
+            enabled = true;
+        }
+        if (sort == null) {
+            sort = 0;
+        }
+    }
+
 }

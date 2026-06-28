@@ -78,10 +78,10 @@ INSERT INTO `sys_dict_data` (`dict_sort`, `dict_label`, `dict_value`, `dict_type
 -- ---------------------------------------------
 -- 测试用户
 -- ---------------------------------------------
-INSERT INTO `sys_user` (`id`, `username`, `password`, `nickname`, `phone`, `email`, `user_type`, `enabled`, `created_at`, `updated_at`, `deleted`) VALUES
-(1, 'admin',       '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '系统管理员', '13800000001', 'admin@aimedical.com',    'ADMIN',   1, NOW(), NOW(), 0),
-(2, 'doctor01',    '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '张医生',     '13800000002', 'doctor01@aimedical.com', 'DOCTOR',  1, NOW(), NOW(), 0),
-(3, '13900000003', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '李先生',     '13900000003', 'patient01@aimedical.com','PATIENT', 1, NOW(), NOW(), 0);
+INSERT INTO `sys_user` (`id`, `username`, `password`, `nickname`, `phone`, `email`, `user_type`, `enabled`, `password_change_required`, `token_version`, `created_at`, `updated_at`, `deleted`) VALUES
+(1, 'admin',       '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '系统管理员', '13800000001', 'admin@aimedical.com',    'ADMIN',   1, 0, 0, NOW(), NOW(), 0),
+(2, 'doctor01',    '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '张医生',     '13800000002', 'doctor01@aimedical.com', 'DOCTOR',  1, 0, 0, NOW(), NOW(), 0),
+(3, '13900000003', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '李先生',     '13900000003', 'patient01@aimedical.com','PATIENT', 1, 0, 0, NOW(), NOW(), 0);
 
 -- ---------------------------------------------
 -- 用户-角色

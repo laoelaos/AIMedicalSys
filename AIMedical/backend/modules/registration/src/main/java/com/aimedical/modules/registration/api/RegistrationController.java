@@ -5,6 +5,7 @@ import com.aimedical.modules.registration.dto.CancelRegistrationRequest;
 import com.aimedical.modules.registration.dto.RegistrationDTO;
 import com.aimedical.modules.registration.dto.TriageRecordDTO;
 import com.aimedical.modules.registration.service.RegistrationService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,7 +27,7 @@ public class RegistrationController {
     }
 
     @PostMapping
-    public Result<RegistrationDTO> createRegistration(@RequestBody RegistrationDTO dto) {
+    public Result<RegistrationDTO> createRegistration(@Valid @RequestBody RegistrationDTO dto) {
         return Result.success(registrationService.createRegistration(dto));
     }
 
@@ -57,7 +58,7 @@ public class RegistrationController {
 
     @PutMapping("/{id}/cancel")
     public Result<RegistrationDTO> cancelRegistration(@PathVariable Long id,
-                                                      @RequestBody CancelRegistrationRequest request) {
+                                                      @Valid @RequestBody CancelRegistrationRequest request) {
         return Result.success(registrationService.cancelRegistration(id, request));
     }
 
@@ -68,7 +69,7 @@ public class RegistrationController {
 
     @PostMapping("/{registrationId}/triage")
     public Result<TriageRecordDTO> createTriageRecord(@PathVariable Long registrationId,
-                                                      @RequestBody TriageRecordDTO dto) {
+                                                      @Valid @RequestBody TriageRecordDTO dto) {
         dto.setRegistrationId(registrationId);
         return Result.success(registrationService.createTriageRecord(dto));
     }

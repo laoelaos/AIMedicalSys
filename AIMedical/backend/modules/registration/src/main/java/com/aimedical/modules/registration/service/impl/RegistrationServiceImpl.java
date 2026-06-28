@@ -8,6 +8,7 @@ import com.aimedical.modules.registration.dto.RegistrationDTO;
 import com.aimedical.modules.registration.dto.TriageRecordDTO;
 import com.aimedical.modules.registration.entity.Registration;
 import com.aimedical.modules.registration.entity.RegistrationStatus;
+import com.aimedical.modules.registration.entity.RegistrationType;
 import com.aimedical.modules.registration.entity.TriageRecord;
 import com.aimedical.modules.registration.repository.RegistrationRepository;
 import com.aimedical.modules.registration.repository.TriageRecordRepository;
@@ -39,6 +40,32 @@ public class RegistrationServiceImpl implements RegistrationService {
         Registration entity = RegistrationConverter.toRegistrationEntity(dto);
         entity.setStatus(RegistrationStatus.PENDING.name());
         entity.setQueueNumber(generateQueueNumber(dto.getDoctorId(), dto.getScheduledDate()));
+
+        // Branch logic based on registration type
+        if (dto.getRegistrationType() != null) {
+            RegistrationType registrationType = RegistrationType.valueOf(dto.getRegistrationType());
+            switch (registrationType) {
+                case OUTPATIENT:
+                    // 门诊挂号：设置默认科室和分诊级别
+                    if (entity.getDepartment() == null && dto.getDepartment() != null) {
+                        entity.setDepartment(dto.getDepartment());
+                    }
+                    break;
+                case EXAMINATION:
+                    // 检查挂号：必须指定科室
+                    if (entity.getDepartment() == null) {
+                        throw new BusinessException(GlobalErrorCode.PARAM_INVALID, "检查挂号必须指定科室");
+                    }
+                    break;
+                case EMERGENCY:
+                    // 急诊挂号：设置为最高分诊级别
+                    entity.setTriageLevel("LEVEL_1");
+                    break;
+                default:
+                    break;
+            }
+        }
+
         entity = registrationRepository.save(entity);
         return RegistrationConverter.toRegistrationDTO(entity);
     }
@@ -74,8 +101,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         String currentStatus = entity.getStatus();
         if (!RegistrationStatus.PENDING.name().equals(currentStatus)) {
-            throw new BusinessException(GlobalErrorCode.SYSTEM_ERROR,
-                    "当前状态不允许确认操作，仅待确认状态可确认");
+            throw new BusinessException(GlobalErrorCode.REGISTRATION_STATUS_INVALID);
         }
 
         entity.setStatus(RegistrationStatus.CONFIRMED.name());
@@ -91,8 +117,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         String currentStatus = entity.getStatus();
         if (!RegistrationStatus.CONFIRMED.name().equals(currentStatus)) {
-            throw new BusinessException(GlobalErrorCode.SYSTEM_ERROR,
-                    "当前状态不允许完成操作，仅已确认状态可完成");
+            throw new BusinessException(GlobalErrorCode.REGISTRATION_STATUS_INVALID);
         }
 
         entity.setStatus(RegistrationStatus.COMPLETED.name());
@@ -109,15 +134,13 @@ public class RegistrationServiceImpl implements RegistrationService {
         String currentStatus = entity.getStatus();
         if (!RegistrationStatus.PENDING.name().equals(currentStatus)
                 && !RegistrationStatus.CONFIRMED.name().equals(currentStatus)) {
-            throw new BusinessException(GlobalErrorCode.SYSTEM_ERROR,
-                    "当前状态不允许取消操作，仅待确认或已确认状态可取消");
+            throw new BusinessException(GlobalErrorCode.REGISTRATION_STATUS_INVALID);
         }
 
         // Cancel rule engine: check if scheduled time is at least 2 hours away
         String cancelType = determineCancelType(entity.getScheduledDate(), entity.getScheduledTimeSlot());
         if ("offline".equals(cancelType)) {
-            throw new BusinessException(GlobalErrorCode.SYSTEM_ERROR,
-                    "预约时间距现在不足2小时，无法在线取消，请到窗口线下办理取消");
+            throw new BusinessException(GlobalErrorCode.REGISTRATION_CANCEL_FORBIDDEN);
         }
 
         entity.setStatus(RegistrationStatus.CANCELLED.name());
@@ -136,8 +159,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         String currentStatus = entity.getStatus();
         if (!RegistrationStatus.CONFIRMED.name().equals(currentStatus)) {
-            throw new BusinessException(GlobalErrorCode.SYSTEM_ERROR,
-                    "当前状态不允许标记爽约，仅已确认状态可标记爽约");
+            throw new BusinessException(GlobalErrorCode.REGISTRATION_STATUS_INVALID);
         }
 
         entity.setStatus(RegistrationStatus.NO_SHOW.name());
@@ -161,10 +183,10 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
 
     private int generateQueueNumber(Long doctorId, LocalDate scheduledDate) {
-        List<Registration> todayRegistrations = registrationRepository.findByScheduledDate(scheduledDate);
-        long count = todayRegistrations.stream()
-                .filter(r -> r.getDoctorId() != null && r.getDoctorId().equals(doctorId))
-                .count();
+        if (scheduledDate == null || doctorId == null) {
+            return 1;
+        }
+        long count = registrationRepository.countByScheduledDateAndDoctorId(scheduledDate, doctorId);
         return (int) count + 1;
     }
 
@@ -189,7 +211,6 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
 
     private LocalTime parseTimeSlotStart(String timeSlot) {
-        // Expected format: "HH:mm-HH:mm" e.g. "09:00-10:00"
         String[] parts = timeSlot.split("-");
         if (parts.length > 0) {
             return LocalTime.parse(parts[0].trim());

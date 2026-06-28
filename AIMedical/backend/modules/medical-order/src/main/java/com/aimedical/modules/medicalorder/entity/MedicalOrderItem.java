@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 @Data
 public class MedicalOrderItem extends BaseEntity {
 
+    @Column(name = "order_id")
     private Long orderId;
 
     @Column(length = 20)
