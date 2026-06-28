@@ -61,6 +61,9 @@ apiClient.interceptors.response.use(
     }
 
     const status = error.response.status
+    if (status === 401) {
+      return { code: 'UNAUTHORIZED' as const, message: '登录已过期，请重新登录', isBusinessError: true as const } as BusinessError
+    }
     if (status === 403) {
       return { code: 'FORBIDDEN' as const, message: '无权限访问', isBusinessError: true as const } as BusinessError
     }
