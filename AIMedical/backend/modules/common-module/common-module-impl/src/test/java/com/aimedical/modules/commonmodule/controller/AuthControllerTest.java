@@ -7,9 +7,9 @@ import com.aimedical.modules.commonmodule.auth.UserInfoResponse;
 import com.aimedical.modules.commonmodule.dto.request.LoginRequest;
 import com.aimedical.modules.commonmodule.dto.request.PasswordChangeRequest;
 import com.aimedical.modules.commonmodule.dto.request.RefreshTokenRequest;
-import com.aimedical.modules.commonmodule.dto.response.LoginResponse;
-import com.aimedical.modules.commonmodule.dto.response.TokenRefreshResponse;
-import com.aimedical.modules.commonmodule.service.AuthService;
+import com.aimedical.modules.commonmodule.api.AuthService;
+import com.aimedical.modules.commonmodule.api.dto.TokenRefreshResponse;
+import com.aimedical.modules.commonmodule.api.dto.TokenResponse;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,7 +37,7 @@ class AuthControllerTest {
 
     private AuthController authController;
 
-    private LoginResponse mockLoginResponse;
+    private TokenResponse mockTokenResponse;
     private UserInfoResponse mockUserInfo;
 
     @BeforeEach
@@ -47,7 +47,7 @@ class AuthControllerTest {
         mockUserInfo = new UserInfoResponse(1L, "testuser", "测试用户",
                 null, null, "DOCTOR", null, Set.of());
 
-        mockLoginResponse = new LoginResponse(1L, "testuser", "mock-jwt-token", null,
+        mockTokenResponse = new TokenResponse(1L, "testuser", "mock-jwt-token", null,
                 "Bearer", 86400L, false, mockUserInfo);
     }
 
@@ -58,10 +58,10 @@ class AuthControllerTest {
         @Test
         @DisplayName("登录成功返回SUCCESS")
         void shouldReturnSuccessWhenLoginSucceeds() {
-            when(authService.login(any(LoginRequest.class))).thenReturn(mockLoginResponse);
+            when(authService.login(any(LoginRequest.class))).thenReturn(mockTokenResponse);
 
             var request = new LoginRequest("testuser", "password123");
-            Result<LoginResponse> result = authController.login(request);
+            Result<TokenResponse> result = authController.login(request);
 
             assertEquals("SUCCESS", result.getCode());
             assertEquals("成功", result.getMessage());

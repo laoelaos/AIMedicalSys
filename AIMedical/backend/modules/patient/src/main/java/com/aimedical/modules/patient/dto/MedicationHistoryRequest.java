@@ -1,6 +1,7 @@
 package com.aimedical.modules.patient.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class MedicationHistoryRequest {
@@ -9,7 +10,9 @@ public class MedicationHistoryRequest {
     private String drugName;
     @Size(max = 200, message = "用药原因不能超过200字符")
     private String reason;
+    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "日期格式必须为YYYY-MM-DD")
     private String startedAt;
+    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "日期格式必须为YYYY-MM-DD")
     private String endedAt;
 
     public String getDrugName() { return drugName; }

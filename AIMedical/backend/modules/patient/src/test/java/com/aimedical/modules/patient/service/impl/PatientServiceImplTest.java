@@ -2,7 +2,7 @@ package com.aimedical.modules.patient.service.impl;
 
 import com.aimedical.common.exception.BusinessException;
 import com.aimedical.modules.commonmodule.api.AuthService;
-import com.aimedical.modules.commonmodule.api.PatientErrorCode;
+import com.aimedical.modules.patient.exception.PatientErrorCode;
 import com.aimedical.modules.commonmodule.api.dto.CurrentUserResponse;
 import com.aimedical.modules.commonmodule.api.dto.RegisterRequest;
 import com.aimedical.modules.commonmodule.api.dto.TokenResponse;

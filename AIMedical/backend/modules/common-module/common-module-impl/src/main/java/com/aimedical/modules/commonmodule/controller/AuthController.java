@@ -1,14 +1,14 @@
 package com.aimedical.modules.commonmodule.controller;
 
 import com.aimedical.common.result.Result;
+import com.aimedical.modules.commonmodule.api.AuthService;
+import com.aimedical.modules.commonmodule.api.dto.ProfileUpdateRequest;
+import com.aimedical.modules.commonmodule.api.dto.TokenRefreshResponse;
+import com.aimedical.modules.commonmodule.api.dto.TokenResponse;
+import com.aimedical.modules.commonmodule.auth.UserInfoResponse;
 import com.aimedical.modules.commonmodule.dto.request.LoginRequest;
 import com.aimedical.modules.commonmodule.dto.request.PasswordChangeRequest;
-import com.aimedical.modules.commonmodule.dto.request.ProfileUpdateRequest;
 import com.aimedical.modules.commonmodule.dto.request.RefreshTokenRequest;
-import com.aimedical.modules.commonmodule.dto.response.LoginResponse;
-import com.aimedical.modules.commonmodule.dto.response.TokenRefreshResponse;
-import com.aimedical.modules.commonmodule.auth.UserInfoResponse;
-import com.aimedical.modules.commonmodule.service.AuthService;
 
 import jakarta.validation.Valid;
 
@@ -34,18 +34,17 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        LoginResponse response = authService.login(request);
+    public Result<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
+        TokenResponse response = authService.authenticate(request.username(), request.password());
         return Result.success(response);
     }
 
     @PostMapping("/logout")
     public Result<Void> logout(
-            @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @RequestBody(required = false) RefreshTokenRequest refreshTokenRequest) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
         String token = extractToken(authHeader);
         if (token != null) {
-            authService.logout(token, refreshTokenRequest != null ? refreshTokenRequest.refreshToken() : null);
+            authService.logout(token);
         }
         return Result.success(null);
     }

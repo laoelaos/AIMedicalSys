@@ -173,6 +173,6 @@ public class PatientController {
         if (authorization != null && authorization.startsWith("Bearer ")) {
             return authorization.substring(7);
         }
-        return "";
+        return null;
     }
 }

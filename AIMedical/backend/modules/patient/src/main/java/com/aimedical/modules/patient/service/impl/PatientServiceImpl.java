@@ -3,7 +3,7 @@ package com.aimedical.modules.patient.service.impl;
 import com.aimedical.common.exception.BusinessException;
 import com.aimedical.common.result.Result;
 import com.aimedical.modules.commonmodule.api.AuthService;
-import com.aimedical.modules.commonmodule.api.PatientErrorCode;
+import com.aimedical.modules.patient.exception.PatientErrorCode;
 import com.aimedical.modules.commonmodule.api.dto.CurrentUserResponse;
 import com.aimedical.modules.commonmodule.api.dto.LoginRequest;
 import com.aimedical.modules.commonmodule.api.dto.RegisterRequest;
@@ -69,11 +69,8 @@ public class PatientServiceImpl implements PatientService {
         patient.setUser(user);
         patient.setRealName(request.getName());
         patient.setPhone(request.getPhone());
-        try {
-            patient.setGender(Gender.valueOf(request.getGender().equals("男") ? "MALE" : request.getGender().equals("女") ? "FEMALE" : "UNKNOWN"));
-        } catch (IllegalArgumentException e) {
-            patient.setGender(Gender.UNKNOWN);
-        }
+        String genderCode = mapGenderToEnum(request.getGender());
+        patient.setGender(genderCode != null ? Gender.valueOf(genderCode) : Gender.UNKNOWN);
         patientRepository.save(patient);
         log.info("Patient profile created: patientId={}, userId={}", patient.getId(), user.getId());
         return Result.success(token);
@@ -87,7 +84,8 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public Result<TokenResponse> refresh(String refreshToken) {
-        TokenResponse token = authService.refresh(refreshToken);
+        var refreshed = authService.refreshToken(refreshToken);
+        TokenResponse token = new TokenResponse(refreshed.accessToken(), refreshed.refreshToken(), refreshed.expiresIn());
         return Result.success(token);
     }
 
@@ -127,10 +125,11 @@ public class PatientServiceImpl implements PatientService {
         if (request.getPhone() != null) {
             patient.setPhone(request.getPhone());
         }
-        if (request.getEmail() != null) {
+        if (request.getEmail() != null || request.getAge() != null) {
             User user = userRepository.findById(currentUser.getUserId())
                     .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_NOT_FOUND));
-            user.setEmail(request.getEmail());
+            if (request.getEmail() != null) user.setEmail(request.getEmail());
+            if (request.getAge() != null) user.setAge(request.getAge());
             userRepository.save(user);
         }
         if (request.getEmergencyContact() != null) {

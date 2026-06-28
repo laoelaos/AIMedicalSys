@@ -1,12 +1,14 @@
 package com.aimedical.modules.patient.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class SurgeryHistoryRequest {
     @NotBlank(message = "手术名称不能为空")
     @Size(max = 100, message = "手术名称不能超过100字符")
     private String surgeryName;
+    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "日期格式必须为YYYY-MM-DD")
     private String surgeryAt;
     @Size(max = 100, message = "医院名称不能超过100字符")
     private String hospital;
