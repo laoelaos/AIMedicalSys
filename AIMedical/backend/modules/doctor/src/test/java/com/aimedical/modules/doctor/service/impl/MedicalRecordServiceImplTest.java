@@ -74,8 +74,8 @@ class MedicalRecordServiceImplTest {
         saved.setVersionNo(0);
         MedicalRecordResponse response = buildResponse(RECORD_ID, MedicalRecordStatus.DRAFT.getCode(), 0);
 
-        when(medicalRecordRepository.findByPatientIdAndStatusOrderByVersionNoDesc(
-                PATIENT_ID, MedicalRecordStatus.DRAFT.getCode())).thenReturn(List.of());
+        when(medicalRecordRepository.findByPatientIdAndDoctorIdAndStatusOrderByVersionNoDesc(
+                PATIENT_ID, DOCTOR_USER_ID, MedicalRecordStatus.DRAFT.getCode())).thenReturn(List.of());
         when(doctorRepository.findByUserId(DOCTOR_USER_ID)).thenReturn(Optional.empty());
         when(medicalRecordRepository.save(any(MedicalRecordEntity.class))).thenReturn(saved);
         when(converter.toResponse(saved)).thenReturn(response);
@@ -98,8 +98,8 @@ class MedicalRecordServiceImplTest {
         existing.setVersionNo(0);
         MedicalRecordResponse response = buildResponse(RECORD_ID, MedicalRecordStatus.DRAFT.getCode(), 0);
 
-        when(medicalRecordRepository.findByPatientIdAndStatusOrderByVersionNoDesc(
-                PATIENT_ID, MedicalRecordStatus.DRAFT.getCode())).thenReturn(List.of(existing));
+        when(medicalRecordRepository.findByPatientIdAndDoctorIdAndStatusOrderByVersionNoDesc(
+                PATIENT_ID, DOCTOR_USER_ID, MedicalRecordStatus.DRAFT.getCode())).thenReturn(List.of(existing));
         when(doctorRepository.findByUserId(DOCTOR_USER_ID)).thenReturn(Optional.empty());
         when(medicalRecordRepository.save(existing)).thenReturn(existing);
         when(converter.toResponse(existing)).thenReturn(response);
