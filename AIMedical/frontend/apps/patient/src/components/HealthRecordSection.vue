@@ -157,16 +157,19 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import {
   getHealthRecord,
-  addAllergy, deleteAllergy,
-  addChronicDisease, deleteChronicDisease,
-  addFamilyHistory, deleteFamilyHistory,
-  addSurgery, deleteSurgery,
-  addMedication, deleteMedication,
+  addAllergy, updateAllergy, deleteAllergy,
+  addChronicDisease, updateChronicDisease, deleteChronicDisease,
+  addFamilyHistory, updateFamilyHistory, deleteFamilyHistory,
+  addSurgery, updateSurgery, deleteSurgery,
+  addMedication, updateMedication, deleteMedication,
 } from '@aimedical/shared'
 import type {
   HealthRecordSummary, BusinessError,
-  AllergyRequest, ChronicDiseaseRequest,
-  FamilyHistoryRequest, SurgeryHistoryRequest, MedicationHistoryRequest,
+  AllergyRecord, AllergyRequest,
+  ChronicDiseaseRecord, ChronicDiseaseRequest,
+  FamilyHistoryRecord, FamilyHistoryRequest,
+  SurgeryHistoryRecord, SurgeryHistoryRequest,
+  MedicationHistoryRecord, MedicationHistoryRequest,
 } from '@aimedical/shared'
 
 const loading = ref(true)
@@ -231,7 +234,34 @@ function openAllergyDialog() { dialogType.value = 'allergy'; dialogTitle.value =
 function openChronicDialog() { dialogType.value = 'chronic'; dialogTitle.value = '添加慢病史'; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
 function openFamilyDialog() { dialogType.value = 'family'; dialogTitle.value = '添加家族史'; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
 function openSurgeryDialog() { dialogType.value = 'surgery'; dialogTitle.value = '添加手术史'; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
-function openMedicationDialog() { dialogType.value = 'medication'; dialogTitle.value = '添加用药史'; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
+function openMedicationDialog() { dialogType.value = 'medication'; dialogTitle.value = '添加用药史'; editingId.value = null; clearForm(); dialogVisible.value = true; healthFormRef.value?.clearValidate() }
+
+// Edit functions — pre-fill form with existing record data for update
+function openEditAllergyDialog(a: AllergyRecord) {
+  dialogType.value = 'allergy'; dialogTitle.value = '编辑过敏史'; editingId.value = a.id
+  healthForm.allergen = a.allergen; healthForm.reaction_type = a.reaction_type || ''; healthForm.severity = a.severity || ''; healthForm.occurred_at = a.occurred_at || ''
+  dialogVisible.value = true; healthFormRef.value?.clearValidate()
+}
+function openEditChronicDialog(c: ChronicDiseaseRecord) {
+  dialogType.value = 'chronic'; dialogTitle.value = '编辑慢病史'; editingId.value = c.id
+  healthForm.disease_name = c.disease_name; healthForm.diagnosed_at = c.diagnosed_at || ''; healthForm.current_status = c.current_status || ''
+  dialogVisible.value = true; healthFormRef.value?.clearValidate()
+}
+function openEditFamilyDialog(f: FamilyHistoryRecord) {
+  dialogType.value = 'family'; dialogTitle.value = '编辑家族史'; editingId.value = f.id
+  healthForm.relationship = f.relationship; healthForm.disease_name = f.disease_name; healthForm.note = f.note || ''
+  dialogVisible.value = true; healthFormRef.value?.clearValidate()
+}
+function openEditSurgeryDialog(s: SurgeryHistoryRecord) {
+  dialogType.value = 'surgery'; dialogTitle.value = '编辑手术史'; editingId.value = s.id
+  healthForm.surgery_name = s.surgery_name; healthForm.surgery_at = s.surgery_at || ''; healthForm.hospital = s.hospital || ''
+  dialogVisible.value = true; healthFormRef.value?.clearValidate()
+}
+function openEditMedicationDialog(m: MedicationHistoryRecord) {
+  dialogType.value = 'medication'; dialogTitle.value = '编辑用药史'; editingId.value = m.id
+  healthForm.drug_name = m.drug_name; healthForm.reason = m.reason || ''; healthForm.started_at = m.started_at || ''; healthForm.ended_at = m.ended_at || ''
+  dialogVisible.value = true; healthFormRef.value?.clearValidate()
+}
 
 function buildHealthFormRequest(): AllergyRequest | ChronicDiseaseRequest | FamilyHistoryRequest | SurgeryHistoryRequest | MedicationHistoryRequest {
   const f = healthForm
@@ -255,17 +285,18 @@ async function handleSaveHealthRecord() {
 
   const req = buildHealthFormRequest()
   let result: unknown
+  const isEdit = editingId.value !== null
   switch (dialogType.value) {
     case 'allergy':
-      result = await addAllergy(req as AllergyRequest); break
+      result = isEdit ? await updateAllergy(editingId.value!, req as AllergyRequest) : await addAllergy(req as AllergyRequest); break
     case 'chronic':
-      result = await addChronicDisease(req as ChronicDiseaseRequest); break
+      result = isEdit ? await updateChronicDisease(editingId.value!, req as ChronicDiseaseRequest) : await addChronicDisease(req as ChronicDiseaseRequest); break
     case 'family':
-      result = await addFamilyHistory(req as FamilyHistoryRequest); break
+      result = isEdit ? await updateFamilyHistory(editingId.value!, req as FamilyHistoryRequest) : await addFamilyHistory(req as FamilyHistoryRequest); break
     case 'surgery':
-      result = await addSurgery(req as SurgeryHistoryRequest); break
+      result = isEdit ? await updateSurgery(editingId.value!, req as SurgeryHistoryRequest) : await addSurgery(req as SurgeryHistoryRequest); break
     case 'medication':
-      result = await addMedication(req as MedicationHistoryRequest); break
+      result = isEdit ? await updateMedication(editingId.value!, req as MedicationHistoryRequest) : await addMedication(req as MedicationHistoryRequest); break
     default:
       ElMessage.error('未知的健康记录类型')
       return
@@ -273,7 +304,7 @@ async function handleSaveHealthRecord() {
   if ((result as BusinessError).isBusinessError) {
     ElMessage.error((result as BusinessError).message)
   } else {
-    ElMessage.success('添加成功')
+    ElMessage.success(isEdit ? '更新成功' : '添加成功')
     dialogVisible.value = false
     await loadSummary()
   }
