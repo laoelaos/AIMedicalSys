@@ -208,9 +208,9 @@ public class AuthServiceImpl implements AuthService {
             role.setName("患者");
             role.setEnabled(true);
             role = roleRepository.save(role);
-            user.setRoles(java.util.Set.of(role));
+            user.setRoles(new java.util.HashSet<>(java.util.Set.of(role)));
         } else {
-            user.setRoles(java.util.Set.of(patientRoleOpt.get()));
+            user.setRoles(new java.util.HashSet<>(java.util.Set.of(patientRoleOpt.get())));
         }
         userRepository.save(user);
 
