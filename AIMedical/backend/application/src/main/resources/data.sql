@@ -69,3 +69,14 @@ ALTER TABLE sys_role ALTER COLUMN id RESTART WITH 4;
 ALTER TABLE sys_post ALTER COLUMN id RESTART WITH 4;
 ALTER TABLE sys_function ALTER COLUMN id RESTART WITH 9;
 ALTER TABLE sys_user ALTER COLUMN id RESTART WITH 4;
+
+-- Phase3 种子数据：医生档案（doctor_entity）与患者档案（patient_entity）
+INSERT INTO doctor_entity (id, user_id, real_name, title, department, deleted, created_at, updated_at) VALUES
+(1, 2, '张医生', '副主任医师', '内科', false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+
+INSERT INTO patient_entity (id, user_id, real_name, gender, phone, deleted, created_at, updated_at) VALUES
+(1, 3, '李患者', 'MALE', '13800138003', false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+
+-- 重置 doctor_entity / patient_entity 自增计数器，避免后续业务 INSERT 主键冲突
+ALTER TABLE doctor_entity ALTER COLUMN id RESTART WITH 2;
+ALTER TABLE patient_entity ALTER COLUMN id RESTART WITH 2;

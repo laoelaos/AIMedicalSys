@@ -15,6 +15,11 @@ vi.mock('axios', () => {
         }),
       },
     },
+    defaults: {
+      headers: {
+        common: {} as Record<string, string>,
+      },
+    },
     get: vi.fn(() => Promise.resolve({ data: { code: 'SUCCESS', data: null } })),
     post: vi.fn(() => Promise.resolve({ data: { code: 'SUCCESS', data: null } })),
     put: vi.fn(() => Promise.resolve({ data: { code: 'SUCCESS', data: null } })),
@@ -34,27 +39,30 @@ beforeEach(() => {
 })
 
 describe('Success interceptor', () => {
-  it('unwraps SUCCESS response to body.data', () => {
+  // 拦截器在 SUCCESS 时将 response.data 替换为 body.data，并返回完整 AxiosResponse。
+  // 上层 apiGet/apiPost 通过 response.data 获取解包后的业务数据。
+  it('replaces response.data with body.data on SUCCESS and returns full response', () => {
     const handler = captured.success!
     const mockResponse = { data: { code: 'SUCCESS', data: { id: 1 } } }
     const result = handler(mockResponse)
     expect(result.data).toEqual({ id: 1 })
   })
 
-  it('unwraps nested data from SUCCESS response', () => {
+  it('replaces response.data with nested body.data on SUCCESS', () => {
     const handler = captured.success!
     const mockResponse = { data: { code: 'SUCCESS', data: { nested: 'value' } } }
     const result = handler(mockResponse)
     expect(result.data).toEqual({ nested: 'value' })
   })
 
-  it('unwraps array data from SUCCESS response', () => {
+  it('replaces response.data with array body.data on SUCCESS', () => {
     const handler = captured.success!
     const mockResponse = { data: { code: 'SUCCESS', data: ['a', 'b'] } }
     const result = handler(mockResponse)
     expect(result.data).toEqual(['a', 'b'])
   })
 
+  // 非 SUCCESS 时拦截器 reject(BusinessError)，由上层 try-catch 捕获转为返回值。
   it('rejects with BusinessError when code is not SUCCESS', async () => {
     const handler = captured.success!
     const mockResponse = { data: { code: 'BUSINESS_ERROR', message: '业务异常' } }
@@ -77,6 +85,7 @@ describe('Success interceptor', () => {
 })
 
 describe('Error interceptor', () => {
+  // 错误拦截器始终 reject(BusinessError)，由上层 apiGet/apiPost 的 try-catch 捕获。
   it('rejects with NETWORK_ERROR when error.response is undefined', async () => {
     const handler = captured.error!
     const error = { response: undefined }
@@ -232,6 +241,10 @@ describe('Integration: wrapper functions & interceptors', () => {
     vi.mocked(apiClient.get).mockImplementation(async () => captured.error!({ response: undefined }))
 
     const result = await apiGet('/test')
-    expect(result).toEqual({ code: 'NETWORK_ERROR', message: '网络不可达，请检查网络连接', isBusinessError: true })
+    expect(result).toEqual({
+      code: 'NETWORK_ERROR',
+      message: '网络不可达，请检查网络连接',
+      isBusinessError: true,
+    })
   })
 })

@@ -163,4 +163,20 @@ INSERT INTO `surgery_history` (`health_profile_id`, `surgery_name`, `surgery_at`
 INSERT INTO `medication_history` (`health_profile_id`, `drug_name`, `reason`, `started_at`, `created_at`, `updated_at`, `deleted`) VALUES
 (1, '硝苯地平缓释片', '高血压', '2022-02-01', NOW(), NOW(), 0);
 
+-- ---------------------------------------------
+-- 病历模板（按科室）
+-- ---------------------------------------------
+INSERT INTO `medical_record_template` (`id`, `department`, `name`, `chief_complaint_tpl`, `present_illness_tpl`, `past_history_tpl`, `diagnosis_tpl`, `treatment_plan_tpl`, `enabled`, `remark`, `created_at`, `updated_at`, `deleted`) VALUES
+(1, '内科', '内科通用病历模板', '主诉：[症状] [持续时间]', '现病史：患者[时间]前无明显诱因出现[症状]，伴[伴随症状]，无明显诱因，未诊治。', '既往史：高血压病史[年]，否认糖尿病、冠心病史，否认手术史。', '诊断：1. [初步诊断]\n2. 待排查', '治疗方案：1. 完善相关检查\n2. 对症治疗\n3. 注意休息，随诊', 1, '内科门诊通用模板', NOW(), NOW(), 0),
+(2, '内科', '高血压随访病历模板', '主诉：高血压复诊', '现病史：患者确诊高血压[年]，长期口服[药物]，血压控制在[范围]。', '既往史：同前。', '诊断：原发性高血压', '治疗方案：1. 继续原方案服药\n2. 监测血压\n3. 低盐饮食', 1, '高血压随访专用模板', NOW(), NOW(), 0),
+(3, '外科', '外科通用病历模板', '主诉：[部位] [症状] [持续时间]', '现病史：患者[时间]前[受伤机制/起病情况]，[症状演变]。', '既往史：否认慢性病史，否认药物过敏史。', '诊断：[初步诊断]', '治疗方案：1. 完善影像学检查\n2. 必要时手术', 1, '外科门诊通用模板', NOW(), NOW(), 0);
+
+-- ---------------------------------------------
+-- 接诊/叫号队列（doctor_id=2 内科张医生，patient_id=1 李明）
+-- ---------------------------------------------
+INSERT INTO `consultation_queue` (`id`, `patient_id`, `patient_name`, `doctor_id`, `department`, `queue_no`, `status`, `registered_at`, `called_at`, `finished_at`, `remark`, `created_at`, `updated_at`, `deleted`) VALUES
+(1, 1, '李明', 2, '内科', 'A001', 'WAITING', NOW(), NULL, NULL, '初诊', NOW(), NOW(), 0),
+(2, 1, '李明', 2, '内科', 'A002', 'WAITING', NOW(), NULL, NULL, '复诊', NOW(), NOW(), 0),
+(3, 1, '李明', 2, '内科', 'A003', 'CALLED',  NOW(), NOW(), NULL, NULL, NOW(), NOW(), 0);
+
 SET FOREIGN_KEY_CHECKS = 1;

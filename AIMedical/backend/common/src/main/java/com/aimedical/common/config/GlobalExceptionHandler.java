@@ -9,7 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
@@ -91,9 +93,24 @@ public class GlobalExceptionHandler {
                 .body(Result.fail(GlobalErrorCode.SYSTEM_ERROR));
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Result<Void>> handleAccessDenied(AccessDeniedException e) {
+        log.warn("Access denied: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Result.fail(GlobalErrorCode.FORBIDDEN));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Result<Void>> handleMissingParam(MissingServletRequestParameterException e) {
+        log.warn("Missing required parameter: {}", e.getParameterName());
+        return ResponseEntity.badRequest()
+                .body(Result.fail(GlobalErrorCode.PARAM_INVALID.getCode(),
+                        "缺少必需参数: " + e.getParameterName()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Result<Void>> handleException(Exception e) {
-        log.error("System exception", e);
+        log.error("System exception: {} - {}", e.getClass().getName(), e.getMessage(), e);
         return ResponseEntity.status(500)
                 .body(Result.fail(GlobalErrorCode.SYSTEM_ERROR));
     }

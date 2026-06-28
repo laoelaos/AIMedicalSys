@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import com.aimedical.modules.ai.api.AiResult;
@@ -39,6 +40,7 @@ import com.aimedical.modules.ai.api.dto.schedule.ScheduleResponse;
 import com.aimedical.modules.ai.api.dto.triage.TriageRequest;
 import com.aimedical.modules.ai.api.dto.triage.TriageResponse;
 
+@Primary
 @Service
 public class FallbackAiService implements AiService {
 

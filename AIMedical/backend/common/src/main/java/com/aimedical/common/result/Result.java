@@ -38,6 +38,10 @@ public class Result<T> {
         return fail(errorCode.getCode(), errorCode.getMessage());
     }
 
+    public static <T> Result<T> fail(ErrorCode errorCode, String message) {
+        return fail(errorCode.getCode(), message);
+    }
+
     public String getCode() {
         return code;
     }
