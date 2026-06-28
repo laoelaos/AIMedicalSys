@@ -95,18 +95,24 @@ const rules = {
 async function handleRegister() {
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
-  const err = await auth.register({
-    phone: form.phone,
-    password: form.password,
-    name: form.name,
-    gender: form.gender,
-    age: form.age!,
-  })
-  if (err) {
-    ElMessage.error(err)
-  } else {
-    ElMessage.success('注册成功')
-    router.push('/profile')
+  try {
+    const err = await auth.register({
+      phone: form.phone,
+      password: form.password,
+      name: form.name,
+      gender: form.gender,
+      age: form.age!,
+    })
+    if (err) {
+      ElMessage.error(err)
+    } else {
+      ElMessage.success('注册成功')
+      // Fetch profile immediately so ProfilePage has data on arrival
+      await auth.fetchProfile()
+      router.push('/profile')
+    }
+  } catch (e) {
+    ElMessage.error('网络异常，请稍后重试')
   }
 }
 </script>

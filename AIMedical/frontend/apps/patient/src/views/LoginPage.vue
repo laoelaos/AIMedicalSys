@@ -51,12 +51,16 @@ const rules = {
 async function handleLogin() {
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
-  const err = await auth.login(form)
-  if (err) {
-    ElMessage.error(err)
-  } else {
-    ElMessage.success('登录成功')
-    router.push('/profile')
+  try {
+    const err = await auth.login(form)
+    if (err) {
+      ElMessage.error(err)
+    } else {
+      ElMessage.success('登录成功')
+      router.push('/profile')
+    }
+  } catch (e) {
+    ElMessage.error('网络异常，请稍后重试')
   }
 }
 </script>

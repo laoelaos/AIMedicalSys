@@ -47,6 +47,10 @@ apiClient.interceptors.response.use(
           const refreshBody = refreshResponse.data
           if (refreshBody.code === 'SUCCESS' && refreshBody.data) {
             setTokens(refreshBody.data.access_token, refreshBody.data.refresh_token)
+            // Notify all Pinia stores that tokens were refreshed
+            window.dispatchEvent(new CustomEvent('aimedical:tokens-refreshed', {
+              detail: { access_token: refreshBody.data.access_token }
+            }))
             if (error.config.headers) {
               error.config.headers.Authorization = `Bearer ${refreshBody.data.access_token}`
             }

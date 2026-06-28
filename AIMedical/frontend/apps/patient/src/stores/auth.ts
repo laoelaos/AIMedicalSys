@@ -8,6 +8,13 @@ export const useAuthStore = defineStore('auth', () => {
   const profile = ref<PatientProfile | null>(null)
   const loading = ref(false)
 
+  // Keep token in sync with localStorage after silent refresh by axios interceptor
+  if (typeof window !== 'undefined') {
+    window.addEventListener('aimedical:tokens-refreshed', ((e: CustomEvent) => {
+      token.value = e.detail?.access_token || getAccessToken()
+    }) as EventListener)
+  }
+
   const isLoggedIn = computed(() => !!token.value)
 
   async function login(req: LoginRequest): Promise<string | null> {

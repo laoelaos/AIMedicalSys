@@ -164,11 +164,7 @@ public class PatientConverter {
         if (request.getName() != null) patient.setRealName(request.getName());
         if (request.getPhone() != null) patient.setPhone(request.getPhone());
         if (request.getGender() != null) {
-            try {
-                patient.setGender(Gender.valueOf(request.getGender()));
-            } catch (IllegalArgumentException e) {
-                // leave unchanged on invalid gender
-            }
+            patient.setGender(Gender.fromLabel(request.getGender()));
         }
         if (request.getEmergencyContact() != null) patient.setEmergencyContact(request.getEmergencyContact());
     }

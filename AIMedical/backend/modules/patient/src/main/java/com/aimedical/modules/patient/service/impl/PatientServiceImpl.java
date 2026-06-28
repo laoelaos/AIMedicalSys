@@ -69,8 +69,7 @@ public class PatientServiceImpl implements PatientService {
         patient.setUser(user);
         patient.setRealName(request.getName());
         patient.setPhone(request.getPhone());
-        String genderCode = mapGenderToEnum(request.getGender());
-        patient.setGender(genderCode != null ? Gender.valueOf(genderCode) : Gender.UNKNOWN);
+        patient.setGender(Gender.fromLabel(request.getGender()));
         patientRepository.save(patient);
         log.info("Patient profile created: patientId={}, userId={}", patient.getId(), user.getId());
         return Result.success(token);
@@ -117,11 +116,7 @@ public class PatientServiceImpl implements PatientService {
             patient.setRealName(request.getName());
         }
         if (request.getGender() != null) {
-            try {
-                patient.setGender(Gender.valueOf(mapGenderToEnum(request.getGender())));
-            } catch (IllegalArgumentException e) {
-                log.warn("Invalid gender value in updateProfile: {}", request.getGender());
-            }
+            patient.setGender(Gender.fromLabel(request.getGender()));
         }
         if (request.getPhone() != null) {
             patient.setPhone(request.getPhone());
@@ -140,14 +135,6 @@ public class PatientServiceImpl implements PatientService {
         return Result.success(PatientConverter.toDto(patient));
     }
 
-    private static String mapGenderToEnum(String gender) {
-        if (gender == null) return null;
-        return switch (gender) {
-            case "男", "MALE" -> "MALE";
-            case "女", "FEMALE" -> "FEMALE";
-            default -> "UNKNOWN";
-        };
-    }
 
     // ==================== Health Record ====================
 
@@ -374,14 +361,7 @@ public class PatientServiceImpl implements PatientService {
         // Initialize patient profile fields from user data; fallback nickname→username
         patient.setRealName(user.getNickname() != null ? user.getNickname() : user.getUsername());
         patient.setPhone(user.getPhone());
-        // T5: use mapGenderToEnum to handle Chinese values (男/女/未知) as well as enum codes
-        try {
-            patient.setGender(user.getGender() != null
-                    ? Gender.valueOf(mapGenderToEnum(user.getGender()))
-                    : Gender.UNKNOWN);
-        } catch (IllegalArgumentException e) {
-            patient.setGender(Gender.UNKNOWN);
-        }
+        patient.setGender(Gender.fromLabel(user.getGender()));
         return patientRepository.save(patient);
     }
 
