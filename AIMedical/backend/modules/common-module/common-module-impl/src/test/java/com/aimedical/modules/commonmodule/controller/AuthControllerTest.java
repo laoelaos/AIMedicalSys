@@ -35,6 +35,8 @@ class AuthControllerTest {
 
     @Mock
     private AuthService authService;
+    @Mock
+    private com.aimedical.modules.commonmodule.permission.UserRepository userRepository;
 
     private AuthController authController;
 
@@ -44,7 +46,7 @@ class AuthControllerTest {
 
     @BeforeEach
     void setUp() {
-        authController = new AuthController(authService);
+        authController = new AuthController(authService, userRepository);
 
         mockUserInfo = new UserInfoResponse(1L, "testuser", "测试用户",
                 null, null, "DOCTOR", null, Set.of());
