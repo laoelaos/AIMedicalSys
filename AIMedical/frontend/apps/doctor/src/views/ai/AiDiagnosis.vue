@@ -100,9 +100,23 @@ const form = reactive<AiDiagnosisRequest>({
 })
 
 onMounted(() => {
-  // 从 query 预填（从病情录入页或患者信息卡跳转来）
-  const pid = route.query.patientId
+  // 优先从 sessionStorage 读取长文本（避免 URL 静默截断），读取后清除
+  const raw = sessionStorage.getItem('condition_entry_draft')
+  if (raw) {
+    try {
+      const data = JSON.parse(raw)
+      if (data.chief_complaint) form.chief_complaint = data.chief_complaint
+      if (data.present_illness) form.present_illness = data.present_illness
+      if (data.past_history) form.past_history = data.past_history
+    } catch {
+      // 忽略损坏的 JSON
+    }
+    sessionStorage.removeItem('condition_entry_draft')
+  }
+  // patient_id 从 query 读取（短数值，统一 snake_case）
+  const pid = route.query.patient_id
   if (pid) form.patient_id = Number(pid)
+  // query 回退（兼容旧入口）
   if (route.query.chief_complaint)
     form.chief_complaint = String(route.query.chief_complaint)
   if (route.query.present_illness)

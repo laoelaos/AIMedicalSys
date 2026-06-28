@@ -32,7 +32,7 @@
       <div class="action-block">
         <h3 class="block-title">AI辅助</h3>
         <el-button-group>
-          <el-button type="success" @click="router.push(`/ai/diagnosis?patientId=${patientId}`)">
+          <el-button type="success" @click="router.push(`/ai/diagnosis?patient_id=${patientId}`)">
             AI辅助诊断
           </el-button>
           <el-button type="success" @click="router.push(`/ai/examination?patientId=${patientId}`)">
@@ -46,7 +46,7 @@
           </el-button>
           <el-button
             type="success"
-            @click="router.push(`/ai/medical-record-gen?patientId=${patientId}`)"
+            @click="router.push(`/ai/medical-record-gen?patient_id=${patientId}`)"
           >
             AI病历生成
           </el-button>

@@ -1,6 +1,8 @@
 package com.aimedical.modules.doctor.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
@@ -17,7 +19,7 @@ public record PrescriptionItemRequest(
     @Size(max = 64) String dosage,
     @Size(max = 128) String usageMethod,
     @Size(max = 64) String frequency,
-    BigDecimal quantity,
+    @NotNull @Positive BigDecimal quantity,
     @Size(max = 32) String unit,
     @Size(max = 500) String remark
 ) {

@@ -3,11 +3,13 @@ package com.aimedical.modules.doctor.entity;
 import com.aimedical.common.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Data;
 
 import java.math.BigDecimal;
 
 @Entity
+@Table(name = "doctor_profile")
 @Data
 public class DoctorEntity extends BaseEntity {
 

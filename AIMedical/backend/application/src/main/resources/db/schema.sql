@@ -485,6 +485,7 @@ CREATE TABLE `medical_record` (
   `doctor_id`          BIGINT        NOT NULL                COMMENT '医生用户ID',
   `department`         VARCHAR(64)   DEFAULT NULL            COMMENT '科室',
   `version_no`         INT           NOT NULL DEFAULT 1      COMMENT '版本号',
+  `lock_version`       BIGINT        NOT NULL DEFAULT 0      COMMENT 'JPA 乐观锁版本',
   `status`             VARCHAR(20)   NOT NULL DEFAULT 'DRAFT' COMMENT '状态 DRAFT/OFFICIAL',
   `chief_complaint`    TEXT          DEFAULT NULL            COMMENT '主诉',
   `present_illness`   TEXT          DEFAULT NULL            COMMENT '现病史',

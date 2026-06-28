@@ -4,6 +4,7 @@ import com.aimedical.common.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -11,6 +12,9 @@ import lombok.EqualsAndHashCode;
  * 病历实体（含版本管理）
  *
  * <p>状态 DRAFT(草稿) -> OFFICIAL(正式)。同一患者可存在多个版本，通过 version_no 区分。
+ *
+ * <p>并发控制：使用 JPA {@code @Version} 乐观锁（lock_version 列），
+ * 防止记录级并发覆盖；publish 时版本号自增在同一事务内完成。
  *
  * @author AIMedical Team
  * @version 1.0.0
@@ -33,9 +37,14 @@ public class MedicalRecordEntity extends BaseEntity {
     @Column(name = "department", length = 64)
     private String department;
 
-    /** 版本号（草稿=0，正式版本从1递增） */
+    /** 版本号（业务版本，草稿=0，正式版本从1递增） */
     @Column(name = "version_no", nullable = false)
     private Integer versionNo = 0;
+
+    /** JPA 乐观锁版本号，由 Hibernate 管理，防止记录级并发覆盖 */
+    @Version
+    @Column(name = "lock_version", nullable = false)
+    private Long lockVersion = 0L;
 
     /** 状态 DRAFT/OFFICIAL */
     @Column(name = "status", nullable = false, length = 20)
@@ -61,7 +70,8 @@ public class MedicalRecordEntity extends BaseEntity {
     @Column(name = "treatment_plan", columnDefinition = "TEXT")
     private String treatmentPlan;
 
-    /** 关联处方ID */
+    /** 关联处方ID（裸 Long 引用，未使用 @ManyToOne JPA 关联；
+     *  避免双向关联带来的级联复杂度，按需通过 PrescriptionRepository 单独查询） */
     @Column(name = "prescription_id")
     private Long prescriptionId;
 

@@ -66,7 +66,10 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             return Result.success(degradedDiagnosis());
         }
         try {
-            AiResult<DiagnosisResponse> result = aiService.diagnosis(new com.aimedical.modules.ai.api.dto.diagnosis.DiagnosisRequest()).join();
+            AiResult<DiagnosisResponse> result = aiService.diagnosis(
+                    new com.aimedical.modules.ai.api.dto.diagnosis.DiagnosisRequest(
+                            request.patientId(), request.chiefComplaint(),
+                            request.presentIllness(), request.pastHistory())).join();
             if (result.isDegraded() || !result.isSuccess()) {
                 return Result.success(degradedDiagnosis());
             }
@@ -139,7 +142,10 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             return Result.success(degradedMedicalRecordGen());
         }
         try {
-            AiResult<MedicalRecordGenResponse> result = aiService.generateMedicalRecord(new com.aimedical.modules.ai.api.dto.medicalrecord.MedicalRecordGenRequest()).join();
+            AiResult<MedicalRecordGenResponse> result = aiService.generateMedicalRecord(
+                    new com.aimedical.modules.ai.api.dto.medicalrecord.MedicalRecordGenRequest(
+                            request.patientId(), request.templateId(), request.chiefComplaint(),
+                            request.presentIllness(), request.pastHistory(), request.diagnosis())).join();
             if (result.isDegraded() || !result.isSuccess()) {
                 return Result.success(degradedMedicalRecordGen());
             }

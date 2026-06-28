@@ -54,12 +54,10 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
     @Override
     @Transactional
     public Result<MedicalRecordResponse> createOrUpdateDraft(MedicalRecordCreateRequest request, Long doctorUserId) {
-        // 查找该患者+医生的现有草稿
+        // 将 doctorId 下推到数据库查询，避免拉取其他医生的草稿到内存过滤
         List<MedicalRecordEntity> drafts = medicalRecordRepository
-                .findByPatientIdAndStatusOrderByVersionNoDesc(request.patientId(), MedicalRecordStatus.DRAFT.getCode())
-                .stream()
-                .filter(r -> doctorUserId.equals(r.getDoctorId()))
-                .toList();
+                .findByPatientIdAndDoctorIdAndStatusOrderByVersionNoDesc(
+                        request.patientId(), doctorUserId, MedicalRecordStatus.DRAFT.getCode());
 
         String department = doctorRepository.findByUserId(doctorUserId)
                 .map(d -> d.getDepartment())
@@ -91,7 +89,10 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
 
         // 发布为正式版本
         if (request.publish()) {
-            return publish(saved.getId(), doctorUserId);
+            // 注意：不能调用 this.publish()，同类内自调用会绕过 Spring AOP 代理，
+            // 导致 publish 的 @Transactional 注解不生效。此处直接调用 doPublish，
+            // 复用当前事务（createOrUpdateDraft 已开启事务）。
+            return doPublish(saved, doctorUserId);
         }
         return Result.success(converter.toResponse(saved));
     }
@@ -103,7 +104,14 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
         if (opt.isEmpty()) {
             return Result.fail(GlobalErrorCode.MEDICAL_RECORD_NOT_FOUND);
         }
-        MedicalRecordEntity entity = opt.get();
+        return doPublish(opt.get(), doctorUserId);
+    }
+
+    /**
+     * 发布核心逻辑（无 @Transactional 注解，继承调用方事务）。
+     * 抽取为独立方法避免 publish 与 createOrUpdateDraft 之间的自调用代理失效问题。
+     */
+    private Result<MedicalRecordResponse> doPublish(MedicalRecordEntity entity, Long doctorUserId) {
         // 校验病历归属当前医生，防止越权操作他人病历
         if (!entity.getDoctorId().equals(doctorUserId)) {
             return Result.fail(GlobalErrorCode.FORBIDDEN, "无权操作他人病历");

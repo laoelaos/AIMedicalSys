@@ -171,16 +171,19 @@ async function handleSubmit(submitForReview: boolean) {
     submit_for_review: submitForReview,
   }
 
-  const res = await doctorApi.createPrescription(payload)
-  loading.value = false
+  try {
+    const res = await doctorApi.createPrescription(payload)
 
-  if (isBusinessError(res)) {
-    ElMessage.error((res as BusinessError).message)
-    return
+    if (isBusinessError(res)) {
+      ElMessage.error((res as BusinessError).message)
+      return
+    }
+
+    ElMessage.success(submitForReview ? '处方已创建并提交审核' : '处方草稿已保存')
+    router.push(`/patient/${patientId}`)
+  } finally {
+    loading.value = false
   }
-
-  ElMessage.success(submitForReview ? '处方已创建并提交审核' : '处方草稿已保存')
-  router.push(`/patient/${patientId}`)
 }
 </script>
 

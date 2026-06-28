@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 接诊/叫号队列服务实现。
@@ -20,11 +21,19 @@ import java.util.List;
  * <p>状态流转：WAITING -> CALLED -> IN_CONSULTATION -> FINISHED；
  * WAITING/CALLED -> SKIPPED（过号）。
  *
+ * <p>并发约束：同一医生同一时间仅允许一名患者处于 CALLED/IN_CONSULTATION，
+ * 叫号前校验，避免并发接诊冲突。
+ *
  * @author AIMedical Team
  * @version 1.0.0
  */
 @Service
 public class ConsultationQueueServiceImpl implements ConsultationQueueService {
+
+    /** 同医生活跃状态（已叫号/接诊中），用于并发接诊约束校验 */
+    private static final List<String> ACTIVE_STATUSES = List.of(
+            ConsultationStatus.CALLED.getCode(),
+            ConsultationStatus.IN_CONSULTATION.getCode());
 
     private final ConsultationQueueRepository queueRepository;
     private final ConsultationQueueConverter converter;
@@ -64,6 +73,14 @@ public class ConsultationQueueServiceImpl implements ConsultationQueueService {
     @Override
     @Transactional
     public Result<ConsultationQueueResponse> callNext(Long doctorUserId) {
+        // 并发约束：同一医生已有 CALLED/IN_CONSULTATION 患者时禁止再次叫号，
+        // 避免同一医生并发接诊多名患者
+        if (!queueRepository
+                .findByDoctorIdAndStatusInOrderByRegisteredAtAsc(doctorUserId, ACTIVE_STATUSES)
+                .isEmpty()) {
+            return Result.fail(GlobalErrorCode.CONSULTATION_NOT_CALLABLE.getCode(),
+                    "当前已有叫号/接诊中患者，请先完成该接诊后再叫下一位");
+        }
         List<ConsultationQueueEntity> waiting = queueRepository
                 .findByDoctorIdAndStatusOrderByRegisteredAtAsc(doctorUserId, ConsultationStatus.WAITING.getCode());
         if (waiting.isEmpty()) {
@@ -79,10 +96,11 @@ public class ConsultationQueueServiceImpl implements ConsultationQueueService {
     @Override
     @Transactional
     public Result<ConsultationQueueResponse> startConsultation(Long id, Long doctorUserId) {
-        ConsultationQueueEntity entity = loadOrFail(id);
-        if (entity == null) {
+        Optional<ConsultationQueueEntity> opt = loadOrFail(id);
+        if (opt.isEmpty()) {
             return Result.fail(GlobalErrorCode.CONSULTATION_NOT_FOUND);
         }
+        ConsultationQueueEntity entity = opt.get();
         // 校验叫号记录归属当前医生，防止越权操作他人叫号记录
         if (!entity.getDoctorId().equals(doctorUserId)) {
             return Result.fail(GlobalErrorCode.FORBIDDEN, "无权操作他人叫号记录");
@@ -98,10 +116,11 @@ public class ConsultationQueueServiceImpl implements ConsultationQueueService {
     @Override
     @Transactional
     public Result<ConsultationQueueResponse> finishConsultation(Long id, Long doctorUserId) {
-        ConsultationQueueEntity entity = loadOrFail(id);
-        if (entity == null) {
+        Optional<ConsultationQueueEntity> opt = loadOrFail(id);
+        if (opt.isEmpty()) {
             return Result.fail(GlobalErrorCode.CONSULTATION_NOT_FOUND);
         }
+        ConsultationQueueEntity entity = opt.get();
         // 校验叫号记录归属当前医生，防止越权操作他人叫号记录
         if (!entity.getDoctorId().equals(doctorUserId)) {
             return Result.fail(GlobalErrorCode.FORBIDDEN, "无权操作他人叫号记录");
@@ -118,10 +137,11 @@ public class ConsultationQueueServiceImpl implements ConsultationQueueService {
     @Override
     @Transactional
     public Result<ConsultationQueueResponse> skip(Long id, Long doctorUserId) {
-        ConsultationQueueEntity entity = loadOrFail(id);
-        if (entity == null) {
+        Optional<ConsultationQueueEntity> opt = loadOrFail(id);
+        if (opt.isEmpty()) {
             return Result.fail(GlobalErrorCode.CONSULTATION_NOT_FOUND);
         }
+        ConsultationQueueEntity entity = opt.get();
         // 校验叫号记录归属当前医生，防止越权操作他人叫号记录
         if (!entity.getDoctorId().equals(doctorUserId)) {
             return Result.fail(GlobalErrorCode.FORBIDDEN, "无权操作他人叫号记录");
@@ -136,7 +156,11 @@ public class ConsultationQueueServiceImpl implements ConsultationQueueService {
         return Result.success(converter.toResponse(saved));
     }
 
-    private ConsultationQueueEntity loadOrFail(Long id) {
-        return queueRepository.findById(id).orElse(null);
+    /**
+     * 加载叫号记录，找不到返回 Optional.empty() 而非 null，
+     * 调用方须显式处理缺失场景，避免 NPE。
+     */
+    private Optional<ConsultationQueueEntity> loadOrFail(Long id) {
+        return queueRepository.findById(id);
     }
 }

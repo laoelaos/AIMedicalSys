@@ -67,25 +67,33 @@ const form = reactive({
 })
 
 function saveAsDraft() {
-  router.push({
-    path: `/patient/${patientId}/medical-records/new`,
-    query: {
+  // 长文本通过 sessionStorage 传递，避免 URL 静默截断（目标页读取后清除）
+  sessionStorage.setItem(
+    'condition_entry_draft',
+    JSON.stringify({
       chief_complaint: form.chief_complaint,
       present_illness: form.present_illness,
       past_history: form.past_history,
       diagnosis: form.diagnosis,
-    },
-  })
+    })
+  )
+  router.push(`/patient/${patientId}/medical-records/new`)
 }
 
 function goAiDiagnosis() {
-  router.push({
-    path: '/ai/diagnosis',
-    query: {
-      patientId: String(patientId),
+  // 长文本通过 sessionStorage 传递，避免 URL 静默截断（目标页读取后清除）
+  sessionStorage.setItem(
+    'condition_entry_draft',
+    JSON.stringify({
       chief_complaint: form.chief_complaint,
       present_illness: form.present_illness,
       past_history: form.past_history,
+    })
+  )
+  router.push({
+    path: '/ai/diagnosis',
+    query: {
+      patient_id: String(patientId),
     },
   })
 }

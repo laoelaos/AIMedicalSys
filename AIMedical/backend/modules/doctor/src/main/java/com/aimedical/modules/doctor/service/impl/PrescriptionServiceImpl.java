@@ -13,6 +13,9 @@ import com.aimedical.modules.doctor.repository.DoctorRepository;
 import com.aimedical.modules.doctor.repository.PrescriptionItemRepository;
 import com.aimedical.modules.doctor.repository.PrescriptionRepository;
 import com.aimedical.modules.doctor.service.PrescriptionService;
+// T7 已知技术债务：doctor 模块直接依赖 patient 模块的 Repository，形成编译期硬依赖。
+// 完整解耦应在 common-module-api 定义 PatientInfoPort 接口，由 patient 模块实现，
+// doctor 模块仅依赖接口。Phase 3 范围内保留该依赖，待后续重构。
 import com.aimedical.modules.patient.entity.PatientEntity;
 import com.aimedical.modules.patient.repository.PatientRepository;
 import org.springframework.stereotype.Service;
@@ -142,6 +145,10 @@ public class PrescriptionServiceImpl implements PrescriptionService {
                 && !PrescriptionStatus.REJECTED.getCode().equals(current)) {
             return Result.fail(GlobalErrorCode.PRESCRIPTION_INVALID_STATE);
         }
+        // 校验处方明细非空：禁止无明细的处方进入审核流程
+        if (entity.getItems() == null || entity.getItems().isEmpty()) {
+            return Result.fail(GlobalErrorCode.PARAM_INVALID.getCode(), "处方明细不能为空，请添加至少一项药品");
+        }
         entity.setStatus(PrescriptionStatus.PENDING_REVIEW.getCode());
         PrescriptionEntity saved = prescriptionRepository.save(entity);
         return Result.success(converter.toResponse(saved));
@@ -150,6 +157,11 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     @Override
     @Transactional
     public Result<PrescriptionResponse> audit(Long id, PrescriptionAuditRequest request, Long auditorUserId) {
+        // 校验审核操作人：角色权限由 Controller 层 @PreAuthorize("hasRole('DOCTOR')") 保障；
+        // Phase 3 简化允许医生自审，生产环境应由药师/上级医生独立审核。
+        if (auditorUserId == null) {
+            return Result.fail(GlobalErrorCode.UNAUTHORIZED.getCode(), "无法获取审核操作人信息");
+        }
         Optional<PrescriptionEntity> opt = prescriptionRepository.findById(id);
         if (opt.isEmpty()) {
             return Result.fail(GlobalErrorCode.PRESCRIPTION_NOT_FOUND);
@@ -159,6 +171,10 @@ public class PrescriptionServiceImpl implements PrescriptionService {
             return Result.fail(GlobalErrorCode.PRESCRIPTION_NOT_AUDITABLE);
         }
         boolean approve = Boolean.TRUE.equals(request.approve());
+        // 驳回时校验驳回原因必填，避免无理由驳回
+        if (!approve && (request.auditRemark() == null || request.auditRemark().isBlank())) {
+            return Result.fail(GlobalErrorCode.PARAM_INVALID.getCode(), "驳回时必须填写驳回原因");
+        }
         entity.setStatus(approve
                 ? PrescriptionStatus.APPROVED.getCode()
                 : PrescriptionStatus.REJECTED.getCode());

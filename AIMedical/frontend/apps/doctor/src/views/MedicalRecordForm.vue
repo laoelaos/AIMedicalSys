@@ -71,7 +71,12 @@ import type { MedicalRecordTemplateResponse } from '@aimedical/shared'
 const route = useRoute()
 const router = useRouter()
 const patientId = Number(route.params.patientId)
-const editingId = route.query.id ? Number(route.query.id) : null
+// 编辑模式：优先从路由 param（recordId）读取，回退 query.id（详情页编辑按钮仍用 query）
+const editingId = route.params.recordId
+  ? Number(route.params.recordId)
+  : route.query.id
+    ? Number(route.query.id)
+    : null
 const isEditing = computed(() => editingId !== null)
 
 const loading = ref(false)
@@ -92,7 +97,25 @@ const rules: FormRules = {
   chief_complaint: [{ required: true, message: '请输入主诉', trigger: 'blur' }],
 }
 
-function prefillFromQuery() {
+function prefillForm() {
+  // 优先从 sessionStorage 读取长文本（避免 URL 静默截断），读取后清除
+  const storageKeys = ['condition_entry_draft', 'ai_medical_record_gen']
+  for (const key of storageKeys) {
+    const raw = sessionStorage.getItem(key)
+    if (!raw) continue
+    try {
+      const data = JSON.parse(raw)
+      if (data.chief_complaint) form.chief_complaint = data.chief_complaint
+      if (data.present_illness) form.present_illness = data.present_illness
+      if (data.past_history) form.past_history = data.past_history
+      if (data.diagnosis) form.diagnosis = data.diagnosis
+      if (data.treatment_plan) form.treatment_plan = data.treatment_plan
+    } catch {
+      // 忽略损坏的 JSON
+    }
+    sessionStorage.removeItem(key)
+  }
+  // query 回退（兼容旧入口）
   if (route.query.chief_complaint) form.chief_complaint = String(route.query.chief_complaint)
   if (route.query.present_illness) form.present_illness = String(route.query.present_illness)
   if (route.query.past_history) form.past_history = String(route.query.past_history)
@@ -176,7 +199,7 @@ onMounted(async () => {
     if (editingId !== null) {
       await loadRecordForEdit(editingId)
     } else {
-      prefillFromQuery()
+      prefillForm()
     }
   } finally {
     loading.value = false

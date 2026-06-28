@@ -17,10 +17,10 @@ public record MedicalRecordCreateRequest(
     Long templateId,
     Long prescriptionId,
     @Size(max = 500) String chiefComplaint,
-    String presentIllness,
-    String pastHistory,
-    String diagnosis,
-    String treatmentPlan,
+    @Size(max = 2000) String presentIllness,
+    @Size(max = 2000) String pastHistory,
+    @Size(max = 500) String diagnosis,
+    @Size(max = 2000) String treatmentPlan,
     @Size(max = 500) String remark,
     boolean publish
 ) {

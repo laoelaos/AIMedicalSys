@@ -121,7 +121,21 @@ const form = reactive<Omit<AiMedicalRecordGenRequest, 'patient_id'>>({
 })
 
 onMounted(() => {
-  const pid = route.query.patientId
+  // 优先从 sessionStorage 读取长文本（避免 URL 静默截断），兼容 query 回退
+  const raw = sessionStorage.getItem('condition_entry_draft')
+  if (raw) {
+    try {
+      const data = JSON.parse(raw)
+      if (data.chief_complaint) form.chief_complaint = data.chief_complaint
+      if (data.present_illness) form.present_illness = data.present_illness
+      if (data.past_history) form.past_history = data.past_history
+      if (data.diagnosis) form.diagnosis = data.diagnosis
+    } catch {
+      // 忽略损坏的 JSON
+    }
+    sessionStorage.removeItem('condition_entry_draft')
+  }
+  const pid = route.query.patient_id
   if (pid) patientIdInput.value = String(pid)
   if (route.query.chief_complaint)
     form.chief_complaint = String(route.query.chief_complaint)
@@ -178,16 +192,18 @@ async function handleSubmit() {
 function goToMedicalRecordForm() {
   if (!result.value || !patientIdInput.value) return
   const pid = patientIdInput.value
-  router.push({
-    path: `/patient/${pid}/medical-records/new`,
-    query: {
+  // 长文本通过 sessionStorage 传递，避免 URL 静默截断（目标页读取后清除）
+  sessionStorage.setItem(
+    'ai_medical_record_gen',
+    JSON.stringify({
       chief_complaint: result.value.chief_complaint,
       present_illness: result.value.present_illness,
       past_history: result.value.past_history,
       diagnosis: result.value.diagnosis,
       treatment_plan: result.value.treatment_plan,
-    },
-  })
+    })
+  )
+  router.push(`/patient/${pid}/medical-records/new`)
 }
 
 function handleReset() {

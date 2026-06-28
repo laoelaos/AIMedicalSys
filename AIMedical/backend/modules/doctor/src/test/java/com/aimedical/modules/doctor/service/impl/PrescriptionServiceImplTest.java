@@ -101,6 +101,8 @@ class PrescriptionServiceImplTest {
         assertEquals("SUCCESS", result.getCode());
         assertEquals(PrescriptionStatus.DRAFT.getCode(), result.getData().status());
         verify(prescriptionRepository).save(any(PrescriptionEntity.class));
+        // T23: 验证医生科室查询交互，防止后续修改遗漏该依赖
+        verify(doctorRepository).findByUserId(DOCTOR_USER_ID);
     }
 
     @Test
@@ -227,6 +229,7 @@ class PrescriptionServiceImplTest {
         entity.setId(PRESCRIPTION_ID);
         entity.setDoctorId(DOCTOR_USER_ID);
         entity.setStatus(PrescriptionStatus.DRAFT.getCode());
+        entity.setItems(List.of(new PrescriptionItemEntity()));
         PrescriptionResponse response = buildResponse(PRESCRIPTION_ID, PrescriptionStatus.PENDING_REVIEW.getCode());
         when(prescriptionRepository.findById(PRESCRIPTION_ID)).thenReturn(Optional.of(entity));
         when(prescriptionRepository.save(entity)).thenReturn(entity);
@@ -244,6 +247,7 @@ class PrescriptionServiceImplTest {
         entity.setId(PRESCRIPTION_ID);
         entity.setDoctorId(DOCTOR_USER_ID);
         entity.setStatus(PrescriptionStatus.REJECTED.getCode());
+        entity.setItems(List.of(new PrescriptionItemEntity()));
         PrescriptionResponse response = buildResponse(PRESCRIPTION_ID, PrescriptionStatus.PENDING_REVIEW.getCode());
         when(prescriptionRepository.findById(PRESCRIPTION_ID)).thenReturn(Optional.of(entity));
         when(prescriptionRepository.save(entity)).thenReturn(entity);
