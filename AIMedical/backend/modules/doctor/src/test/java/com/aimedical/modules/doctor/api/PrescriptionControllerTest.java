@@ -64,7 +64,7 @@ class PrescriptionControllerTest {
         return new PrescriptionResponse(
                 PRESCRIPTION_ID, PATIENT_ID, "张三", DOCTOR_ID, "内科",
                 "DRAFT", "上呼吸道感染", false, null,
-                null, null, "饭后服用",
+                null, null, null, "饭后服用",
                 LocalDateTime.now(), LocalDateTime.now(), List.of()
         );
     }

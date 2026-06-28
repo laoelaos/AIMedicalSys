@@ -344,7 +344,7 @@ class PrescriptionServiceImplTest {
         return new PrescriptionResponse(
                 id, PATIENT_ID, "张三", DOCTOR_USER_ID, "内科",
                 status, "上呼吸道感染", false, null,
-                null, null, "饭后服用",
+                null, null, null, "饭后服用",
                 LocalDateTime.now(), LocalDateTime.now(), List.of()
         );
     }
