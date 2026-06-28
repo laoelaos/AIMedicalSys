@@ -9,11 +9,13 @@ import com.aimedical.modules.patient.service.PatientService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/patient")
 @Tag(name = "患者端", description = "患者注册、登录、个人中心、健康档案")
+@PreAuthorize("hasRole('PATIENT')")
 public class PatientController {
 
     private final PatientService patientService;
@@ -26,12 +28,14 @@ public class PatientController {
 
     @PostMapping("/register")
     @Operation(summary = "患者注册")
+    @PreAuthorize("permitAll()")
     public Result<TokenResponse> register(@Valid @RequestBody RegisterRequest request) {
         return patientService.register(request);
     }
 
     @PostMapping("/login")
     @Operation(summary = "患者登录")
+    @PreAuthorize("permitAll()")
     public Result<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
         return patientService.login(request);
     }
