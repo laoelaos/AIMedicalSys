@@ -11,6 +11,7 @@
 
     <properties>
         <jacoco.skip>false</jacoco.skip>
+        <jacoco.skip.check>false</jacoco.skip.check>
     </properties>
 
     <dependencies>
@@ -26,6 +27,16 @@
         <dependency>
             <groupId>com.aimedical</groupId>
             <artifactId>common-module-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.aimedical</groupId>
+            <artifactId>patient</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.aimedical</groupId>
+            <artifactId>doctor</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

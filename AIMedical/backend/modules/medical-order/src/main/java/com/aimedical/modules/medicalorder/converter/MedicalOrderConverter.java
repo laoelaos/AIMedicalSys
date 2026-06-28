@@ -4,6 +4,7 @@ import com.aimedical.modules.medicalorder.dto.ChargePreOrderDTO;
 import com.aimedical.modules.medicalorder.dto.ChargePreOrderItemDTO;
 import com.aimedical.modules.medicalorder.dto.MedicalOrderDTO;
 import com.aimedical.modules.medicalorder.dto.MedicalOrderItemDTO;
+import com.aimedical.modules.medicalorder.dto.MedicationOrderDTO;
 import com.aimedical.modules.medicalorder.entity.ChargePreOrder;
 import com.aimedical.modules.medicalorder.entity.ChargePreOrderItem;
 import com.aimedical.modules.medicalorder.entity.MedicalOrder;
@@ -124,6 +125,37 @@ public class MedicalOrderConverter {
             return Collections.emptyList();
         }
         return items.stream().map(MedicalOrderConverter::toDto).collect(Collectors.toList());
+    }
+
+    public static MedicationOrderDTO toMedicationOrderDTO(MedicalOrder order, List<MedicalOrderItem> items,
+                                                          String patientName, String doctorName) {
+        MedicationOrderDTO dto = new MedicationOrderDTO();
+        dto.setOrderNo(order.getOrderNo());
+        dto.setPatientId(order.getPatientId());
+        dto.setDoctorId(order.getDoctorId());
+        dto.setDiagnosis(order.getDiagnosis());
+        dto.setIsUrgent(order.getIsUrgent());
+        dto.setPatientName(patientName);
+        dto.setDoctorName(doctorName);
+
+        if (items != null) {
+            List<MedicationOrderDTO.MedicationOrderItemDTO> contractItems = items.stream().map(item -> {
+                MedicationOrderDTO.MedicationOrderItemDTO contractItem = new MedicationOrderDTO.MedicationOrderItemDTO();
+                contractItem.setItemCode(item.getItemCode());
+                contractItem.setItemName(item.getItemName());
+                contractItem.setSpecification(item.getSpecification());
+                contractItem.setQuantity(item.getQuantity());
+                contractItem.setUnit(item.getUnit());
+                contractItem.setDosage(item.getDosage());
+                contractItem.setUsageMethod(item.getUsageMethod());
+                contractItem.setFrequency(item.getFrequency());
+                contractItem.setDays(item.getDays());
+                return contractItem;
+            }).collect(Collectors.toList());
+            dto.setItems(contractItems);
+        }
+
+        return dto;
     }
 
 }

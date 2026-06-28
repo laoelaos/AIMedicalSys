@@ -6,15 +6,14 @@ import com.aimedical.modules.registration.dto.RegistrationDTO;
 import com.aimedical.modules.registration.dto.TriageRecordDTO;
 import com.aimedical.modules.registration.service.RegistrationService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/registration")
@@ -37,32 +36,32 @@ public class RegistrationController {
     }
 
     @GetMapping("/patient/{patientId}")
-    public Result<List<RegistrationDTO>> getByPatient(@PathVariable Long patientId) {
-        return Result.success(registrationService.getRegistrationsByPatient(patientId));
+    public Result<Page<RegistrationDTO>> getByPatient(@PathVariable Long patientId, Pageable pageable) {
+        return Result.success(registrationService.getRegistrationsByPatient(patientId, pageable));
     }
 
     @GetMapping("/doctor/{doctorId}")
-    public Result<List<RegistrationDTO>> getByDoctor(@PathVariable Long doctorId) {
-        return Result.success(registrationService.getRegistrationsByDoctor(doctorId));
+    public Result<Page<RegistrationDTO>> getByDoctor(@PathVariable Long doctorId, Pageable pageable) {
+        return Result.success(registrationService.getRegistrationsByDoctor(doctorId, pageable));
     }
 
-    @PutMapping("/{id}/confirm")
+    @PostMapping("/{id}/confirm")
     public Result<RegistrationDTO> confirmRegistration(@PathVariable Long id) {
         return Result.success(registrationService.confirmRegistration(id));
     }
 
-    @PutMapping("/{id}/complete")
+    @PostMapping("/{id}/complete")
     public Result<RegistrationDTO> completeRegistration(@PathVariable Long id) {
         return Result.success(registrationService.completeRegistration(id));
     }
 
-    @PutMapping("/{id}/cancel")
+    @PostMapping("/{id}/cancel")
     public Result<RegistrationDTO> cancelRegistration(@PathVariable Long id,
                                                       @Valid @RequestBody CancelRegistrationRequest request) {
         return Result.success(registrationService.cancelRegistration(id, request));
     }
 
-    @PutMapping("/{id}/noshow")
+    @PostMapping("/{id}/noshow")
     public Result<RegistrationDTO> markNoShow(@PathVariable Long id) {
         return Result.success(registrationService.markNoShow(id));
     }

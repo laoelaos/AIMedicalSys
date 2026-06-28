@@ -21,4 +21,5 @@ spring:
 
 jwt:
   secret: dGVzdC1zZWNyZXQta2V5LWZvci1pbnRlZ3JhdGlvbi10ZXN0cy1taW4tMzI=
-  expiration: 86400
+  access-token-expiration: 86400
+  refresh-token-expiration: 604800

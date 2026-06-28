@@ -1,5 +1,6 @@
 package com.aimedical.modules.medicalorder.dto;
 
+import com.aimedical.modules.medicalorder.entity.OrderType;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -9,7 +10,7 @@ public class MedicalOrderItemDTO {
 
     private Long id;
     private Long orderId;
-    private String itemType;
+    private OrderType itemType;
     private String itemCode;
     private String itemName;
     private String specification;

@@ -3,8 +3,8 @@ package com.aimedical.modules.registration.service;
 import com.aimedical.modules.registration.dto.CancelRegistrationRequest;
 import com.aimedical.modules.registration.dto.RegistrationDTO;
 import com.aimedical.modules.registration.dto.TriageRecordDTO;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface RegistrationService {
 
@@ -12,9 +12,9 @@ public interface RegistrationService {
 
     RegistrationDTO getRegistration(Long id);
 
-    List<RegistrationDTO> getRegistrationsByPatient(Long patientId);
+    Page<RegistrationDTO> getRegistrationsByPatient(Long patientId, Pageable pageable);
 
-    List<RegistrationDTO> getRegistrationsByDoctor(Long doctorId);
+    Page<RegistrationDTO> getRegistrationsByDoctor(Long doctorId, Pageable pageable);
 
     RegistrationDTO confirmRegistration(Long id);
 

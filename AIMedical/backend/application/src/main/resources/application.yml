@@ -46,6 +46,11 @@ management:
       exposure:
         include: health,info,metrics
 
+jwt:
+  secret: ${JWT_SECRET:ZGV2LXNlY3JldC1rZXktZm9yLWxvY2FsLWRldmVsb3BtZW50LW9ubHktcGxlYXNlLWNoYW5nZS1pbi1wcm9kdWN0aW9u}
+  access-token-expiration: 86400
+  refresh-token-expiration: 604800
+
 springdoc:
   api-docs:
     path: /v3/api-docs

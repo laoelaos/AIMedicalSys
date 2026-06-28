@@ -1,6 +1,9 @@
 package com.aimedical.modules.registration.repository;
 
 import com.aimedical.modules.registration.entity.Registration;
+import com.aimedical.modules.registration.entity.RegistrationStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,11 +15,11 @@ import java.util.List;
 @Repository
 public interface RegistrationRepository extends JpaRepository<Registration, Long> {
 
-    List<Registration> findByPatientId(Long patientId);
+    Page<Registration> findByPatientId(Long patientId, Pageable pageable);
 
-    List<Registration> findByDoctorId(Long doctorId);
+    Page<Registration> findByDoctorId(Long doctorId, Pageable pageable);
 
-    List<Registration> findByStatus(String status);
+    List<Registration> findByStatus(RegistrationStatus status);
 
     List<Registration> findByScheduledDate(LocalDate date);
 

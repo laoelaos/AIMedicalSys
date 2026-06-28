@@ -2,18 +2,17 @@ package com.aimedical.modules.medicalorder.entity;
 
 import com.aimedical.common.base.BaseEnum;
 
-public enum OrderStatus implements BaseEnum {
-    DRAFT("DRAFT", "草稿"),
-    SUBMITTED("SUBMITTED", "已提交"),
-    CHARGED("CHARGED", "已收费"),
-    DISPENSED("DISPENSED", "已发药"),
-    COMPLETED("COMPLETED", "已完成"),
-    CANCELLED("CANCELLED", "已取消");
+public enum ChargeItemType implements BaseEnum {
+    DRUG("DRUG", "药品"),
+    EXAMINATION("EXAMINATION", "检查"),
+    LAB_TEST("LAB_TEST", "检验"),
+    MATERIAL("MATERIAL", "材料"),
+    OTHER("OTHER", "其他");
 
     private final String code;
     private final String desc;
 
-    OrderStatus(String code, String desc) {
+    ChargeItemType(String code, String desc) {
         this.code = code;
         this.desc = desc;
     }

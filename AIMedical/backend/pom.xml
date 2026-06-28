@@ -168,7 +168,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.11</version>
+                <version>${jacoco.version}</version>
                 <configuration>
                     <skip>${jacoco.skip}</skip>
                 </configuration>
@@ -199,9 +199,14 @@
                                     <element>BUNDLE</element>
                                     <limits>
                                         <limit>
-                                            <counter>INSTRUCTION</counter>
+                                            <counter>LINE</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.00</minimum>
+                                            <minimum>${jacoco.min.line.coverage}</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>${jacoco.min.branch.coverage}</minimum>
                                         </limit>
                                     </limits>
                                 </rule>

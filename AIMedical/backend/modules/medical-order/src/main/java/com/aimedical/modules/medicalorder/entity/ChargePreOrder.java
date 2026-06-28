@@ -3,6 +3,8 @@ package com.aimedical.modules.medicalorder.entity;
 import com.aimedical.common.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.Data;
 
@@ -25,8 +27,9 @@ public class ChargePreOrder extends BaseEntity {
     @Column(name = "total_amount", precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "charge_status", length = 20)
-    private String chargeStatus = "PENDING";
+    private ChargeStatus chargeStatus = ChargeStatus.PENDING;
 
     @Column(length = 500)
     private String remark;

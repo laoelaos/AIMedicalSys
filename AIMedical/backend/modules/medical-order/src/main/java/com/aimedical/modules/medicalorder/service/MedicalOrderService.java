@@ -3,8 +3,8 @@ package com.aimedical.modules.medicalorder.service;
 import com.aimedical.modules.medicalorder.dto.ChargePreOrderDTO;
 import com.aimedical.modules.medicalorder.dto.MedicalOrderDTO;
 import com.aimedical.modules.medicalorder.dto.MedicationOrderDTO;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface MedicalOrderService {
 
@@ -16,11 +16,17 @@ public interface MedicalOrderService {
 
     MedicalOrderDTO cancelOrder(Long id);
 
+    MedicalOrderDTO chargeOrder(Long id);
+
+    MedicalOrderDTO dispenseOrder(Long id);
+
+    MedicalOrderDTO completeOrder(Long id);
+
     ChargePreOrderDTO generateChargePreOrder(Long orderId);
 
-    List<MedicalOrderDTO> getOrdersByPatient(Long patientId);
+    Page<MedicalOrderDTO> getOrdersByPatient(Long patientId, Pageable pageable);
 
-    List<MedicalOrderDTO> getOrdersByDoctor(Long doctorId);
+    Page<MedicalOrderDTO> getOrdersByDoctor(Long doctorId, Pageable pageable);
 
     MedicationOrderDTO buildMedicationOrderContract(Long orderId);
 

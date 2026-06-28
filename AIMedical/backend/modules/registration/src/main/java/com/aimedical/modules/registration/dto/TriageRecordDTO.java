@@ -1,5 +1,6 @@
 package com.aimedical.modules.registration.dto;
 
+import com.aimedical.modules.registration.entity.TriageLevel;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -17,7 +18,7 @@ public class TriageRecordDTO {
     private String bloodPressure;
     private Integer heartRate;
     private String triageDepartment;
-    private String triageLevel;
+    private TriageLevel triageLevel;
     private String triageNote;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

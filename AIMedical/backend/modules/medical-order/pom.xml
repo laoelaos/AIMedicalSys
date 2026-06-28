@@ -11,6 +11,7 @@
 
     <properties>
         <jacoco.skip>false</jacoco.skip>
+        <jacoco.skip.check>false</jacoco.skip.check>
     </properties>
 
     <dependencies>
@@ -35,6 +36,11 @@
         <dependency>
             <groupId>com.aimedical</groupId>
             <artifactId>doctor</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.aimedical</groupId>
+            <artifactId>registration</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

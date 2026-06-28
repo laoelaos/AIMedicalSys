@@ -27,7 +27,8 @@ spring:
 
 jwt:
   secret: ZGV2LXNlY3JldC1rZXktZm9yLWxvY2FsLWRldmVsb3BtZW50LW9ubHktcGxlYXNlLWNoYW5nZS1pbi1wcm9kdWN0aW9u
-  expiration: 86400
+  access-token-expiration: 86400
+  refresh-token-expiration: 604800
 
 ai:
   mock:

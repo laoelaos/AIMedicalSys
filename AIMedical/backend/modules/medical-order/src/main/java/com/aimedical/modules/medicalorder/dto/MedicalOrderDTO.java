@@ -1,5 +1,8 @@
 package com.aimedical.modules.medicalorder.dto;
 
+import com.aimedical.modules.medicalorder.entity.OrderStatus;
+import com.aimedical.modules.medicalorder.entity.OrderType;
+import jakarta.validation.Valid;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -13,12 +16,13 @@ public class MedicalOrderDTO {
     private Long doctorId;
     private Long registrationId;
     private String orderNo;
-    private String orderType;
-    private String orderStatus;
+    private OrderType orderType;
+    private OrderStatus orderStatus;
     private String diagnosis;
     private BigDecimal totalAmount;
     private Boolean isUrgent;
     private String remark;
+    @Valid
     private List<MedicalOrderItemDTO> items;
 
 }

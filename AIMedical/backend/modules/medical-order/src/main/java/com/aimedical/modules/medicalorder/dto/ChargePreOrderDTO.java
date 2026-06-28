@@ -1,5 +1,6 @@
 package com.aimedical.modules.medicalorder.dto;
 
+import com.aimedical.modules.medicalorder.entity.ChargeStatus;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -13,7 +14,7 @@ public class ChargePreOrderDTO {
     private Long patientId;
     private String chargeNo;
     private BigDecimal totalAmount;
-    private String chargeStatus;
+    private ChargeStatus chargeStatus;
     private String remark;
     private List<ChargePreOrderItemDTO> items;
 

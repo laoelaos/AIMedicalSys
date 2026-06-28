@@ -29,7 +29,8 @@ public enum GlobalErrorCode implements ErrorCode {
     REGISTRATION_CANCEL_FORBIDDEN("REGISTRATION_CANCEL_FORBIDDEN", "预约时间距现在不足2小时，无法在线取消，请到窗口线下办理"),
     ORDER_STATUS_INVALID("ORDER_STATUS_INVALID", "当前订单状态不允许此操作"),
     ORDER_ITEM_EMPTY("ORDER_ITEM_EMPTY", "订单至少需要包含一个项目"),
-    CHARGE_PRE_ORDER_EXISTS("CHARGE_PRE_ORDER_EXISTS", "该订单已生成收费前置单，不可重复生成");
+    CHARGE_PRE_ORDER_EXISTS("CHARGE_PRE_ORDER_EXISTS", "该订单已生成收费前置单，不可重复生成"),
+    TRIAGE_RECORD_EXISTS("TRIAGE_RECORD_EXISTS", "该挂号已存在分诊记录，不可重复创建");
 
     private final String code;
     private final String message;

@@ -3,6 +3,8 @@ package com.aimedical.modules.medicalorder.entity;
 import com.aimedical.common.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.Data;
 
@@ -16,8 +18,9 @@ public class MedicalOrderItem extends BaseEntity {
     @Column(name = "order_id")
     private Long orderId;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private String itemType;
+    private OrderType itemType;
 
     @Column(length = 64)
     private String itemCode;

@@ -3,6 +3,8 @@ package com.aimedical.modules.registration.entity;
 import com.aimedical.common.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.Data;
 
@@ -33,8 +35,9 @@ public class TriageRecord extends BaseEntity {
     @Column(length = 64)
     private String triageDepartment;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private String triageLevel;
+    private TriageLevel triageLevel;
 
     @Column(length = 500)
     private String triageNote;

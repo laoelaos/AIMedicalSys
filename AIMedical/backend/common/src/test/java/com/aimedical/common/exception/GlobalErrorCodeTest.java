@@ -8,7 +8,7 @@ class GlobalErrorCodeTest {
 
     @Test
     void shouldHaveExpectedConstants() {
-        assertEquals(25, GlobalErrorCode.values().length);
+        assertEquals(26, GlobalErrorCode.values().length);
         assertNotNull(GlobalErrorCode.valueOf("SUCCESS"));
         assertNotNull(GlobalErrorCode.valueOf("SYSTEM_ERROR"));
         assertNotNull(GlobalErrorCode.valueOf("PARAM_INVALID"));
@@ -34,6 +34,7 @@ class GlobalErrorCodeTest {
         assertNotNull(GlobalErrorCode.valueOf("ORDER_STATUS_INVALID"));
         assertNotNull(GlobalErrorCode.valueOf("ORDER_ITEM_EMPTY"));
         assertNotNull(GlobalErrorCode.valueOf("CHARGE_PRE_ORDER_EXISTS"));
+        assertNotNull(GlobalErrorCode.valueOf("TRIAGE_RECORD_EXISTS"));
     }
 
     @Test
@@ -172,5 +173,11 @@ class GlobalErrorCodeTest {
     void chargePreOrderExistsShouldReturnCorrectCodeAndMessage() {
         assertEquals("CHARGE_PRE_ORDER_EXISTS", GlobalErrorCode.CHARGE_PRE_ORDER_EXISTS.getCode());
         assertEquals("该订单已生成收费前置单，不可重复生成", GlobalErrorCode.CHARGE_PRE_ORDER_EXISTS.getMessage());
+    }
+
+    @Test
+    void triageRecordExistsShouldReturnCorrectCodeAndMessage() {
+        assertEquals("TRIAGE_RECORD_EXISTS", GlobalErrorCode.TRIAGE_RECORD_EXISTS.getCode());
+        assertEquals("该挂号已存在分诊记录，不可重复创建", GlobalErrorCode.TRIAGE_RECORD_EXISTS.getMessage());
     }
 }
