@@ -57,6 +57,7 @@ async function handleLogin() {
       ElMessage.error(err)
     } else {
       ElMessage.success('登录成功')
+      await auth.fetchProfile()
       router.push('/profile')
     }
   } catch (e) {

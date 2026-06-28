@@ -4,8 +4,8 @@
     <el-card class="sub-card">
       <template #header><strong>过敏史</strong></template>
       <div v-if="summary?.allergies?.length">
-        <el-tag v-for="a in summary.allergies" :key="a.id" closable style="margin:4px"
-          @close="handleDeleteAllergy(a.id)">
+        <el-tag v-for="a in summary.allergies" :key="a.id" closable style="margin:4px;cursor:pointer"
+          @close="handleDeleteAllergy(a.id)" @click="openEditAllergyDialog(a)">
           {{ a.allergen }}
           <template v-if="a.severity"> ({{ severityLabel(a.severity) }})</template>
         </el-tag>
@@ -18,8 +18,8 @@
     <el-card class="sub-card">
       <template #header><strong>慢病史</strong></template>
       <div v-if="summary?.chronic_diseases?.length">
-        <el-tag v-for="c in summary.chronic_diseases" :key="c.id" closable style="margin:4px"
-          @close="handleDeleteChronic(c.id)">
+        <el-tag v-for="c in summary.chronic_diseases" :key="c.id" closable style="margin:4px;cursor:pointer"
+          @close="handleDeleteChronic(c.id)" @click="openEditChronicDialog(c)">
           {{ c.disease_name }}
           <template v-if="c.current_status">
             ({{ statusLabel(c.current_status) }})
@@ -37,7 +37,8 @@
         <div v-for="f in summary.family_histories" :key="f.id" class="record-row">
           <span>{{ f.relationship }}: {{ f.disease_name }}</span>
           <template v-if="f.note"> ({{ f.note }})</template>
-          <el-button type="danger" link size="small" @click="handleDeleteFamily(f.id)">删除</el-button>
+          <el-button type="primary" link size="small" @click="openEditFamilyDialog(f)">编辑</el-button>
+            <el-button type="danger" link size="small" @click="handleDeleteFamily(f.id)">删除</el-button>
         </div>
       </div>
       <el-empty v-else description="暂无家族史" :image-size="40" />
@@ -50,7 +51,8 @@
       <div v-if="summary?.surgery_histories?.length">
         <div v-for="s in summary.surgery_histories" :key="s.id" class="record-row">
           <span>{{ s.surgery_name }} {{ s.surgery_at ? `(${s.surgery_at})` : '' }} {{ s.hospital ? `- ${s.hospital}` : '' }}</span>
-          <el-button type="danger" link size="small" @click="handleDeleteSurgery(s.id)">删除</el-button>
+          <el-button type="primary" link size="small" @click="openEditSurgeryDialog(s)">编辑</el-button>
+            <el-button type="danger" link size="small" @click="handleDeleteSurgery(s.id)">删除</el-button>
         </div>
       </div>
       <el-empty v-else description="暂无手术史" :image-size="40" />
@@ -63,7 +65,8 @@
       <div v-if="summary?.medication_histories?.length">
         <div v-for="m in summary.medication_histories" :key="m.id" class="record-row">
           <span>{{ m.drug_name }} {{ m.started_at ? `${m.started_at}` : '' }}{{ m.ended_at ? `~${m.ended_at}` : '' }}</span>
-          <el-button type="danger" link size="small" @click="handleDeleteMedication(m.id)">删除</el-button>
+          <el-button type="primary" link size="small" @click="openEditMedicationDialog(m)">编辑</el-button>
+            <el-button type="danger" link size="small" @click="handleDeleteMedication(m.id)">删除</el-button>
         </div>
       </div>
       <el-empty v-else description="暂无用药史" :image-size="40" />
