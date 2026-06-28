@@ -1,6 +1,7 @@
 package com.aimedical.common.result;
 
 import com.aimedical.common.exception.ErrorCode;
+import com.aimedical.common.exception.GlobalErrorCode;
 import lombok.Data;
 
 @Data
@@ -15,15 +16,15 @@ public class Result<T> {
 
     public static <T> Result<T> success(T data) {
         Result<T> result = new Result<>();
-        result.code = "SUCCESS";
-        result.message = "成功";
+        result.code = GlobalErrorCode.SUCCESS.getCode();
+        result.message = GlobalErrorCode.SUCCESS.getMessage();
         result.data = data;
         return result;
     }
 
     public static <T> Result<T> success(T data, String message) {
         Result<T> result = new Result<>();
-        result.code = "SUCCESS";
+        result.code = GlobalErrorCode.SUCCESS.getCode();
         result.message = message;
         result.data = data;
         return result;

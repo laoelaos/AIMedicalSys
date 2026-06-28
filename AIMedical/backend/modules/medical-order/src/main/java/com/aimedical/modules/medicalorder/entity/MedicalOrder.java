@@ -6,13 +6,17 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "medical_order")
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(callSuper = true)
 public class MedicalOrder extends BaseEntity {
 
     @Column(name = "patient_id")
@@ -24,7 +28,7 @@ public class MedicalOrder extends BaseEntity {
     @Column(name = "registration_id")
     private Long registrationId;
 
-    @Column(length = 32, unique = true)
+    @Column(name = "order_no", length = 32, unique = true)
     private String orderNo;
 
     @Enumerated(EnumType.STRING)
@@ -35,7 +39,7 @@ public class MedicalOrder extends BaseEntity {
     @Column(name = "order_status", length = 20)
     private OrderStatus orderStatus = OrderStatus.DRAFT;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "diagnosis", columnDefinition = "TEXT")
     private String diagnosis;
 
     @Column(name = "total_amount", precision = 10, scale = 2)
@@ -44,7 +48,7 @@ public class MedicalOrder extends BaseEntity {
     @Column(name = "is_urgent")
     private Boolean isUrgent = false;
 
-    @Column(length = 500)
+    @Column(name = "remark", length = 500)
     private String remark;
 
 }

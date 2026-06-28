@@ -6,55 +6,60 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "medical_order_item")
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(callSuper = true)
 public class MedicalOrderItem extends BaseEntity {
 
     @Column(name = "order_id")
     private Long orderId;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    private OrderType itemType;
+    @Column(name = "item_type", length = 20)
+    private ItemType itemType;
 
-    @Column(length = 64)
+    @Column(name = "item_code", length = 64)
     private String itemCode;
 
-    @Column(length = 255)
+    @Column(name = "item_name", length = 255)
     private String itemName;
 
-    @Column(length = 255)
+    @Column(name = "specification", length = 255)
     private String specification;
 
-    @Column(precision = 10, scale = 2)
+    @Column(name = "quantity", precision = 10, scale = 2)
     private BigDecimal quantity;
 
-    @Column(length = 20)
+    @Column(name = "unit", length = 20)
     private String unit;
 
-    @Column(precision = 10, scale = 2)
+    @Column(name = "unit_price", precision = 10, scale = 2)
     private BigDecimal unitPrice;
 
-    @Column(precision = 10, scale = 2)
+    @Column(name = "amount", precision = 10, scale = 2)
     private BigDecimal amount;
 
-    @Column(length = 100)
+    @Column(name = "dosage", length = 100)
     private String dosage;
 
-    @Column(length = 100)
+    @Column(name = "usage_method", length = 100)
     private String usageMethod;
 
-    @Column(length = 50)
+    @Column(name = "frequency", length = 50)
     private String frequency;
 
+    @Column(name = "days")
     private Integer days;
 
-    @Column(length = 500)
+    @Column(name = "remark", length = 500)
     private String remark;
 
 }

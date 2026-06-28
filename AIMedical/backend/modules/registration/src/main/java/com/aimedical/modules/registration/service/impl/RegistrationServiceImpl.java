@@ -2,8 +2,8 @@ package com.aimedical.modules.registration.service.impl;
 
 import com.aimedical.common.exception.BusinessException;
 import com.aimedical.common.exception.GlobalErrorCode;
-import com.aimedical.modules.doctor.repository.DoctorRepository;
-import com.aimedical.modules.patient.repository.PatientRepository;
+import com.aimedical.modules.doctor.service.DoctorService;
+import com.aimedical.modules.patient.service.PatientService;
 import com.aimedical.modules.registration.converter.RegistrationConverter;
 import com.aimedical.modules.registration.dto.CancelRegistrationRequest;
 import com.aimedical.modules.registration.dto.RegistrationDTO;
@@ -17,6 +17,9 @@ import com.aimedical.modules.registration.repository.RegistrationRepository;
 import com.aimedical.modules.registration.repository.TriageRecordRepository;
 import com.aimedical.modules.registration.service.RegistrationService;
 import jakarta.persistence.OptimisticLockException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -32,22 +35,24 @@ import java.util.stream.Collectors;
 @Service
 public class RegistrationServiceImpl implements RegistrationService {
 
+    private static final Logger log = LoggerFactory.getLogger(RegistrationServiceImpl.class);
+
     private final RegistrationRepository registrationRepository;
     private final TriageRecordRepository triageRecordRepository;
-    private final PatientRepository patientRepository;
-    private final DoctorRepository doctorRepository;
+    private final PatientService patientService;
+    private final DoctorService doctorService;
 
     /** 排号生成的锁对象，保证同一医生同一日期的排号原子性 */
     private final Object queueLock = new Object();
 
     public RegistrationServiceImpl(RegistrationRepository registrationRepository,
                                    TriageRecordRepository triageRecordRepository,
-                                   PatientRepository patientRepository,
-                                   DoctorRepository doctorRepository) {
+                                   PatientService patientService,
+                                   DoctorService doctorService) {
         this.registrationRepository = registrationRepository;
         this.triageRecordRepository = triageRecordRepository;
-        this.patientRepository = patientRepository;
-        this.doctorRepository = doctorRepository;
+        this.patientService = patientService;
+        this.doctorService = doctorService;
     }
 
     @Override
@@ -55,12 +60,14 @@ public class RegistrationServiceImpl implements RegistrationService {
     public RegistrationDTO createRegistration(RegistrationDTO dto) {
         // 校验患者和医生是否存在
         if (dto.getPatientId() != null) {
-            patientRepository.findById(dto.getPatientId())
-                    .orElseThrow(() -> new BusinessException(GlobalErrorCode.NOT_FOUND, "患者不存在: " + dto.getPatientId()));
+            if (!patientService.existsById(dto.getPatientId())) {
+                throw new BusinessException(GlobalErrorCode.NOT_FOUND, "患者不存在: " + dto.getPatientId());
+            }
         }
         if (dto.getDoctorId() != null) {
-            doctorRepository.findById(dto.getDoctorId())
-                    .orElseThrow(() -> new BusinessException(GlobalErrorCode.NOT_FOUND, "医生不存在: " + dto.getDoctorId()));
+            if (!doctorService.existsById(dto.getDoctorId())) {
+                throw new BusinessException(GlobalErrorCode.NOT_FOUND, "医生不存在: " + dto.getDoctorId());
+            }
         }
 
         Registration entity = RegistrationConverter.toRegistrationEntity(dto);
@@ -92,7 +99,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             }
         }
 
-        entity = registrationRepository.save(entity);
+        entity = saveRegistrationWithRetry(entity);
         return RegistrationConverter.toRegistrationDTO(entity);
     }
 
@@ -222,7 +229,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     private int generateQueueNumber(Long doctorId, LocalDate scheduledDate) {
         if (scheduledDate == null || doctorId == null) {
-            return 1;
+            throw new BusinessException(GlobalErrorCode.PARAM_INVALID, "医生ID和预约日期不能为空");
         }
         synchronized (queueLock) {
             long count = registrationRepository.countByScheduledDateAndDoctorId(scheduledDate, doctorId);
@@ -232,6 +239,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     private String determineCancelType(LocalDate scheduledDate, String scheduledTimeSlot) {
         if (scheduledDate == null || scheduledTimeSlot == null) {
+            log.warn("scheduledDate or scheduledTimeSlot is null, defaulting to offline cancel");
             return "offline";
         }
 
@@ -246,16 +254,28 @@ public class RegistrationServiceImpl implements RegistrationService {
                 return "offline";
             }
         } catch (DateTimeParseException | IllegalArgumentException e) {
+            log.warn("Failed to parse scheduledTimeSlot '{}', defaulting to offline cancel: {}", scheduledTimeSlot, e.getMessage());
             return "offline";
         }
     }
 
     private LocalTime parseTimeSlotStart(String timeSlot) {
-        String[] parts = timeSlot.split("-");
+        String trimmed = timeSlot.trim();
+
+        // Handle AM/PM format
+        if ("AM".equalsIgnoreCase(trimmed)) {
+            return LocalTime.of(8, 0);
+        }
+        if ("PM".equalsIgnoreCase(trimmed)) {
+            return LocalTime.of(13, 0);
+        }
+
+        // Handle HH:mm-HH:mm format
+        String[] parts = trimmed.split("-");
         if (parts.length > 0) {
             return LocalTime.parse(parts[0].trim());
         }
-        return LocalTime.parse(timeSlot.trim());
+        return LocalTime.parse(trimmed);
     }
 
     /**
@@ -268,5 +288,22 @@ public class RegistrationServiceImpl implements RegistrationService {
             throw new BusinessException(GlobalErrorCode.SYSTEM_ERROR,
                     operation + "失败：数据已被其他操作修改，请刷新后重试");
         }
+    }
+
+    private Registration saveRegistrationWithRetry(Registration entity) {
+        int maxRetries = 3;
+        for (int i = 0; i < maxRetries; i++) {
+            try {
+                return registrationRepository.save(entity);
+            } catch (DataIntegrityViolationException e) {
+                if (i == maxRetries - 1) {
+                    throw new BusinessException(GlobalErrorCode.SYSTEM_ERROR,
+                            "排号生成失败，请重试");
+                }
+                // Re-generate queue number and retry
+                entity.setQueueNumber(generateQueueNumber(entity.getDoctorId(), entity.getScheduledDate()));
+            }
+        }
+        throw new BusinessException(GlobalErrorCode.SYSTEM_ERROR, "排号生成失败");
     }
 }

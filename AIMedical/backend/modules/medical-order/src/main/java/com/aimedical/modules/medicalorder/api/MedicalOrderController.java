@@ -2,6 +2,7 @@ package com.aimedical.modules.medicalorder.api;
 
 import com.aimedical.common.result.Result;
 import com.aimedical.modules.medicalorder.dto.ChargePreOrderDTO;
+import com.aimedical.modules.medicalorder.dto.MedicalOrderCreateRequest;
 import com.aimedical.modules.medicalorder.dto.MedicalOrderDTO;
 import com.aimedical.modules.medicalorder.dto.MedicationOrderDTO;
 import com.aimedical.modules.medicalorder.service.MedicalOrderService;
@@ -26,8 +27,8 @@ public class MedicalOrderController {
     }
 
     @PostMapping
-    public Result<MedicalOrderDTO> createOrder(@Valid @RequestBody MedicalOrderDTO dto) {
-        return Result.success(medicalOrderService.createOrder(dto));
+    public Result<MedicalOrderDTO> createOrder(@Valid @RequestBody MedicalOrderCreateRequest request) {
+        return Result.success(medicalOrderService.createOrder(request));
     }
 
     @GetMapping("/{id}")

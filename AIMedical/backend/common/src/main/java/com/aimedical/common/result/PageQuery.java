@@ -13,6 +13,7 @@ public class PageQuery {
     @Min(0)
     private int page = 0;
 
+    @Min(1)
     @Max(500)
     private int size = 20;
 

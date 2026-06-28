@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @Setter
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
-@SQLDelete(sql = "UPDATE {h-table} SET deleted = true WHERE id = ?")
+@SQLDelete(sql = "UPDATE {h-table} SET deleted = true, version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted = false")
 public abstract class BaseEntity {
 

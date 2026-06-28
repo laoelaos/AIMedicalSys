@@ -4,29 +4,33 @@ import com.aimedical.common.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "admin_profile")
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(callSuper = true)
 public class AdminEntity extends BaseEntity {
 
-    @Column(unique = true)
+    @Column(name = "user_id", unique = true)
     private Long userId;
 
-    @Column(length = 64)
+    @Column(name = "real_name", length = 64)
     private String realName;
 
-    @Column(length = 20)
+    @Column(name = "gender", length = 20)
     private String gender;
 
-    @Column(length = 20)
+    @Column(name = "phone", length = 20)
     private String phone;
 
-    @Column(length = 64)
+    @Column(name = "department", length = 64)
     private String department;
 
-    @Column(length = 500)
+    @Column(name = "remark", length = 500)
     private String remark;
 
 }

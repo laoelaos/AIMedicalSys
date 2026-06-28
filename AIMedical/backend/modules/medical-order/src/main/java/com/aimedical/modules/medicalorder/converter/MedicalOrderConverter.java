@@ -2,6 +2,7 @@ package com.aimedical.modules.medicalorder.converter;
 
 import com.aimedical.modules.medicalorder.dto.ChargePreOrderDTO;
 import com.aimedical.modules.medicalorder.dto.ChargePreOrderItemDTO;
+import com.aimedical.modules.medicalorder.dto.MedicalOrderCreateRequest;
 import com.aimedical.modules.medicalorder.dto.MedicalOrderDTO;
 import com.aimedical.modules.medicalorder.dto.MedicalOrderItemDTO;
 import com.aimedical.modules.medicalorder.dto.MedicationOrderDTO;
@@ -43,6 +44,18 @@ public class MedicalOrderConverter {
         entity.setOrderStatus(dto.getOrderStatus());
         entity.setDiagnosis(dto.getDiagnosis());
         entity.setTotalAmount(dto.getTotalAmount());
+        entity.setIsUrgent(dto.getIsUrgent());
+        entity.setRemark(dto.getRemark());
+        return entity;
+    }
+
+    public static MedicalOrder toEntity(MedicalOrderCreateRequest dto) {
+        MedicalOrder entity = new MedicalOrder();
+        entity.setPatientId(dto.getPatientId());
+        entity.setDoctorId(dto.getDoctorId());
+        entity.setRegistrationId(dto.getRegistrationId());
+        entity.setOrderType(dto.getOrderType());
+        entity.setDiagnosis(dto.getDiagnosis());
         entity.setIsUrgent(dto.getIsUrgent());
         entity.setRemark(dto.getRemark());
         return entity;

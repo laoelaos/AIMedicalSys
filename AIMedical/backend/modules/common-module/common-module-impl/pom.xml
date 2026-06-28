@@ -11,6 +11,10 @@
     <artifactId>common-module-impl</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <jacoco.skip>false</jacoco.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.aimedical</groupId>
@@ -64,7 +68,7 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>runtime</scope>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

@@ -2,9 +2,10 @@ package com.aimedical.modules.medicalorder.service.impl;
 
 import com.aimedical.common.exception.BusinessException;
 import com.aimedical.common.exception.GlobalErrorCode;
-import com.aimedical.modules.doctor.repository.DoctorRepository;
+import com.aimedical.modules.doctor.service.DoctorService;
 import com.aimedical.modules.medicalorder.converter.MedicalOrderConverter;
 import com.aimedical.modules.medicalorder.dto.ChargePreOrderDTO;
+import com.aimedical.modules.medicalorder.dto.MedicalOrderCreateRequest;
 import com.aimedical.modules.medicalorder.dto.MedicalOrderDTO;
 import com.aimedical.modules.medicalorder.dto.MedicalOrderItemDTO;
 import com.aimedical.modules.medicalorder.dto.MedicationOrderDTO;
@@ -12,21 +13,21 @@ import com.aimedical.modules.medicalorder.entity.ChargePreOrder;
 import com.aimedical.modules.medicalorder.entity.ChargePreOrderItem;
 import com.aimedical.modules.medicalorder.entity.ChargeItemType;
 import com.aimedical.modules.medicalorder.entity.ChargeStatus;
+import com.aimedical.modules.medicalorder.entity.ItemType;
 import com.aimedical.modules.medicalorder.entity.MedicalOrder;
 import com.aimedical.modules.medicalorder.entity.MedicalOrderItem;
 import com.aimedical.modules.medicalorder.entity.OrderStatus;
-import com.aimedical.modules.medicalorder.entity.OrderType;
 import com.aimedical.modules.medicalorder.repository.ChargePreOrderItemRepository;
 import com.aimedical.modules.medicalorder.repository.ChargePreOrderRepository;
 import com.aimedical.modules.medicalorder.repository.MedicalOrderItemRepository;
 import com.aimedical.modules.medicalorder.repository.MedicalOrderRepository;
 import com.aimedical.modules.medicalorder.service.MedicalOrderService;
-import com.aimedical.modules.patient.repository.PatientRepository;
+import com.aimedical.modules.patient.service.PatientService;
 import com.aimedical.modules.registration.entity.Registration;
 import com.aimedical.modules.registration.entity.RegistrationStatus;
 import com.aimedical.modules.registration.repository.RegistrationRepository;
-import jakarta.persistence.OptimisticLockException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -48,29 +49,29 @@ public class MedicalOrderServiceImpl implements MedicalOrderService {
     private final MedicalOrderItemRepository itemRepository;
     private final ChargePreOrderRepository chargePreOrderRepository;
     private final ChargePreOrderItemRepository chargePreOrderItemRepository;
-    private final PatientRepository patientRepository;
-    private final DoctorRepository doctorRepository;
+    private final PatientService patientService;
+    private final DoctorService doctorService;
     private final RegistrationRepository registrationRepository;
 
     public MedicalOrderServiceImpl(MedicalOrderRepository orderRepository,
                                    MedicalOrderItemRepository itemRepository,
                                    ChargePreOrderRepository chargePreOrderRepository,
                                    ChargePreOrderItemRepository chargePreOrderItemRepository,
-                                   PatientRepository patientRepository,
-                                   DoctorRepository doctorRepository,
+                                   PatientService patientService,
+                                   DoctorService doctorService,
                                    RegistrationRepository registrationRepository) {
         this.orderRepository = orderRepository;
         this.itemRepository = itemRepository;
         this.chargePreOrderRepository = chargePreOrderRepository;
         this.chargePreOrderItemRepository = chargePreOrderItemRepository;
-        this.patientRepository = patientRepository;
-        this.doctorRepository = doctorRepository;
+        this.patientService = patientService;
+        this.doctorService = doctorService;
         this.registrationRepository = registrationRepository;
     }
 
     @Override
     @Transactional
-    public MedicalOrderDTO createOrder(MedicalOrderDTO dto) {
+    public MedicalOrderDTO createOrder(MedicalOrderCreateRequest dto) {
         if (dto.getPatientId() == null) {
             throw new BusinessException(GlobalErrorCode.PARAM_INVALID, "患者ID不能为空");
         }
@@ -82,10 +83,12 @@ public class MedicalOrderServiceImpl implements MedicalOrderService {
         }
 
         // 校验关联实体是否存在
-        patientRepository.findById(dto.getPatientId())
-                .orElseThrow(() -> new BusinessException(GlobalErrorCode.NOT_FOUND, "患者不存在: " + dto.getPatientId()));
-        doctorRepository.findById(dto.getDoctorId())
-                .orElseThrow(() -> new BusinessException(GlobalErrorCode.NOT_FOUND, "医生不存在: " + dto.getDoctorId()));
+        if (!patientService.existsById(dto.getPatientId())) {
+            throw new BusinessException(GlobalErrorCode.NOT_FOUND, "患者不存在: " + dto.getPatientId());
+        }
+        if (!doctorService.existsById(dto.getDoctorId())) {
+            throw new BusinessException(GlobalErrorCode.NOT_FOUND, "医生不存在: " + dto.getDoctorId());
+        }
         Registration registration = registrationRepository.findById(dto.getRegistrationId())
                 .orElseThrow(() -> new BusinessException(GlobalErrorCode.NOT_FOUND, "挂号记录不存在: " + dto.getRegistrationId()));
         if (!registration.getPatientId().equals(dto.getPatientId())) {
@@ -113,9 +116,10 @@ public class MedicalOrderServiceImpl implements MedicalOrderService {
             }
         }
         order.setTotalAmount(totalAmount);
-        order = orderRepository.save(order);
+        order = saveOrderWithRetry(order);
 
         if (dto.getItems() != null && !dto.getItems().isEmpty()) {
+            List<MedicalOrderItem> itemsToSave = new ArrayList<>();
             for (MedicalOrderItemDTO itemDto : dto.getItems()) {
                 MedicalOrderItem item = MedicalOrderConverter.toEntity(itemDto);
                 item.setOrderId(order.getId());
@@ -123,8 +127,9 @@ public class MedicalOrderServiceImpl implements MedicalOrderService {
                         ? item.getUnitPrice().multiply(item.getQuantity())
                         : BigDecimal.ZERO;
                 item.setAmount(amount);
-                itemRepository.save(item);
+                itemsToSave.add(item);
             }
+            itemRepository.saveAll(itemsToSave);
         }
 
         return enrichOrderDto(order);
@@ -192,6 +197,13 @@ public class MedicalOrderServiceImpl implements MedicalOrderService {
 
         order.setOrderStatus(OrderStatus.CHARGED);
         order = saveOrderWithOptimisticLock(order, "收费");
+
+        // 同步更新收费前置单状态
+        chargePreOrderRepository.findByOrderId(id).ifPresent(chargePreOrder -> {
+            chargePreOrder.setChargeStatus(ChargeStatus.CHARGED);
+            chargePreOrderRepository.save(chargePreOrder);
+        });
+
         return enrichOrderDto(order);
     }
 
@@ -241,6 +253,11 @@ public class MedicalOrderServiceImpl implements MedicalOrderService {
             throw new BusinessException(GlobalErrorCode.ORDER_ITEM_EMPTY, "订单没有项目，无法生成收费预订单");
         }
 
+        // 前置检查：如果已有收费前置单，拒绝重复生成
+        if (chargePreOrderRepository.findByOrderId(orderId).isPresent()) {
+            throw new BusinessException(GlobalErrorCode.CHARGE_PRE_ORDER_EXISTS);
+        }
+
         ChargePreOrder chargePreOrder = new ChargePreOrder();
         chargePreOrder.setOrderId(orderId);
         chargePreOrder.setPatientId(order.getPatientId());
@@ -265,25 +282,18 @@ public class MedicalOrderServiceImpl implements MedicalOrderService {
 
         chargePreOrder.setTotalAmount(totalAmount);
 
-        // 幂等性保护：利用数据库唯一约束防止并发重复创建
+        // 利用数据库唯一约束防止并发重复创建
         try {
             chargePreOrder = chargePreOrderRepository.save(chargePreOrder);
         } catch (DataIntegrityViolationException e) {
-            // 唯一约束冲突，说明已有其他并发请求创建了前置单
-            return chargePreOrderRepository.findByOrderId(orderId)
-                    .map(existing -> {
-                        ChargePreOrderDTO dto = MedicalOrderConverter.toDto(existing);
-                        List<ChargePreOrderItem> savedItems = chargePreOrderItemRepository.findByChargePreOrderId(existing.getId());
-                        dto.setItems(MedicalOrderConverter.toChargeItemDtoList(savedItems));
-                        return dto;
-                    })
-                    .orElseThrow(() -> new BusinessException(GlobalErrorCode.SYSTEM_ERROR, "收费前置单创建失败"));
+            // 并发冲突：其他请求已创建前置单
+            throw new BusinessException(GlobalErrorCode.CHARGE_PRE_ORDER_EXISTS);
         }
 
         for (ChargePreOrderItem chargeItem : chargeItems) {
             chargeItem.setChargePreOrderId(chargePreOrder.getId());
-            chargePreOrderItemRepository.save(chargeItem);
         }
+        chargePreOrderItemRepository.saveAll(chargeItems);
 
         ChargePreOrderDTO dto = MedicalOrderConverter.toDto(chargePreOrder);
         List<ChargePreOrderItem> savedItems = chargePreOrderItemRepository.findByChargePreOrderId(chargePreOrder.getId());
@@ -293,20 +303,30 @@ public class MedicalOrderServiceImpl implements MedicalOrderService {
 
     @Override
     public Page<MedicalOrderDTO> getOrdersByPatient(Long patientId, Pageable pageable) {
-        return orderRepository.findByPatientId(patientId, pageable).map(order -> {
-            MedicalOrderDTO dto = MedicalOrderConverter.toDto(order);
-            List<MedicalOrderItem> items = itemRepository.findByOrderId(order.getId());
-            dto.setItems(MedicalOrderConverter.toItemDtoList(items));
-            return dto;
-        });
+        Page<MedicalOrder> orderPage = orderRepository.findByPatientId(patientId, pageable);
+        return enrichOrderDtos(orderPage);
     }
 
     @Override
     public Page<MedicalOrderDTO> getOrdersByDoctor(Long doctorId, Pageable pageable) {
-        return orderRepository.findByDoctorId(doctorId, pageable).map(order -> {
+        Page<MedicalOrder> orderPage = orderRepository.findByDoctorId(doctorId, pageable);
+        return enrichOrderDtos(orderPage);
+    }
+
+    private Page<MedicalOrderDTO> enrichOrderDtos(Page<MedicalOrder> orderPage) {
+        if (orderPage.isEmpty()) {
+            return orderPage.map(MedicalOrderConverter::toDto);
+        }
+        List<Long> orderIds = orderPage.getContent().stream()
+                .map(MedicalOrder::getId)
+                .collect(Collectors.toList());
+        List<MedicalOrderItem> allItems = itemRepository.findByOrderIdIn(orderIds);
+        return orderPage.map(order -> {
             MedicalOrderDTO dto = MedicalOrderConverter.toDto(order);
-            List<MedicalOrderItem> items = itemRepository.findByOrderId(order.getId());
-            dto.setItems(MedicalOrderConverter.toItemDtoList(items));
+            List<MedicalOrderItem> orderItems = allItems.stream()
+                    .filter(item -> item.getOrderId().equals(order.getId()))
+                    .collect(Collectors.toList());
+            dto.setItems(MedicalOrderConverter.toItemDtoList(orderItems));
             return dto;
         });
     }
@@ -316,20 +336,12 @@ public class MedicalOrderServiceImpl implements MedicalOrderService {
         MedicalOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new BusinessException(GlobalErrorCode.NOT_FOUND, "订单不存在: " + orderId));
 
-        List<MedicalOrderItem> items = itemRepository.findByOrderId(orderId);
+        List<MedicalOrderItem> items = itemRepository.findByOrderId(orderId).stream()
+                .filter(item -> item.getItemType() == ItemType.DRUG)
+                .collect(Collectors.toList());
 
-        String patientName = null;
-        if (order.getPatientId() != null) {
-            patientName = patientRepository.findById(order.getPatientId())
-                    .map(patient -> patient.getRealName())
-                    .orElse(null);
-        }
-        String doctorName = null;
-        if (order.getDoctorId() != null) {
-            doctorName = doctorRepository.findById(order.getDoctorId())
-                    .map(doctor -> doctor.getRealName())
-                    .orElse(null);
-        }
+        String patientName = order.getPatientId() != null ? patientService.getRealName(order.getPatientId()) : null;
+        String doctorName = order.getDoctorId() != null ? doctorService.getRealName(order.getDoctorId()) : null;
 
         return MedicalOrderConverter.toMedicationOrderDTO(order, items, patientName, doctorName);
     }
@@ -356,17 +368,32 @@ public class MedicalOrderServiceImpl implements MedicalOrderService {
     private MedicalOrder saveOrderWithOptimisticLock(MedicalOrder order, String operation) {
         try {
             return orderRepository.save(order);
-        } catch (OptimisticLockException e) {
+        } catch (OptimisticLockingFailureException e) {
             throw new BusinessException(GlobalErrorCode.SYSTEM_ERROR,
                     operation + "失败：数据已被其他操作修改，请刷新后重试");
         }
     }
 
-    private ChargeItemType convertToChargeItemType(OrderType orderType) {
-        if (orderType == null) {
+    private MedicalOrder saveOrderWithRetry(MedicalOrder order) {
+        int maxRetries = 3;
+        for (int i = 0; i < maxRetries; i++) {
+            try {
+                return orderRepository.save(order);
+            } catch (DataIntegrityViolationException e) {
+                if (i == maxRetries - 1) {
+                    throw new BusinessException(GlobalErrorCode.SYSTEM_ERROR, "订单创建失败，请重试");
+                }
+                order.setOrderNo(generateOrderNo("MO"));
+            }
+        }
+        throw new BusinessException(GlobalErrorCode.SYSTEM_ERROR, "订单创建失败");
+    }
+
+    private ChargeItemType convertToChargeItemType(ItemType itemType) {
+        if (itemType == null) {
             return ChargeItemType.OTHER;
         }
-        return switch (orderType) {
+        return switch (itemType) {
             case DRUG -> ChargeItemType.DRUG;
             case EXAMINATION -> ChargeItemType.EXAMINATION;
             case LAB_TEST -> ChargeItemType.LAB_TEST;

@@ -149,7 +149,7 @@ class MovedModulePomTest {
     }
 
     @Test
-    void rootPomShouldHaveExactlyEightModules() throws Exception {
+    void rootPomShouldHaveExactlyTenModules() throws Exception {
         assertEquals(10, rootPom.getDocumentElement()
             .getElementsByTagName("module").getLength());
     }

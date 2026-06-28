@@ -1,6 +1,7 @@
 package com.aimedical.modules.medicalorder.service;
 
 import com.aimedical.modules.medicalorder.dto.ChargePreOrderDTO;
+import com.aimedical.modules.medicalorder.dto.MedicalOrderCreateRequest;
 import com.aimedical.modules.medicalorder.dto.MedicalOrderDTO;
 import com.aimedical.modules.medicalorder.dto.MedicationOrderDTO;
 import org.springframework.data.domain.Page;
@@ -8,7 +9,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface MedicalOrderService {
 
-    MedicalOrderDTO createOrder(MedicalOrderDTO dto);
+    MedicalOrderDTO createOrder(MedicalOrderCreateRequest request);
 
     MedicalOrderDTO getOrder(Long id);
 

@@ -13,6 +13,10 @@
     <artifactId>common</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <jacoco.skip>false</jacoco.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.projectlombok</groupId>

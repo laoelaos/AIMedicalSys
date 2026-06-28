@@ -37,13 +37,15 @@ class ApplicationPomTest {
     }
 
     @Test
-    void shouldHaveAllFiveIgnoredUnusedDeclaredDependencies() throws Exception {
+    void shouldHaveAllSevenIgnoredUnusedDeclaredDependencies() throws Exception {
         String base = "/project/build/plugins/plugin[artifactId='maven-dependency-plugin']/configuration/ignoredUnusedDeclaredDependencies/ignoredUnusedDeclaredDependency";
         assertTrue(exists(base + "[.='com.aimedical:ai-api']"));
         assertTrue(exists(base + "[.='com.aimedical:common-module-api']"));
         assertTrue(exists(base + "[.='com.aimedical:patient']"));
         assertTrue(exists(base + "[.='com.aimedical:doctor']"));
         assertTrue(exists(base + "[.='com.aimedical:admin']"));
+        assertTrue(exists(base + "[.='com.aimedical:medical-order']"));
+        assertTrue(exists(base + "[.='com.aimedical:registration']"));
     }
 
     @Test
