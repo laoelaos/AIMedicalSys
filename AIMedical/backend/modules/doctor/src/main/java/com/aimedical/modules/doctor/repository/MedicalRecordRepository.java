@@ -4,6 +4,7 @@ import com.aimedical.modules.doctor.entity.MedicalRecordEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 病历仓储
