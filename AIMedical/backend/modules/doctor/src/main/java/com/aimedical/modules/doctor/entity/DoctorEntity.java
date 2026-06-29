@@ -3,18 +3,12 @@ package com.aimedical.modules.doctor.entity;
 import com.aimedical.common.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "doctor_profile")
-@Getter
-@Setter
-@EqualsAndHashCode(callSuper = true)
+@Data
 public class DoctorEntity extends BaseEntity {
 
     @Column(name = "user_id", unique = true, nullable = false)

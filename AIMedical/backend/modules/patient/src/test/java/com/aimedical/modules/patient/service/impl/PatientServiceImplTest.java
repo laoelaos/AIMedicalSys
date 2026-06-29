@@ -1,13 +1,16 @@
 package com.aimedical.modules.patient.service.impl;
 
 import com.aimedical.common.result.Result;
+import com.aimedical.modules.patient.repository.PatientRepository;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class PatientServiceImplTest {
 
-    private final PatientServiceImpl service = new PatientServiceImpl();
+    private final PatientRepository repository = mock(PatientRepository.class);
+    private final PatientServiceImpl service = new PatientServiceImpl(repository);
 
     @Test
     void shouldReturnSuccessCode() {
