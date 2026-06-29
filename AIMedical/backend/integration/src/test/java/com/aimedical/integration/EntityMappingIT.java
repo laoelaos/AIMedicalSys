@@ -10,9 +10,15 @@ import com.aimedical.modules.commonmodule.permission.Post;
 import com.aimedical.modules.commonmodule.permission.Role;
 import com.aimedical.modules.commonmodule.permission.User;
 import com.aimedical.modules.doctor.entity.DoctorEntity;
-import com.aimedical.modules.patient.entity.AllergyHistory;
-import com.aimedical.modules.patient.entity.HealthProfile;
+import com.aimedical.modules.patient.entity.Gender;
+import com.aimedical.modules.patient.entity.AllergySeverity;
+import com.aimedical.modules.patient.entity.DiseaseStatus;
+import com.aimedical.modules.patient.entity.PatientAllergy;
+import com.aimedical.modules.patient.entity.PatientChronicDisease;
 import com.aimedical.modules.patient.entity.PatientEntity;
+import com.aimedical.modules.patient.entity.PatientFamilyHistory;
+import com.aimedical.modules.patient.entity.PatientMedicationHistory;
+import com.aimedical.modules.patient.entity.PatientSurgeryHistory;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.Test;
@@ -55,56 +61,58 @@ class EntityMappingIT {
     @PersistenceContext
     private EntityManager entityManager;
 
-    // ==================== AllergyHistory ====================
+    // ==================== PatientAllergy ====================
 
     @Test
-    void allergyHistory_shouldMapOccurredAtColumn() {
-        AllergyHistory allergy = new AllergyHistory();
-        allergy.setHealthProfileId(1L);
+    void patientAllergy_shouldMapOccurredAtColumn() {
+        User testUser = new User();
+        testUser.setUsername("test_pa_user");
+        testUser.setPassword("pwd123");
+        testUser.setNickname("过敏测试用户");
+        testUser.setUserType(UserType.PATIENT);
+        entityManager.persist(testUser);
+        entityManager.flush();
+
+        PatientEntity patient = new PatientEntity();
+        patient.setUserId(testUser.getId());
+        patient.setRealName("过敏测试患者");
+        patient.setGender(Gender.MALE);
+        entityManager.persist(patient);
+        entityManager.flush();
+
+        PatientAllergy allergy = new PatientAllergy();
+        allergy.setPatient(patient);
         allergy.setAllergen("青霉素");
         allergy.setReactionType("皮疹");
-        allergy.setSeverity("MILD");
+        allergy.setSeverity(AllergySeverity.MILD);
         allergy.setOccurredAt(LocalDate.of(2023, 5, 10));
-        allergy.setNote("注意观察");
 
         entityManager.persist(allergy);
         entityManager.flush();
 
-        AllergyHistory found = entityManager.find(AllergyHistory.class, allergy.getId());
+        PatientAllergy found = entityManager.find(PatientAllergy.class, allergy.getId());
         assertEquals(LocalDate.of(2023, 5, 10), found.getOccurredAt());
-        assertEquals("注意观察", found.getNote());
-        assertNotNull(found.getAllergen());
-    }
-
-    // ==================== HealthProfile ====================
-
-    @Test
-    void healthProfile_shouldMapDecimalPrecision() {
-        HealthProfile hp = new HealthProfile();
-        hp.setPatientId(1L);
-        hp.setBloodType("A");
-        hp.setHeightCm(new BigDecimal("175.0"));
-        hp.setWeightKg(new BigDecimal("70.5"));
-        hp.setBmi(new BigDecimal("23.0"));
-        hp.setMaritalStatus("MARRIED");
-
-        entityManager.persist(hp);
-        entityManager.flush();
-
-        HealthProfile found = entityManager.find(HealthProfile.class, hp.getId());
-        assertEquals(0, new BigDecimal("175.0").compareTo(found.getHeightCm()));
-        assertEquals(0, new BigDecimal("70.5").compareTo(found.getWeightKg()));
-        assertEquals(0, new BigDecimal("23.0").compareTo(found.getBmi()));
+        assertEquals("青霉素", found.getAllergen());
+        assertEquals("皮疹", found.getReactionType());
     }
 
     // ==================== PatientEntity ====================
 
     @Test
     void patientEntity_shouldMapAvatarUrl() {
+        // Create a User first to satisfy FK constraint on user_id
+        User testUser = new User();
+        testUser.setUsername("test_patient_avatar");
+        testUser.setPassword("pwd123");
+        testUser.setNickname("头像测试用户");
+        testUser.setUserType(UserType.PATIENT);
+        entityManager.persist(testUser);
+        entityManager.flush();
+
         PatientEntity patient = new PatientEntity();
-        patient.setUserId(100L);
+        patient.setUserId(testUser.getId());
         patient.setRealName("测试患者");
-        patient.setGender("MALE");
+        patient.setGender(Gender.MALE);
         // 测试最大长度 500 字符（https://example.com/avatar/ = 27 chars + 469 x + .jpg = 4 chars = 500）
         String longUrl = "https://example.com/avatar/" + "x".repeat(469) + ".jpg";
         patient.setAvatarUrl(longUrl);
@@ -551,38 +559,137 @@ class EntityMappingIT {
     }
 
     @Test
-    void patientWithHealthProfileAndAllergy_shouldWorkTogether() {
+    void patientWithAllergy_shouldWorkTogether() {
+        User compositeUser = new User();
+        compositeUser.setUsername("test_composite_patient");
+        compositeUser.setPassword("pwd123");
+        compositeUser.setNickname("综合测试用户");
+        compositeUser.setUserType(UserType.PATIENT);
+        entityManager.persist(compositeUser);
+        entityManager.flush();
+
         PatientEntity patient = new PatientEntity();
-        patient.setUserId(300L);
+        patient.setUserId(compositeUser.getId());
         patient.setRealName("综合测试");
-        patient.setGender("FEMALE");
+        patient.setGender(Gender.FEMALE);
         entityManager.persist(patient);
         entityManager.flush();
 
-        HealthProfile hp = new HealthProfile();
-        hp.setPatientId(patient.getId());
-        hp.setBloodType("O");
-        hp.setHeightCm(new BigDecimal("165.0"));
-        hp.setWeightKg(new BigDecimal("55.0"));
-        hp.setBmi(new BigDecimal("20.2"));
-        entityManager.persist(hp);
-        entityManager.flush();
-
-        AllergyHistory allergy = new AllergyHistory();
-        allergy.setHealthProfileId(hp.getId());
+        PatientAllergy allergy = new PatientAllergy();
+        allergy.setPatient(patient);
         allergy.setAllergen("花生");
-        allergy.setSeverity("SEVERE");
+        allergy.setSeverity(AllergySeverity.SEVERE);
         allergy.setOccurredAt(LocalDate.of(2020, 6, 1));
         entityManager.persist(allergy);
         entityManager.flush();
 
-        AllergyHistory found = entityManager.find(AllergyHistory.class, allergy.getId());
+        PatientAllergy found = entityManager.find(PatientAllergy.class, allergy.getId());
         assertEquals("花生", found.getAllergen());
-        assertEquals("SEVERE", found.getSeverity());
+        assertEquals(AllergySeverity.SEVERE, found.getSeverity());
         assertEquals(LocalDate.of(2020, 6, 1), found.getOccurredAt());
+        assertEquals(patient.getId(), found.getPatient().getId());
+    }
 
-        HealthProfile hpFound = entityManager.find(HealthProfile.class, hp.getId());
-        assertEquals(0, new BigDecimal("165.0").compareTo(hpFound.getHeightCm()));
-        assertEquals(0, new BigDecimal("20.2").compareTo(hpFound.getBmi()));
+    // ==================== PatientChronicDisease ====================
+
+    @Test
+    void patientChronicDisease_shouldMapFields() {
+        User u = createTestUser("chronic_test");
+        PatientEntity patient = createTestPatient(u);
+        PatientChronicDisease entity = new PatientChronicDisease();
+        entity.setPatient(patient);
+        entity.setDiseaseName("高血压");
+        entity.setCurrentStatus(DiseaseStatus.STABLE);
+        entity.setDiagnosedAt(LocalDate.of(2022, 1, 15));
+        entityManager.persist(entity);
+        entityManager.flush();
+
+        PatientChronicDisease found = entityManager.find(PatientChronicDisease.class, entity.getId());
+        assertEquals("高血压", found.getDiseaseName());
+        assertEquals(LocalDate.of(2022, 1, 15), found.getDiagnosedAt());
+        assertEquals(patient.getId(), found.getPatient().getId());
+    }
+
+    // ==================== PatientFamilyHistory ====================
+
+    @Test
+    void patientFamilyHistory_shouldMapFields() {
+        User u = createTestUser("family_test");
+        PatientEntity patient = createTestPatient(u);
+        PatientFamilyHistory entity = new PatientFamilyHistory();
+        entity.setPatient(patient);
+        entity.setRelationship("父亲");
+        entity.setDiseaseName("冠心病");
+        entity.setNote("60岁发病");
+        entityManager.persist(entity);
+        entityManager.flush();
+
+        PatientFamilyHistory found = entityManager.find(PatientFamilyHistory.class, entity.getId());
+        assertEquals("父亲", found.getRelationship());
+        assertEquals("冠心病", found.getDiseaseName());
+        assertEquals(patient.getId(), found.getPatient().getId());
+    }
+
+    // ==================== PatientSurgeryHistory ====================
+
+    @Test
+    void patientSurgeryHistory_shouldMapFields() {
+        User u = createTestUser("surgery_test");
+        PatientEntity patient = createTestPatient(u);
+        PatientSurgeryHistory entity = new PatientSurgeryHistory();
+        entity.setPatient(patient);
+        entity.setSurgeryName("阑尾切除术");
+        entity.setSurgeryAt(LocalDate.of(2010, 6, 15));
+        entity.setHospital("北京市第一人民医院");
+        entityManager.persist(entity);
+        entityManager.flush();
+
+        PatientSurgeryHistory found = entityManager.find(PatientSurgeryHistory.class, entity.getId());
+        assertEquals("阑尾切除术", found.getSurgeryName());
+        assertEquals(LocalDate.of(2010, 6, 15), found.getSurgeryAt());
+        assertEquals(patient.getId(), found.getPatient().getId());
+    }
+
+    // ==================== PatientMedicationHistory ====================
+
+    @Test
+    void patientMedicationHistory_shouldMapFields() {
+        User u = createTestUser("medication_test");
+        PatientEntity patient = createTestPatient(u);
+        PatientMedicationHistory entity = new PatientMedicationHistory();
+        entity.setPatient(patient);
+        entity.setDrugName("硝苯地平缓释片");
+        entity.setReason("高血压");
+        entity.setStartedAt(LocalDate.of(2022, 2, 1));
+        entityManager.persist(entity);
+        entityManager.flush();
+
+        PatientMedicationHistory found = entityManager.find(PatientMedicationHistory.class, entity.getId());
+        assertEquals("硝苯地平缓释片", found.getDrugName());
+        assertEquals("高血压", found.getReason());
+        assertEquals(patient.getId(), found.getPatient().getId());
+    }
+
+    // ==================== Helpers ====================
+
+    private User createTestUser(String username) {
+        User u = new User();
+        u.setUsername(username);
+        u.setPassword("pwd123");
+        u.setNickname(username + "_nick");
+        u.setUserType(UserType.PATIENT);
+        entityManager.persist(u);
+        entityManager.flush();
+        return u;
+    }
+
+    private PatientEntity createTestPatient(User user) {
+        PatientEntity p = new PatientEntity();
+        p.setUserId(user.getId());
+        p.setRealName(user.getNickname());
+        p.setGender(Gender.MALE);
+        entityManager.persist(p);
+        entityManager.flush();
+        return p;
     }
 }

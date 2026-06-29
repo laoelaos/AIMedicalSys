@@ -169,6 +169,7 @@ class JwtAuthenticationFilterTest {
 
         User user = mock(User.class);
         when(user.getId()).thenReturn(userId);
+        when(user.getUsername()).thenReturn("testuser");
         when(user.getEnabled()).thenReturn(true);
         when(user.getPasswordChangeRequired()).thenReturn(false);
         when(user.getRoles()).thenReturn(Set.of());
@@ -179,7 +180,7 @@ class JwtAuthenticationFilterTest {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         assertNotNull(auth);
-        assertEquals(userId, auth.getPrincipal());
+        assertEquals("testuser", auth.getPrincipal());
         assertTrue(auth.getAuthorities().isEmpty());
         verify(chain).doFilter(request, response);
     }

@@ -12,6 +12,7 @@ spring:
     init:
       encoding: UTF-8
       mode: always
+      continue-on-error: true
 
   h2:
     console:
@@ -28,6 +29,10 @@ spring:
         dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
     show-sql: true
+
+  devtools:
+    restart:
+      trigger-file: .trigger-restart
 
 jwt:
   secret: ZGV2LXNlY3JldC1rZXktZm9yLWxvY2FsLWRldmVsb3BtZW50LW9ubHktcGxlYXNlLWNoYW5nZS1pbi1wcm9kdWN0aW9u

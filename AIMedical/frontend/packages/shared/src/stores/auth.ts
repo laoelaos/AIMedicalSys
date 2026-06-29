@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { authApi, setAuthToken, clearAuthToken } from '../api'
-import type { UserInfo, LoginRequest, BusinessError } from '../types'
+import { setTokens, clearTokens } from '../utils'
+import type { UserInfo, DoctorLoginRequest, BusinessError } from '../types'
 
 export interface AuthStoreOptions {
   /** 应用类型标识，用于localStorage的key区分 */
@@ -31,23 +32,20 @@ export interface AuthStoreOptions {
  * @returns Pinia store
  */
 export function createAuthStore(options: AuthStoreOptions) {
-  const TOKEN_KEY = `aimedical_${options.appType}_token`
   const USER_KEY = `aimedical_${options.appType}_user`
 
   return defineStore(`auth_${options.appType}`, () => {
-    // 从localStorage初始化token和user
-    // 安全提示：localStorage 可被 XSS 读取，Phase2+ 将迁移到 httpOnly cookie
-    const token = ref<string>(localStorage.getItem(TOKEN_KEY) || '')
+    const token = ref<string>(localStorage.getItem('aimedical_access_token') || '')
     const storedUser = localStorage.getItem(USER_KEY)
     const user = ref<UserInfo | null>(storedUser ? JSON.parse(storedUser) : null)
     const isAuthenticated = computed(() => token.value !== '' && user.value !== null)
 
     /**
-     * 保存token到localStorage
+     * 保存token到localStorage (使用共享的System A密钥)
      */
-    function saveToken(newToken: string): void {
+    function saveToken(newToken: string, refreshToken?: string): void {
       token.value = newToken
-      localStorage.setItem(TOKEN_KEY, newToken)
+      setTokens(newToken, refreshToken || localStorage.getItem('aimedical_refresh_token') || '')
       setAuthToken(newToken)
     }
 
@@ -65,7 +63,7 @@ export function createAuthStore(options: AuthStoreOptions) {
     function clearAuthData(): void {
       token.value = ''
       user.value = null
-      localStorage.removeItem(TOKEN_KEY)
+      clearTokens()
       localStorage.removeItem(USER_KEY)
       clearAuthToken()
     }
@@ -81,14 +79,17 @@ export function createAuthStore(options: AuthStoreOptions) {
      * 用户登录
      * @returns 登录结果对象 { success: boolean, errorMessage?: string }
      */
-    async function login(request: LoginRequest): Promise<{ success: boolean; errorMessage?: string }> {
+    async function login(request: DoctorLoginRequest): Promise<{ success: boolean; errorMessage?: string }> {
       const response = await authApi.login(request)
       if (isBusinessError(response)) {
-        // 透传后端返回的错误信息
         return { success: false, errorMessage: response.message || '登录失败，请检查用户名和密码' }
       }
-      saveToken(response.access_token)
-      saveUser(response.user)
+      saveToken(response.access_token, response.refresh_token)
+      // Fetch user info separately (TokenResponse has no .user field)
+      const userInfo = await authApi.me()
+      if (!isBusinessError(userInfo)) {
+        saveUser(userInfo)
+      }
       return { success: true }
     }
 
@@ -101,16 +102,20 @@ export function createAuthStore(options: AuthStoreOptions) {
     }
 
     /**
-     * 刷新令牌
+     * 刷新令牌 — passes stored refresh token
      */
     async function refreshToken(): Promise<boolean> {
-      const response = await authApi.refresh()
+      const storedRefresh = localStorage.getItem('aimedical_refresh_token')
+      if (!storedRefresh) {
+        clearAuthData()
+        return false
+      }
+      const response = await authApi.refresh(storedRefresh)
       if (isBusinessError(response)) {
         clearAuthData()
         return false
       }
-      saveToken(response.access_token)
-      saveUser(response.user)
+      saveToken(response.access_token, response.refresh_token)
       return true
     }
 
@@ -120,7 +125,10 @@ export function createAuthStore(options: AuthStoreOptions) {
     async function fetchCurrentUser(): Promise<boolean> {
       const response = await authApi.me()
       if (isBusinessError(response)) {
-        clearAuthData()
+        // Only clear auth data on 401/token-invalid errors; transient failures are recoverable
+        if (response.code === 'UNAUTHORIZED' || response.code === 'AUTH_TOKEN_INVALID') {
+          clearAuthData()
+        }
         return false
       }
       saveUser(response)

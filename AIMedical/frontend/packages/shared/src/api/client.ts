@@ -1,5 +1,6 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
+import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import type { ApiResult, BusinessError } from '../types'
+import { getAccessToken, setTokens, clearTokens, getRefreshToken } from '../utils'
 
 /**
  * 共享 axios 客户端与请求辅助函数。
@@ -13,95 +14,118 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-/**
- * 将业务错误统一包装为 BusinessError 对象
- */
-function toBusinessError(code: string, message: string): BusinessError {
-  return { code, message, isBusinessError: true }
-}
+// Request interceptor: attach JWT token
+apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const token = getAccessToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
 
-/**
- * 响应拦截器
- *
- * <p>统一 Promise 状态约定：
- * - HTTP 层成功（2xx）：检查业务 code，SUCCESS 时返回数据，业务错误时 reject(BusinessError)
- * - HTTP 层失败（非 2xx）：统一 reject(BusinessError)
- *
- * <p>上层 apiGet/apiPost/apiPut/apiDelete 通过 try-catch 捕获 BusinessError 并转为返回值，
- * 从而对外暴露统一的 `Promise<T | BusinessError>` 接口。
- */
+// Response interceptor: unwrap Result<T>, handle errors
+// Note: we intentionally unwrap AxiosResponse → data for ergonomic API wrappers.
+// Axios strict interceptor typing disagrees with this pattern, so we assert.
 apiClient.interceptors.response.use(
-  (response: AxiosResponse) => {
+  ((response: AxiosResponse<ApiResult<unknown>>): unknown => {
     const body = response.data as ApiResult<unknown>
     if (body.code !== 'SUCCESS') {
-      const error = toBusinessError(body.code, body.message ?? '')
-      return Promise.reject(error)
+      return { code: body.code, message: body.message ?? '', isBusinessError: true as const } as BusinessError
     }
-    response.data = body.data
-    return response
-  },
-  (error) => {
+    return body.data
+  }) as Parameters<typeof apiClient.interceptors.response.use>[0],
+  async (error: { response?: AxiosResponse; config?: InternalAxiosRequestConfig & { _retry?: boolean }; code?: string; message?: string }) => {
     if (error.response === undefined) {
-      return Promise.reject(toBusinessError('NETWORK_ERROR', '网络不可达，请检查网络连接'))
+      return { code: 'NETWORK_ERROR' as const, message: '网络不可达，请检查网络连接', isBusinessError: true as const } as BusinessError
     }
-    const status = error.response.status
-    if (status === 401) {
-      // 清理失效令牌并跳转登录页（避免在登录页重复跳转）
-      clearAuthToken()
-      if (typeof window !== 'undefined' && !window.location.pathname.endsWith('/login')) {
-        window.location.href = '/login'
+
+    // Try refresh token on 401 (only once)
+    if (error.response.status === 401 && error.config && !error.config._retry) {
+      const refreshToken = getRefreshToken()
+      if (refreshToken) {
+        error.config._retry = true
+        try {
+          const refreshResponse = await axios.post<ApiResult<{ access_token: string; refresh_token: string }>>(
+            '/api/auth/refresh',
+            { refresh_token: refreshToken },
+            { headers: { Authorization: `Bearer ${refreshToken}` } }
+          )
+          const refreshBody = refreshResponse.data
+          if (refreshBody.code === 'SUCCESS' && refreshBody.data) {
+            setTokens(refreshBody.data.access_token, refreshBody.data.refresh_token)
+            // Notify all Pinia stores that tokens were refreshed
+            window.dispatchEvent(new CustomEvent('aimedical:tokens-refreshed', {
+              detail: { access_token: refreshBody.data.access_token }
+            }))
+            if (error.config.headers) {
+              error.config.headers.Authorization = `Bearer ${refreshBody.data.access_token}`
+            }
+            return apiClient(error.config)
+          }
+        } catch {
+          // Refresh failed, clear tokens and redirect to login
+        }
       }
-      return Promise.reject(toBusinessError('UNAUTHORIZED', '登录已过期，请重新登录'))
+      clearTokens()
+      return { code: 'UNAUTHORIZED' as const, message: '登录已过期，请重新登录', isBusinessError: true as const } as BusinessError
+    }
+
+    const requestUrl = error.config?.url ?? 'unknown'
+    const status = error.response.status
+    console.warn('[api] HTTP error for', requestUrl, 'status:', status)
+    if (status === 401) {
+      return { code: 'UNAUTHORIZED' as const, message: '登录已过期，请重新登录', isBusinessError: true as const } as BusinessError
     }
     if (status === 403) {
-      return Promise.reject(toBusinessError('FORBIDDEN', '无权限访问'))
+      return { code: 'FORBIDDEN' as const, message: '无权限访问', isBusinessError: true as const } as BusinessError
     }
-    // 后端返回的业务错误体（GlobalExceptionHandler 返回 Result JSON）
+
+    // Backend business error body (GlobalExceptionHandler returns Result JSON)
     const body = error.response.data as ApiResult<unknown> | undefined
     if (body && body.code) {
-      return Promise.reject(toBusinessError(body.code, body.message ?? `请求失败（${status}）`))
+      return { code: body.code, message: body.message ?? `请求失败（${status}）`, isBusinessError: true as const } as BusinessError
     }
-    return Promise.reject(toBusinessError('HTTP_ERROR', `请求失败（${status}）`))
+    return { code: 'HTTP_ERROR' as const, message: `请求失败（${status}）`, isBusinessError: true as const } as BusinessError
   },
 )
 
+// ==================== API Wrappers (try-catch pattern) ====================
+
 export async function apiGet<T>(url: string, config?: AxiosRequestConfig): Promise<T | BusinessError> {
   try {
-    const response = await apiClient.get<unknown>(url, config)
-    return (response as AxiosResponse<T>).data
-  } catch (error) {
-    return error as BusinessError
+    return await apiClient.get(url, config) as T
+  } catch {
+    return { code: 'NETWORK_ERROR', message: '网络不可达，请检查网络连接', isBusinessError: true as const } as BusinessError
   }
 }
 
 export async function apiPost<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T | BusinessError> {
   try {
-    const response = await apiClient.post<unknown>(url, data, config)
-    return (response as AxiosResponse<T>).data
-  } catch (error) {
-    return error as BusinessError
+    return await apiClient.post(url, data, config) as T
+  } catch {
+    return { code: 'NETWORK_ERROR', message: '网络不可达，请检查网络连接', isBusinessError: true as const } as BusinessError
   }
 }
 
 export async function apiPut<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T | BusinessError> {
   try {
-    const response = await apiClient.put<unknown>(url, data, config)
-    return (response as AxiosResponse<T>).data
-  } catch (error) {
-    return error as BusinessError
+    return await apiClient.put(url, data, config) as T
+  } catch {
+    return { code: 'NETWORK_ERROR', message: '网络不可达，请检查网络连接', isBusinessError: true as const } as BusinessError
   }
 }
 
 export async function apiDelete<T>(url: string, config?: AxiosRequestConfig): Promise<T | BusinessError> {
   try {
-    const response = await apiClient.delete<unknown>(url, config)
-    return (response as AxiosResponse<T>).data
-  } catch (error) {
-    return error as BusinessError
+    return await apiClient.delete(url, config) as T
+  } catch {
+    return { code: 'NETWORK_ERROR', message: '网络不可达，请检查网络连接', isBusinessError: true as const } as BusinessError
   }
 }
 
 export { apiClient }
+
+// ==================== Token Helpers ====================
 
 /**
  * 设置认证令牌

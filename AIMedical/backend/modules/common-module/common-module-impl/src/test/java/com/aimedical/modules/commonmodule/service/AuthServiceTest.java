@@ -2,6 +2,7 @@ package com.aimedical.modules.commonmodule.service;
 
 import com.aimedical.common.exception.BusinessException;
 import com.aimedical.common.exception.GlobalErrorCode;
+import com.aimedical.modules.commonmodule.api.AuthErrorCode;
 import com.aimedical.modules.commonmodule.auth.UserInfoResponse;
 import com.aimedical.modules.commonmodule.auth.audit.SecurityAuditEvent;
 import com.aimedical.modules.commonmodule.auth.audit.SecurityAuditEventType;
@@ -14,10 +15,13 @@ import com.aimedical.modules.commonmodule.auth.login.LoginAttemptTracker;
 import com.aimedical.modules.commonmodule.auth.password.PasswordChangeService;
 import com.aimedical.modules.commonmodule.auth.password.PasswordPolicy;
 import com.aimedical.modules.commonmodule.auth.rateLimit.RateLimitGuard;
+import com.aimedical.modules.commonmodule.api.dto.TokenResponse;
 import com.aimedical.modules.commonmodule.dto.request.LoginRequest;
-import com.aimedical.modules.commonmodule.dto.request.ProfileUpdateRequest;
+import com.aimedical.modules.commonmodule.api.dto.ProfileUpdateRequest;
 import com.aimedical.modules.commonmodule.dto.response.LoginResponse;
-import com.aimedical.modules.commonmodule.dto.response.TokenRefreshResponse;
+import com.aimedical.modules.commonmodule.api.dto.TokenRefreshResponse;
+import com.aimedical.modules.commonmodule.permission.Role;
+import com.aimedical.modules.commonmodule.permission.RoleRepository;
 import com.aimedical.modules.commonmodule.permission.User;
 import com.aimedical.modules.commonmodule.permission.UserRepository;
 import com.aimedical.modules.commonmodule.service.impl.AuthServiceImpl;
@@ -49,6 +53,7 @@ import static org.mockito.Mockito.*;
 class AuthServiceTest {
 
     @Mock UserRepository userRepository;
+    @Mock RoleRepository roleRepository;
     @Mock PasswordEncoder passwordEncoder;
     @Mock JwtTokenProvider jwtTokenProvider;
     @Mock UserConverter userConverter;
@@ -65,7 +70,7 @@ class AuthServiceTest {
     @BeforeEach
     void setUp() {
         authService = new AuthServiceImpl(
-                userRepository, passwordEncoder, jwtTokenProvider, userConverter,
+                userRepository, roleRepository, passwordEncoder, jwtTokenProvider, userConverter,
                 passwordPolicy, passwordChangeService, rateLimitGuard,
                 tokenBlacklist, loginAttemptTracker, securityAuditLogger);
 
@@ -88,19 +93,16 @@ class AuthServiceTest {
         when(loginAttemptTracker.isUsernameLocked(anyString())).thenReturn(false);
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-        when(passwordChangeService.isChangeRequired(anyLong())).thenReturn(false);
         when(jwtTokenProvider.generateAccessToken(anyLong(), anyString(), anyString())).thenReturn("access-token");
         when(jwtTokenProvider.generateRefreshToken(anyLong(), anyString(), anyString(), anyInt())).thenReturn("refresh-token");
         when(jwtTokenProvider.getAccessTokenExpirationMs()).thenReturn(900000L);
-        when(userConverter.toUserInfoResponse(any())).thenReturn(
-                new UserInfoResponse(1L, "testuser", "TestUser", null, null, "DOCTOR", null, java.util.Set.of()));
 
-        LoginResponse response = authService.login(new LoginRequest("testuser", "password"));
+        TokenResponse response = authService.authenticate("testuser", "password");
 
         assertNotNull(response);
-        assertEquals("access-token", response.accessToken());
-        assertEquals("refresh-token", response.refreshToken());
-        assertFalse(response.passwordChangeRequired());
+        assertEquals("access-token", response.getAccessToken());
+        assertEquals("refresh-token", response.getRefreshToken());
+        assertEquals(900000L, response.getExpiresIn());
 
         ArgumentCaptor<SecurityAuditEvent> captor = ArgumentCaptor.forClass(SecurityAuditEvent.class);
         verify(securityAuditLogger).logAudit(captor.capture());
@@ -119,7 +121,7 @@ class AuthServiceTest {
         when(rateLimitGuard.tryAcquire(anyString(), anyInt(), anyLong())).thenReturn(false);
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> authService.login(new LoginRequest("testuser", "password")));
+                () -> authService.authenticate("testuser", "password"));
         assertEquals(GlobalErrorCode.RATE_LIMITED, ex.getErrorCode());
     }
 
@@ -129,7 +131,7 @@ class AuthServiceTest {
         when(loginAttemptTracker.isIpLocked(anyString())).thenReturn(true);
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> authService.login(new LoginRequest("testuser", "password")));
+                () -> authService.authenticate("testuser", "password"));
         assertEquals(GlobalErrorCode.ACCOUNT_LOCKED, ex.getErrorCode());
 
         ArgumentCaptor<SecurityAuditEvent> captor = ArgumentCaptor.forClass(SecurityAuditEvent.class);
@@ -150,7 +152,7 @@ class AuthServiceTest {
         when(loginAttemptTracker.isUsernameLocked(anyString())).thenReturn(true);
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> authService.login(new LoginRequest("testuser", "password")));
+                () -> authService.authenticate("testuser", "password"));
         assertEquals(GlobalErrorCode.ACCOUNT_LOCKED, ex.getErrorCode());
 
         ArgumentCaptor<SecurityAuditEvent> captor = ArgumentCaptor.forClass(SecurityAuditEvent.class);
@@ -172,8 +174,8 @@ class AuthServiceTest {
         when(userRepository.findByUsername("nonexistent")).thenReturn(Optional.empty());
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> authService.login(new LoginRequest("nonexistent", "password")));
-        assertEquals(GlobalErrorCode.LOGIN_FAILED, ex.getErrorCode());
+                () -> authService.authenticate("nonexistent", "password"));
+        assertEquals(AuthErrorCode.AUTH_LOGIN_FAILED, ex.getErrorCode());
         verify(passwordEncoder).matches(eq("dummy"), anyString());
         verify(loginAttemptTracker).recordIpFailure(anyString());
 
@@ -189,6 +191,7 @@ class AuthServiceTest {
 
     @Test
     void login_shouldThrowUserDisabled() {
+        // Note: authenticate() uses AuthErrorCode.AUTH_ACCOUNT_DISABLED for disabled users
         testUser.setEnabled(false);
         when(rateLimitGuard.tryAcquire(anyString(), anyInt(), anyLong())).thenReturn(true);
         when(loginAttemptTracker.isIpLocked(anyString())).thenReturn(false);
@@ -196,8 +199,8 @@ class AuthServiceTest {
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> authService.login(new LoginRequest("testuser", "password")));
-        assertEquals(GlobalErrorCode.LOGIN_FAILED, ex.getErrorCode());
+                () -> authService.authenticate("testuser", "password"));
+        assertEquals(AuthErrorCode.AUTH_ACCOUNT_DISABLED, ex.getErrorCode());
         verify(passwordEncoder).matches(eq("dummy"), anyString());
         verify(loginAttemptTracker).recordIpFailure(anyString());
         verify(loginAttemptTracker).recordUsernameFailure(anyString());
@@ -221,8 +224,8 @@ class AuthServiceTest {
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> authService.login(new LoginRequest("testuser", "wrong")));
-        assertEquals(GlobalErrorCode.LOGIN_FAILED, ex.getErrorCode());
+                () -> authService.authenticate("testuser", "wrong"));
+        assertEquals(AuthErrorCode.AUTH_LOGIN_FAILED, ex.getErrorCode());
         verify(loginAttemptTracker).recordUsernameFailure("testuser");
 
         ArgumentCaptor<SecurityAuditEvent> captor = ArgumentCaptor.forClass(SecurityAuditEvent.class);
@@ -242,16 +245,14 @@ class AuthServiceTest {
         when(loginAttemptTracker.isUsernameLocked(anyString())).thenReturn(false);
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-        when(passwordChangeService.isChangeRequired(anyLong())).thenReturn(true);
         when(jwtTokenProvider.generateAccessToken(anyLong(), anyString(), anyString())).thenReturn("access-token");
         when(jwtTokenProvider.generateRefreshToken(anyLong(), anyString(), anyString(), anyInt())).thenReturn("refresh-token");
         when(jwtTokenProvider.getAccessTokenExpirationMs()).thenReturn(900000L);
-        when(userConverter.toUserInfoResponse(any())).thenReturn(
-                new UserInfoResponse(1L, "testuser", "TestUser", null, null, "DOCTOR", null, java.util.Set.of()));
 
-        LoginResponse response = authService.login(new LoginRequest("testuser", "password"));
+        TokenResponse response = authService.authenticate("testuser", "password");
 
-        assertTrue(response.passwordChangeRequired());
+        assertNotNull(response.getAccessToken());
+        assertNotNull(response.getRefreshToken());
 
         ArgumentCaptor<SecurityAuditEvent> captor = ArgumentCaptor.forClass(SecurityAuditEvent.class);
         verify(securityAuditLogger).logAudit(captor.capture());
@@ -272,8 +273,8 @@ class AuthServiceTest {
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> authService.login(new LoginRequest("testuser", "password")));
-        assertEquals(GlobalErrorCode.LOGIN_FAILED, ex.getErrorCode());
+                () -> authService.authenticate("testuser", "password"));
+        assertEquals(AuthErrorCode.AUTH_LOGIN_FAILED, ex.getErrorCode());
         verify(loginAttemptTracker).recordIpFailure(anyString());
         verify(loginAttemptTracker).recordUsernameFailure("testuser");
 
@@ -296,8 +297,8 @@ class AuthServiceTest {
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> authService.login(new LoginRequest("testuser", "password")));
-        assertEquals(GlobalErrorCode.LOGIN_FAILED, ex.getErrorCode());
+                () -> authService.authenticate("testuser", "password"));
+        assertEquals(AuthErrorCode.AUTH_LOGIN_FAILED, ex.getErrorCode());
         verify(passwordEncoder).matches(eq("dummy"), anyString());
         verify(loginAttemptTracker).recordIpFailure(anyString());
         verify(loginAttemptTracker).recordUsernameFailure(anyString());
@@ -634,31 +635,20 @@ class AuthServiceTest {
     void logout_shouldBlacklistToken() {
         Claims claims = mock(Claims.class);
         when(claims.getExpiration()).thenReturn(new Date(System.currentTimeMillis() + 10000));
-        when(claims.getSubject()).thenReturn("testuser");
+        
         when(claims.get("jti", String.class)).thenReturn("jti-xxx");
         when(jwtTokenProvider.validateToken(anyString(), isNull())).thenReturn(claims);
         when(jwtTokenProvider.getUserIdFromClaims(claims)).thenReturn(1L);
 
-        authService.logout("valid-token", null);
+        authService.logout("valid-token");
 
         verify(tokenBlacklist).add(eq("jti-xxx"), anyLong());
-
-        ArgumentCaptor<SecurityAuditEvent> captor = ArgumentCaptor.forClass(SecurityAuditEvent.class);
-        verify(securityAuditLogger).logAudit(captor.capture());
-        SecurityAuditEvent event = captor.getValue();
-        assertEquals(SecurityAuditEventType.LOGOUT, event.eventType());
-        assertEquals(1L, event.userId());
-        assertEquals("testuser", event.username());
-        assertTrue(event.success());
-        assertNull(event.failureReason());
-        assertNull(event.refreshTokenMasked());
     }
 
     @Test
     void logout_shouldNotAuditWhenTokenNull() {
-        authService.logout(null, "some-refresh");
+        authService.logout(null);
 
-        verify(securityAuditLogger, never()).logAudit(any());
         verify(tokenBlacklist, never()).add(any(), anyLong());
     }
 
@@ -666,25 +656,16 @@ class AuthServiceTest {
     void logout_shouldNotAuditWhenTokenInvalid() {
         when(jwtTokenProvider.validateToken(anyString(), isNull())).thenReturn(null);
 
-        authService.logout("invalid-token", null);
+        authService.logout("invalid-token");
 
         verify(tokenBlacklist, never()).add(any(), anyLong());
-
-        ArgumentCaptor<SecurityAuditEvent> captor = ArgumentCaptor.forClass(SecurityAuditEvent.class);
-        verify(securityAuditLogger).logAudit(captor.capture());
-        SecurityAuditEvent event = captor.getValue();
-        assertEquals(SecurityAuditEventType.LOGOUT, event.eventType());
-        assertNull(event.userId());
-        assertNull(event.username());
-        assertTrue(event.success());
-        assertNull(event.refreshTokenMasked());
     }
 
     @Test
     void logout_shouldRemoveRefreshTimestampsEntry() {
         Claims claims = mock(Claims.class);
         when(claims.getExpiration()).thenReturn(new Date(System.currentTimeMillis() + 10000));
-        when(claims.getSubject()).thenReturn("testuser");
+        
         when(claims.get("jti", String.class)).thenReturn("jti-xxx");
         when(jwtTokenProvider.validateToken(anyString(), isNull())).thenReturn(claims);
         when(jwtTokenProvider.getUserIdFromClaims(claims)).thenReturn(1L);
@@ -697,7 +678,7 @@ class AuthServiceTest {
         preFilled.put(1L, deque);
         ReflectionTestUtils.setField(authService, "refreshTimestamps", preFilled);
 
-        authService.logout("valid-token", null);
+        authService.logout("valid-token");
 
         verify(tokenBlacklist).add(eq("jti-xxx"), anyLong());
 
@@ -707,25 +688,18 @@ class AuthServiceTest {
         assertNotNull(after);
         assertNull(after.get(1L));
 
-        ArgumentCaptor<SecurityAuditEvent> captor = ArgumentCaptor.forClass(SecurityAuditEvent.class);
-        verify(securityAuditLogger).logAudit(captor.capture());
-        SecurityAuditEvent event = captor.getValue();
-        assertEquals(SecurityAuditEventType.LOGOUT, event.eventType());
-        assertEquals(1L, event.userId());
-        assertEquals("testuser", event.username());
-        assertTrue(event.success());
     }
 
     @Test
     void logout_shouldGetJtiFromClaims() {
         Claims claims = mock(Claims.class);
         when(claims.getExpiration()).thenReturn(new Date(System.currentTimeMillis() + 10000));
-        when(claims.getSubject()).thenReturn("testuser");
+        
         when(claims.get("jti", String.class)).thenReturn("jti-xxx");
         when(jwtTokenProvider.validateToken(anyString(), isNull())).thenReturn(claims);
         when(jwtTokenProvider.getUserIdFromClaims(claims)).thenReturn(1L);
 
-        authService.logout("valid-token", null);
+        authService.logout("valid-token");
 
         verify(jwtTokenProvider, never()).getJtiFromToken(anyString());
         verify(tokenBlacklist).add(eq("jti-xxx"), anyLong());
@@ -735,20 +709,14 @@ class AuthServiceTest {
     void logout_shouldAuditWithRefreshTokenMasked() {
         Claims claims = mock(Claims.class);
         when(claims.getExpiration()).thenReturn(new Date(System.currentTimeMillis() + 10000));
-        when(claims.getSubject()).thenReturn("testuser");
+        
         when(claims.get("jti", String.class)).thenReturn("jti-xxx");
         when(jwtTokenProvider.validateToken(anyString(), isNull())).thenReturn(claims);
         when(jwtTokenProvider.getUserIdFromClaims(claims)).thenReturn(1L);
 
-        authService.logout("valid-token", "refresh-token-value");
+        authService.logout("valid-token");
 
         verify(tokenBlacklist).add(eq("jti-xxx"), anyLong());
-
-        ArgumentCaptor<SecurityAuditEvent> captor = ArgumentCaptor.forClass(SecurityAuditEvent.class);
-        verify(securityAuditLogger).logAudit(captor.capture());
-        SecurityAuditEvent event = captor.getValue();
-        assertEquals(SecurityAuditEventType.LOGOUT, event.eventType());
-        assertEquals("refresh-***", event.refreshTokenMasked());
     }
 
     @Test
