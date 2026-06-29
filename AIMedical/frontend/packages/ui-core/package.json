@@ -7,7 +7,13 @@
   "dependencies": {
     "@aimedical/shared": "0.0.0"
   },
+  "scripts": {
+    "test": "vitest run --passWithNoTests",
+    "test:coverage": "vitest run --coverage --passWithNoTests"
+  },
   "devDependencies": {
-    "typescript": "^5.4.5"
+    "@vitest/coverage-v8": "^2.1.0",
+    "typescript": "^5.4.5",
+    "vitest": "^2.1.0"
   }
 }

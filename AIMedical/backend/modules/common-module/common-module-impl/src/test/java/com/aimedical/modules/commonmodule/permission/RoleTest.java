@@ -64,4 +64,25 @@ class RoleTest {
         role.setUsers(users);
         assertEquals(1, role.getUsers().size());
     }
+
+    @Test
+    void shouldDefaultSortIsZero() {
+        Role role = new Role();
+        assertEquals(0, role.getSort().intValue());
+    }
+
+    @Test
+    void shouldSetAndGetSort() {
+        Role role = new Role();
+        role.setSort(1);
+        assertEquals(1, role.getSort().intValue());
+        role.setSort(999);
+        assertEquals(999, role.getSort().intValue());
+    }
+
+    @Test
+    void shouldHaveNonNullSort() {
+        Role role = new Role();
+        assertNotNull(role.getSort());
+    }
 }

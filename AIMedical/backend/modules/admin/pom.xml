@@ -11,6 +11,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>com.aimedical</groupId>
             <artifactId>common</artifactId>
         </dependency>
@@ -40,4 +45,9 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <properties>
+        <jacoco.skip>false</jacoco.skip>
+        <jacoco.skip.check>false</jacoco.skip.check>
+    </properties>
 </project>

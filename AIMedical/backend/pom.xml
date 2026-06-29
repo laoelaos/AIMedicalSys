@@ -30,8 +30,18 @@
         <java.version>17</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <springdoc.version>2.5.0</springdoc.version>
         <h2.version>2.2.224</h2.version>
+        <lombok.version>1.18.32</lombok.version>
+        <jjwt.version>0.12.6</jjwt.version>
+        <!-- ===== CI 门禁阈值（覆盖率/契约）===== -->
+        <jacoco.min.line.coverage>0.50</jacoco.min.line.coverage>
+        <jacoco.min.branch.coverage>0.40</jacoco.min.branch.coverage>
+        <jacoco.version>0.8.12</jacoco.version>
+        <!-- 父 pom 无源码, 默认跳过 jacoco prepare-agent 与 check; 子模块覆盖为 false 启用 -->
+        <jacoco.skip>true</jacoco.skip>
+        <jacoco.skip.check>true</jacoco.skip.check>
     </properties>
 
     <dependencyManagement>
@@ -78,11 +88,80 @@
                 <artifactId>h2</artifactId>
                 <version>${h2.version}</version>
             </dependency>
+            <!-- JWT -->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
+                <scope>runtime</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <build>
         <plugins>
+            <!-- ===== CI 门禁 1: JaCoCo 覆盖率阈值 ===== -->
+            <!--
+                prepare-agent 在 test 阶段前注入 agent; check 在 verify 阶段校验阈值,
+                不达标时 BUILD FAILURE 拦截覆盖率下滑.
+                父 pom 无源码, jacoco.skip=true 同时跳过 prepare-agent 与 check;
+                子模块通过 <properties><jacoco.skip>false</jacoco.skip></properties> 启用.
+            -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <configuration>
+                    <skip>${jacoco.skip}</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>jacoco-prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${jacoco.skip.check}</skip>
+                            <haltOnFailure>true</haltOnFailure>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>${jacoco.min.line.coverage}</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>${jacoco.min.branch.coverage}</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>

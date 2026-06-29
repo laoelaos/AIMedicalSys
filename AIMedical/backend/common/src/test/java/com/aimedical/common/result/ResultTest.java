@@ -11,7 +11,7 @@ class ResultTest {
     void shouldCreateSuccessResultWithData() {
         Result<String> result = Result.success("hello");
         assertEquals("SUCCESS", result.getCode());
-        assertNull(result.getMessage());
+        assertEquals("成功", result.getMessage());
         assertEquals("hello", result.getData());
     }
 
@@ -34,12 +34,12 @@ class ResultTest {
     void shouldCreateFailResultWithErrorCode() {
         ErrorCode errorCode = new ErrorCode() {
             @Override
-            public String code() {
+            public String getCode() {
                 return "TEST_ERR";
             }
 
             @Override
-            public String message() {
+            public String getMessage() {
                 return "测试错误";
             }
         };

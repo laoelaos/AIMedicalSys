@@ -1,6 +1,7 @@
 package com.aimedical.modules.commonmodule.permission;
 
 import com.aimedical.common.base.BaseEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -23,17 +24,20 @@ public class Post extends BaseEntity {
 
     private String description;
 
-    private Boolean enabled;
+    @Column(nullable = false)
+    private Boolean enabled = true;
+
+    private Integer sort;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
     private Role role;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "post_function",
             joinColumns = @JoinColumn(name = "post_id"),
             inverseJoinColumns = @JoinColumn(name = "function_id"))
-    private Set<Function> functions;
+    private Set<PermissionFunction> functions;
 
     @ManyToMany(mappedBy = "posts", fetch = FetchType.LAZY)
     private Set<User> users;
@@ -70,6 +74,14 @@ public class Post extends BaseEntity {
         this.enabled = enabled;
     }
 
+    public Integer getSort() {
+        return sort;
+    }
+
+    public void setSort(Integer sort) {
+        this.sort = sort;
+    }
+
     public Role getRole() {
         return role;
     }
@@ -78,11 +90,11 @@ public class Post extends BaseEntity {
         this.role = role;
     }
 
-    public Set<Function> getFunctions() {
+    public Set<PermissionFunction> getFunctions() {
         return functions;
     }
 
-    public void setFunctions(Set<Function> functions) {
+    public void setFunctions(Set<PermissionFunction> functions) {
         this.functions = functions;
     }
 

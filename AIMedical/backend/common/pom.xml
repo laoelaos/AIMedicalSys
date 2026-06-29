@@ -15,6 +15,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
             <optional>true</optional>
@@ -40,4 +45,10 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <!-- 启用本模块的 jacoco 覆盖率阈值校验 (覆盖父 pom 默认 skip=true) -->
+    <properties>
+        <jacoco.skip>false</jacoco.skip>
+        <jacoco.skip.check>false</jacoco.skip.check>
+    </properties>
 </project>
