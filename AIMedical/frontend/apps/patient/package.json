@@ -4,7 +4,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@aimedical/shared": "0.0.0",
@@ -16,8 +18,11 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.5",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^24.1.0",
     "typescript": "^5.4.5",
     "vite": "^5.2.12",
+    "vitest": "^2.1.0",
     "vue-tsc": "^2.0.19"
   }
 }

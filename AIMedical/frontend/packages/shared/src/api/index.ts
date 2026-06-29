@@ -64,7 +64,9 @@ apiClient.interceptors.response.use(
       return { code: 'UNAUTHORIZED' as const, message: '登录已过期，请重新登录', isBusinessError: true as const } as BusinessError
     }
 
+    const requestUrl = error.config?.url ?? 'unknown'
     const status = error.response.status
+    console.warn('[api] HTTP error for', requestUrl, 'status:', status)
     if (status === 401) {
       return { code: 'UNAUTHORIZED' as const, message: '登录已过期，请重新登录', isBusinessError: true as const } as BusinessError
     }
@@ -126,7 +128,13 @@ export async function loginApi(req: LoginRequest): Promise<TokenResponse | Busin
   const result = await apiPost<TokenResponse>('/patient/login', req)
   if (result && !(result as BusinessError).isBusinessError) {
     const token = result as TokenResponse
+    if (!token.access_token || !token.refresh_token) {
+      console.error('[loginApi] token missing in response:', token)
+      return { code: 'AUTH_TOKEN_MISSING' as const, message: '服务器返回异常', isBusinessError: true as const } as BusinessError
+    }
     saveTokens(token.access_token, token.refresh_token)
+  } else if (result && (result as BusinessError).isBusinessError) {
+    console.error('[loginApi] login returned business error:', (result as BusinessError).code, (result as BusinessError).message)
   }
   return result
 }

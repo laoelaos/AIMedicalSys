@@ -7,9 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -38,9 +36,6 @@ public class PatientEntity extends BaseEntity {
 
     @Column(length = 20)
     private String phone;
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    private com.aimedical.modules.commonmodule.permission.User user;
 
     // CascadeType excludes REMOVE to avoid physical deletes bypassing @SQLDelete on BaseEntity;
     // child records are soft-deleted explicitly via Service-level repository.delete().

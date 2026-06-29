@@ -3,12 +3,12 @@ package com.aimedical.modules.patient.service.impl;
 import com.aimedical.common.exception.BusinessException;
 import com.aimedical.modules.commonmodule.api.AuthErrorCode;
 import com.aimedical.modules.commonmodule.api.AuthService;
+import com.aimedical.modules.commonmodule.api.UserDto;
+import com.aimedical.modules.commonmodule.api.UserQueryService;
 import com.aimedical.modules.patient.exception.PatientErrorCode;
 import com.aimedical.modules.commonmodule.api.dto.CurrentUserResponse;
 import com.aimedical.modules.commonmodule.api.dto.RegisterRequest;
 import com.aimedical.modules.commonmodule.api.dto.TokenResponse;
-import com.aimedical.modules.commonmodule.permission.User;
-import com.aimedical.modules.commonmodule.permission.UserRepository;
 import com.aimedical.modules.patient.entity.PatientEntity;
 import com.aimedical.modules.patient.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -28,7 +29,7 @@ import static org.mockito.Mockito.when;
 class PatientServiceImplTest {
 
     @Mock private AuthService authService;
-    @Mock private UserRepository userRepository;
+    @Mock private UserQueryService userQueryService;
     @Mock private PatientRepository patientRepository;
     @Mock private PatientAllergyRepository allergyRepo;
     @Mock private PatientChronicDiseaseRepository chronicRepo;
@@ -40,7 +41,7 @@ class PatientServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        service = new PatientServiceImpl(authService, userRepository, patientRepository,
+        service = new PatientServiceImpl(authService, userQueryService, patientRepository,
                 allergyRepo, chronicRepo, familyRepo, surgeryRepo, medicationRepo);
     }
 
@@ -54,12 +55,10 @@ class PatientServiceImplTest {
         req.setAge(30);
 
         TokenResponse token = new TokenResponse("at", "rt", 7200);
-        User user = new User();
-        user.setId(1L);
-        user.setUsername("13800138000");
+        UserDto userDto = new UserDto(1L, "13800138000", "张三", "13800138000", null, "男", 30);
 
         when(authService.register(any())).thenReturn(token);
-        when(userRepository.findByUsername("13800138000")).thenReturn(Optional.of(user));
+        when(userQueryService.findByUsername("13800138000")).thenReturn(userDto);
         when(patientRepository.save(any(PatientEntity.class))).thenAnswer(inv -> {
             PatientEntity p = inv.getArgument(0);
             p.setId(1L);

@@ -3,13 +3,13 @@ package com.aimedical.modules.patient.service.impl;
 import com.aimedical.common.exception.BusinessException;
 import com.aimedical.common.result.Result;
 import com.aimedical.modules.commonmodule.api.AuthService;
+import com.aimedical.modules.commonmodule.api.UserDto;
+import com.aimedical.modules.commonmodule.api.UserQueryService;
 import com.aimedical.modules.patient.exception.PatientErrorCode;
 import com.aimedical.modules.commonmodule.api.dto.CurrentUserResponse;
 import com.aimedical.modules.commonmodule.api.dto.LoginRequest;
 import com.aimedical.modules.commonmodule.api.dto.RegisterRequest;
 import com.aimedical.modules.commonmodule.api.dto.TokenResponse;
-import com.aimedical.modules.commonmodule.permission.User;
-import com.aimedical.modules.commonmodule.permission.UserRepository;
 import com.aimedical.modules.patient.converter.PatientConverter;
 import com.aimedical.modules.patient.dto.*;
 import com.aimedical.modules.patient.entity.*;
@@ -29,7 +29,7 @@ public class PatientServiceImpl implements PatientService {
     private static final Logger log = LoggerFactory.getLogger(PatientServiceImpl.class);
 
     private final AuthService authService;
-    private final UserRepository userRepository;
+    private final UserQueryService userQueryService;
     private final PatientRepository patientRepository;
     private final PatientAllergyRepository allergyRepo;
     private final PatientChronicDiseaseRepository chronicRepo;
@@ -38,7 +38,7 @@ public class PatientServiceImpl implements PatientService {
     private final PatientMedicationHistoryRepository medicationRepo;
 
     public PatientServiceImpl(AuthService authService,
-                               UserRepository userRepository,
+                               UserQueryService userQueryService,
                                PatientRepository patientRepository,
                                PatientAllergyRepository allergyRepo,
                                PatientChronicDiseaseRepository chronicRepo,
@@ -46,7 +46,7 @@ public class PatientServiceImpl implements PatientService {
                                PatientSurgeryHistoryRepository surgeryRepo,
                                PatientMedicationHistoryRepository medicationRepo) {
         this.authService = authService;
-        this.userRepository = userRepository;
+        this.userQueryService = userQueryService;
         this.patientRepository = patientRepository;
         this.allergyRepo = allergyRepo;
         this.chronicRepo = chronicRepo;
@@ -61,17 +61,14 @@ public class PatientServiceImpl implements PatientService {
     @Transactional
     public Result<TokenResponse> register(RegisterRequest request) {
         TokenResponse token = authService.register(request);
-        // Create PatientEntity profile
-        User user = userRepository.findByUsername(request.getPhone())
-                .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_NOT_FOUND));
+        UserDto userDto = userQueryService.findByUsername(request.getPhone());
         PatientEntity patient = new PatientEntity();
-        patient.setUserId(user.getId());
-        patient.setUser(user);
+        patient.setUserId(userDto.getId());
         patient.setRealName(request.getName());
         patient.setPhone(request.getPhone());
         patient.setGender(Gender.fromLabel(request.getGender()));
         patientRepository.save(patient);
-        log.info("Patient profile created: patientId={}, userId={}", patient.getId(), user.getId());
+        log.info("Patient profile created: patientId={}, userId={}", patient.getId(), userDto.getId());
         return Result.success(token);
     }
 
@@ -102,7 +99,8 @@ public class PatientServiceImpl implements PatientService {
         CurrentUserResponse currentUser = authService.getCurrentUser();
         PatientEntity patient = patientRepository.findByUserId(currentUser.getUserId())
                 .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_NOT_FOUND));
-        return Result.success(PatientConverter.toDto(patient));
+        UserDto userDto = userQueryService.findById(patient.getUserId());
+        return Result.success(PatientConverter.toDto(patient, userDto.getEmail(), userDto.getAge()));
     }
 
     @Override
@@ -112,18 +110,13 @@ public class PatientServiceImpl implements PatientService {
         PatientEntity patient = patientRepository.findByUserId(currentUser.getUserId())
                 .orElseGet(() -> createPatientProfile(currentUser.getUserId()));
 
-        // Delegate patient-entity field merging to converter (T1)
         PatientConverter.mergeFromRequest(patient, request);
-        // User-entity fields (email/age) live on sys_user, handle separately
         if (request.getEmail() != null || request.getAge() != null) {
-            User user = userRepository.findById(currentUser.getUserId())
-                    .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_NOT_FOUND));
-            if (request.getEmail() != null) user.setEmail(request.getEmail());
-            if (request.getAge() != null) user.setAge(request.getAge());
-            userRepository.save(user);
+            userQueryService.updateUserFields(currentUser.getUserId(), request.getEmail(), request.getAge());
         }
         patientRepository.save(patient);
-        return Result.success(PatientConverter.toDto(patient));
+        UserDto userDto = userQueryService.findById(patient.getUserId());
+        return Result.success(PatientConverter.toDto(patient, userDto.getEmail(), userDto.getAge()));
     }
 
 
@@ -344,15 +337,12 @@ public class PatientServiceImpl implements PatientService {
     }
 
     private PatientEntity createPatientProfile(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_NOT_FOUND));
+        UserDto userDto = userQueryService.findById(userId);
         PatientEntity patient = new PatientEntity();
-        patient.setUserId(user.getId());
-        patient.setUser(user);
-        // Initialize patient profile fields from user data; fallback nickname→username
-        patient.setRealName(user.getNickname() != null ? user.getNickname() : user.getUsername());
-        patient.setPhone(user.getPhone());
-        patient.setGender(Gender.fromLabel(user.getGender()));
+        patient.setUserId(userDto.getId());
+        patient.setRealName(userDto.getNickname() != null ? userDto.getNickname() : userDto.getUsername());
+        patient.setPhone(userDto.getPhone());
+        patient.setGender(Gender.fromLabel(userDto.getGender()));
         return patientRepository.save(patient);
     }
 

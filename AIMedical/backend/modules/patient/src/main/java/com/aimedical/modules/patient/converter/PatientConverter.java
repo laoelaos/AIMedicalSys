@@ -1,6 +1,5 @@
 package com.aimedical.modules.patient.converter;
 
-import com.aimedical.modules.commonmodule.permission.User;
 import com.aimedical.modules.patient.dto.*;
 import com.aimedical.modules.patient.entity.*;
 
@@ -19,7 +18,7 @@ public class PatientConverter {
         throw new UnsupportedOperationException("Utility class");
     }
 
-    public static PatientDto toDto(PatientEntity entity) {
+    public static PatientDto toDto(PatientEntity entity, String email, Integer age) {
         if (entity == null) return null;
         PatientDto dto = new PatientDto();
         dto.setId(entity.getId());
@@ -29,12 +28,8 @@ public class PatientConverter {
         dto.setGender(entity.getGender() != null ? entity.getGender().getDesc() : null);
         dto.setEmergencyContact(entity.getEmergencyContact());
         dto.setAvatarUrl(entity.getAvatarUrl());
-        // Supplement with User data when available for fields not on PatientEntity
-        if (entity.getUser() != null) {
-            User user = entity.getUser();
-            dto.setAge(user.getAge());
-            dto.setEmail(user.getEmail());
-        }
+        dto.setAge(age);
+        dto.setEmail(email);
         return dto;
     }
 

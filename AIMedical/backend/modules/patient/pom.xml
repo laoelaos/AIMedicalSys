@@ -25,11 +25,11 @@
         </dependency>
         <dependency>
             <groupId>com.aimedical</groupId>
-            <artifactId>common-module-impl</artifactId>
+            <artifactId>ai-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.aimedical</groupId>
-            <artifactId>ai-api</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -56,6 +56,8 @@
 
     <properties>
         <jacoco.skip>false</jacoco.skip>
-        <jacoco.skip.check>true</jacoco.skip.check>
+        <jacoco.skip.check>false</jacoco.skip.check>
+        <jacoco.min.line.coverage>0.10</jacoco.min.line.coverage>
+        <jacoco.min.branch.coverage>0.00</jacoco.min.branch.coverage>
     </properties>
 </project>

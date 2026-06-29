@@ -80,6 +80,8 @@ export interface UserInfo {
   id: number
   username: string
   real_name: string
+  phone: string
+  email: string
   role: string
   position?: string
   permissions?: string[]

@@ -54,13 +54,27 @@ async function handleLogin() {
   try {
     const err = await auth.login(form)
     if (err) {
-      ElMessage.error(err)
-    } else {
-      ElMessage.success('登录成功')
-      await auth.fetchProfile()
-      router.push('/profile')
+      console.error('[LoginPage] login failed:', err)
+      if (typeof err === 'object' && err !== null && 'code' in err) {
+        const detail = err as { code: string; message: string }
+        ElMessage.error(`[${detail.code}] ${detail.message}`)
+      } else {
+        ElMessage.error(String(err))
+      }
+      return
     }
+    ElMessage.success('登录成功')
+    try {
+      await auth.fetchProfile()
+    } catch (profileErr) {
+      console.error('[LoginPage] fetchProfile failed after login:', profileErr)
+      ElMessage.warning('获取用户信息失败，请刷新重试')
+      router.push('/profile')
+      return
+    }
+    router.push('/profile')
   } catch (e) {
+    console.error('[LoginPage] unexpected error:', e)
     ElMessage.error('网络异常，请稍后重试')
   }
 }
