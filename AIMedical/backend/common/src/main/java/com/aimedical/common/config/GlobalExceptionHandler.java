@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -89,6 +90,13 @@ public class GlobalExceptionHandler {
         log.error("Response body serialization failed", e);
         return ResponseEntity.status(500)
                 .body(Result.fail(GlobalErrorCode.SYSTEM_ERROR));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Result<Void>> handleNoResourceFound(NoResourceFoundException e) {
+        log.warn("No resource found: {}", e.getResourcePath());
+        return ResponseEntity.status(404)
+                .body(Result.fail(GlobalErrorCode.NOT_FOUND));
     }
 
     @ExceptionHandler(Exception.class)

@@ -1,33 +1,32 @@
 <template>
   <div class="page-container">
-    <el-card class="main-card">
+    <div class="header-row">
+      <h2>智慧云脑诊疗平台 - 个人中心</h2>
+      <el-button type="primary" text @click="router.push('/home')">返回首页</el-button>
+    </div>
+
+    <!-- 个人信息卡片 -->
+    <el-card class="info-card">
       <template #header>
-        <div class="header-row">
-          <h2>智慧云脑诊疗平台 - 个人中心</h2>
-          <el-button type="danger" text @click="handleLogout">退出登录</el-button>
+        <div class="card-header">
+          <span>基本信息</span>
+          <el-button type="primary" size="small" @click="showEditDialog = true">编辑资料</el-button>
         </div>
       </template>
-
-      <el-tabs v-model="activeTab">
-        <el-tab-pane label="基本信息" name="info">
-          <el-skeleton :loading="loading" animated>
-            <el-descriptions :column="2" border>
-              <el-descriptions-item label="姓名">{{ profile?.name || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="手机号">{{ profile?.phone || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="性别">{{ profile?.gender || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="年龄">{{ profile?.age ?? '-' }}</el-descriptions-item>
-              <el-descriptions-item label="邮箱">{{ profile?.email || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="紧急联系人">{{ profile?.emergency_contact || '-' }}</el-descriptions-item>
-            </el-descriptions>
-            <el-button type="primary" style="margin-top:16px" @click="showEditDialog = true">编辑资料</el-button>
-          </el-skeleton>
-        </el-tab-pane>
-
-        <el-tab-pane label="健康档案" name="health">
-          <HealthRecordSection />
-        </el-tab-pane>
-      </el-tabs>
+      <el-skeleton :loading="loading" animated>
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="姓名">{{ profile?.name || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="手机号">{{ profile?.phone || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="性别">{{ profile?.gender || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="年龄">{{ profile?.age ?? '-' }}</el-descriptions-item>
+          <el-descriptions-item label="邮箱">{{ profile?.email || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="紧急联系人">{{ profile?.emergency_contact || '-' }}</el-descriptions-item>
+        </el-descriptions>
+      </el-skeleton>
     </el-card>
+
+    <!-- 健康档案 -->
+    <HealthRecordSection />
 
     <!-- Edit Dialog -->
     <el-dialog v-model="showEditDialog" title="编辑个人资料" width="450px">
@@ -76,7 +75,6 @@ import HealthRecordSection from '../components/HealthRecordSection.vue'
 const auth = useAuthStore()
 const router = useRouter()
 const loading = ref(true)
-const activeTab = ref('info')
 const showEditDialog = ref(false)
 const editFormRef = ref<FormInstance>()
 
@@ -100,16 +98,10 @@ const editRules = {
 }
 
 onMounted(async () => {
-  const p = await auth.fetchProfile()
-  if (!p) {
-    ElMessage.error('获取个人信息失败')
-  } else {
-
-  }
+  await auth.fetchProfile()
   loading.value = false
 })
 
-// Watch the dialog to pre-fill form
 watch(showEditDialog, (val) => {
   if (val && profile.value) {
     editFormRef.value?.clearValidate()
@@ -137,17 +129,10 @@ async function handleUpdateProfile() {
     ElMessage.error((result as BusinessError).message)
   } else {
     const updated = result as PatientProfile
-
-    // Use store method instead of direct mutation
     await auth.setProfile(updated)
     ElMessage.success('资料更新成功')
     showEditDialog.value = false
   }
-}
-
-async function handleLogout() {
-  await auth.logout()
-  router.push('/login')
 }
 </script>
 
@@ -155,12 +140,25 @@ async function handleLogout() {
 .page-container {
   max-width: 900px;
   margin: 20px auto;
-  padding: 0 20px;
+  padding: 0 20px 60px;
 }
-.main-card {
-  min-height: 400px;
-}
+
 .header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header-row h2 {
+  margin: 0;
+}
+
+.info-card {
+  margin-bottom: 20px;
+}
+
+.card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;

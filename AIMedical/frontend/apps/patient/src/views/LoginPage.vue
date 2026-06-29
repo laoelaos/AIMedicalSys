@@ -69,10 +69,10 @@ async function handleLogin() {
     } catch (profileErr) {
       console.error('[LoginPage] fetchProfile failed after login:', profileErr)
       ElMessage.warning('获取用户信息失败，请刷新重试')
-      router.push('/profile')
+      router.push('/home')
       return
     }
-    router.push('/profile')
+    router.push('/home')
   } catch (e) {
     console.error('[LoginPage] unexpected error:', e)
     ElMessage.error('网络异常，请稍后重试')

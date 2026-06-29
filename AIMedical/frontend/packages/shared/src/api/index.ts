@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
-import type { ApiResult, BusinessError, LoginRequest, TokenResponse, TokenRefreshResponse, UserInfo, MenuItem } from '../types'
+import type { ApiResult, BusinessError, LoginRequest, TokenResponse, TokenRefreshResponse, UserInfo, MenuItem, TriageRequest, TriageResponse, TriageDepartment, ConsultRequest, ConsultResponse, AppointmentSlot, RegistrationRequest, RegistrationRecord, CancelResult, ExamCategory, ExamItem, ReportRecord, MedicalRecordRecord, PrescriptionRecord, PaymentRecord, TriageHistoryRecord } from '../types'
 import { getAccessToken, setTokens, clearTokens, getRefreshToken } from '../utils'
 
 const apiClient = axios.create({
@@ -314,17 +314,189 @@ export const authApi = {
  * 菜单相关API
  */
 export const menuApi = {
-  /**
-   * 获取当前用户菜单树
-   */
   tree: (): Promise<MenuItem[] | BusinessError> => {
     return apiGet<MenuItem[]>('/menu/tree')
   },
 
-  /**
-   * 获取所有菜单（管理员）
-   */
   all: (): Promise<MenuItem[] | BusinessError> => {
     return apiGet<MenuItem[]>('/menu/all')
+  },
+}
+
+/**
+ * AI 智能导诊 API
+ */
+export const triageApi = {
+  triage: (data: TriageRequest): Promise<TriageResponse | BusinessError> => {
+    return apiPost<TriageResponse>('/patient/triage', data)
+  },
+
+  getDepartments: (): Promise<TriageDepartment[] | BusinessError> => {
+    return apiGet<TriageDepartment[]>('/patient/triage/departments')
+  },
+}
+
+/**
+ * AI 病情咨询 API
+ */
+export const consultApi = {
+  ask: (data: ConsultRequest): Promise<ConsultResponse | BusinessError> => {
+    return apiPost<ConsultResponse>('/patient/consult', data)
+  },
+
+  mockToggleFault: (): Promise<{ fault: boolean } | BusinessError> => {
+    return apiPost<{ fault: boolean }>('/patient/consult/mock-fault')
+  },
+}
+
+/**
+ * 智能挂号 API
+ */
+export const appointmentApi = {
+  getSlots: (doctorId: number): Promise<AppointmentSlot[] | BusinessError> => {
+    return apiGet<AppointmentSlot[]>(`/patient/appointment/${doctorId}/slots`)
+  },
+
+  book: (data: { doctor_id: number; slot_id: number }): Promise<{ success: boolean; message: string } | BusinessError> => {
+    return apiPost<{ success: boolean; message: string }>('/patient/appointment', data)
+  },
+}
+
+/**
+ * 线上挂号 API
+ */
+export const registrationApi = {
+  getDepartments: (): Promise<TriageDepartment[] | BusinessError> => {
+    return apiGet<TriageDepartment[]>('/patient/registration/departments')
+  },
+
+  getDoctors: (deptId: number): Promise<TriageDepartment[] | BusinessError> => {
+    return apiGet<TriageDepartment[]>(`/patient/registration/departments/${deptId}/doctors`)
+  },
+
+  getExamCategories: (): Promise<ExamCategory[] | BusinessError> => {
+    return apiGet<ExamCategory[]>('/patient/registration/exam-categories')
+  },
+
+  getExamItems: (categoryId: number): Promise<ExamItem[] | BusinessError> => {
+    return apiGet<ExamItem[]>(`/patient/registration/exam-categories/${categoryId}/items`)
+  },
+
+  getTimeSlots: (doctorId?: number, examItemId?: number): Promise<AppointmentSlot[] | BusinessError> => {
+    const params = doctorId ? `/doctor/${doctorId}` : `/exam/${examItemId}`
+    return apiGet<AppointmentSlot[]>(`/patient/registration/slots${params}`)
+  },
+
+  create: (data: RegistrationRequest): Promise<RegistrationRecord | BusinessError> => {
+    return apiPost<RegistrationRecord>('/patient/registration', data)
+  },
+
+  list: (): Promise<RegistrationRecord[] | BusinessError> => {
+    return apiGet<RegistrationRecord[]>('/patient/registration')
+  },
+
+  cancel: (regId: number): Promise<CancelResult | BusinessError> => {
+    return apiPost<CancelResult>(`/patient/registration/${regId}/cancel`, {})
+  },
+
+  getMockDoctors: (): { doctor_id: number; doctor_name: string; available_slot_count: number; score: number }[] => {
+    return [
+      { doctor_id: 201, doctor_name: '王主任', available_slot_count: 5, score: 95 },
+      { doctor_id: 202, doctor_name: '张副主任', available_slot_count: 3, score: 82 },
+      { doctor_id: 203, doctor_name: '李主治医师', available_slot_count: 8, score: 70 },
+    ]
+  },
+
+  getMockSlots: (): AppointmentSlot[] => {
+    return [
+      { slot_id: 1, time_slot: '07-01 08:00-08:30', available: true },
+      { slot_id: 2, time_slot: '07-01 09:00-09:30', available: true },
+      { slot_id: 3, time_slot: '07-01 10:00-10:30', available: false },
+      { slot_id: 4, time_slot: '07-01 14:00-14:30', available: true },
+      { slot_id: 5, time_slot: '07-02 08:30-09:00', available: true },
+      { slot_id: 6, time_slot: '07-02 10:30-11:00', available: true },
+    ]
+  },
+
+  getMockRegistrations: (): RegistrationRecord[] => {
+    return [
+      {
+        id: 1001,
+        registration_type: 'OUTPATIENT',
+        doctor_name: '王主任',
+        department_name: '神经内科',
+        time_slot: '07-01 08:00-08:30',
+        status: 'CONFIRMED',
+        created_at: '2026-06-29 10:30',
+        can_cancel: true,
+      },
+      {
+        id: 1002,
+        registration_type: 'EXAMINATION',
+        exam_item_name: '头颅 CT',
+        time_slot: '07-02 10:30-11:00',
+        status: 'PENDING',
+        created_at: '2026-06-29 14:00',
+        can_cancel: true,
+      },
+      {
+        id: 1003,
+        registration_type: 'OUTPATIENT',
+        doctor_name: '李主治医师',
+        department_name: '普通内科',
+        time_slot: '07-01 15:00-15:30',
+        status: 'DISPENSED',
+        created_at: '2026-06-28 09:00',
+        can_cancel: false,
+      },
+    ]
+  },
+}
+
+/**
+ * 报告/病历/处方/缴费查询 API
+ */
+export const recordsApi = {
+  getReports: (): Promise<ReportRecord[] | BusinessError> => {
+    return apiGet<ReportRecord[]>('/patient/records/reports')
+  },
+
+  getMedicalRecords: (): Promise<MedicalRecordRecord[] | BusinessError> => {
+    return apiGet<MedicalRecordRecord[]>('/patient/records/medical')
+  },
+
+  getPrescriptions: (): Promise<PrescriptionRecord[] | BusinessError> => {
+    return apiGet<PrescriptionRecord[]>('/patient/records/prescriptions')
+  },
+
+  getPayments: (params?: { start_date?: string; end_date?: string; category?: string }): Promise<PaymentRecord[] | BusinessError> => {
+    const query = new URLSearchParams()
+    if (params?.start_date) query.set('start_date', params.start_date)
+    if (params?.end_date) query.set('end_date', params.end_date)
+    if (params?.category) query.set('category', params.category)
+    const qs = query.toString()
+    return apiGet<PaymentRecord[]>(`/patient/records/payments${qs ? '?' + qs : ''}`)
+  },
+
+  getReportDetail: (id: number): Promise<ReportRecord | BusinessError> => {
+    return apiGet<ReportRecord>(`/patient/records/reports/${id}`)
+  },
+
+  getPrescriptionDetail: (id: number): Promise<PrescriptionRecord | BusinessError> => {
+    return apiGet<PrescriptionRecord>(`/patient/records/prescriptions/${id}`)
+  },
+}
+
+/**
+ * 分诊记录查询 API
+ */
+export const triageRecordsApi = {
+  list: (params?: { startTime?: string; endTime?: string; degraded?: boolean }): Promise<TriageHistoryRecord[] | BusinessError> => {
+    const query = new URLSearchParams()
+    if (params?.startTime) query.set('startTime', params.startTime)
+    if (params?.endTime) query.set('endTime', params.endTime)
+    if (params?.degraded) query.set('degraded', 'true')
+    const qs = query.toString()
+    return apiGet<TriageHistoryRecord[]>(`/patient/triage-records${qs ? '?' + qs : ''}`)
   },
 }
