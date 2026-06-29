@@ -2,6 +2,9 @@ package com.aimedical.modules.commonmodule.service.impl;
 
 import com.aimedical.common.exception.BusinessException;
 import com.aimedical.common.exception.GlobalErrorCode;
+import com.aimedical.modules.commonmodule.api.AuthErrorCode;
+import com.aimedical.modules.commonmodule.api.AuthService;
+import com.aimedical.modules.commonmodule.api.dto.*;
 import com.aimedical.modules.commonmodule.auth.UserInfoResponse;
 import com.aimedical.modules.commonmodule.auth.audit.SecurityAuditEvent;
 import com.aimedical.modules.commonmodule.auth.audit.SecurityAuditEventType;
@@ -14,13 +17,11 @@ import com.aimedical.modules.commonmodule.auth.login.LoginAttemptTracker;
 import com.aimedical.modules.commonmodule.auth.password.PasswordChangeService;
 import com.aimedical.modules.commonmodule.auth.password.PasswordPolicy;
 import com.aimedical.modules.commonmodule.auth.rateLimit.RateLimitGuard;
-import com.aimedical.modules.commonmodule.dto.request.LoginRequest;
-import com.aimedical.modules.commonmodule.dto.request.ProfileUpdateRequest;
-import com.aimedical.modules.commonmodule.dto.response.LoginResponse;
-import com.aimedical.modules.commonmodule.dto.response.TokenRefreshResponse;
+import com.aimedical.modules.commonmodule.permission.Role;
+import com.aimedical.modules.commonmodule.permission.RoleRepository;
 import com.aimedical.modules.commonmodule.permission.User;
 import com.aimedical.modules.commonmodule.permission.UserRepository;
-import com.aimedical.modules.commonmodule.service.AuthService;
+import com.aimedical.modules.commonmodule.api.UserType;
 
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
@@ -55,6 +56,7 @@ public class AuthServiceImpl implements AuthService {
     private static final String DUMMY_HASH = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final UserConverter userConverter;
@@ -69,6 +71,7 @@ public class AuthServiceImpl implements AuthService {
 
     public AuthServiceImpl(
             UserRepository userRepository,
+            RoleRepository roleRepository,
             PasswordEncoder passwordEncoder,
             JwtTokenProvider jwtTokenProvider,
             UserConverter userConverter,
@@ -79,6 +82,7 @@ public class AuthServiceImpl implements AuthService {
             LoginAttemptTracker loginAttemptTracker,
             SecurityAuditLogger securityAuditLogger) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.userConverter = userConverter;
@@ -91,7 +95,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public LoginResponse login(LoginRequest request) {
+    public TokenResponse authenticate(String username, String password) {
         String clientIp = getClientIp();
 
         if (!rateLimitGuard.tryAcquire(clientIp, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS)) {
@@ -104,20 +108,20 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(GlobalErrorCode.ACCOUNT_LOCKED, "30分钟");
         }
 
-        if (loginAttemptTracker.isUsernameLocked(request.username())) {
+        if (loginAttemptTracker.isUsernameLocked(username)) {
             securityAuditLogger.logAudit(SecurityAuditEvent.now(
                     SecurityAuditEventType.LOGIN_FAILED, null, null, clientIp, false, "USERNAME_LOCKED", null, null));
             throw new BusinessException(GlobalErrorCode.ACCOUNT_LOCKED, "15分钟");
         }
 
-        java.util.Optional<User> userOpt = userRepository.findByUsername(request.username());
+        java.util.Optional<User> userOpt = userRepository.findByUsername(username);
 
         if (userOpt.isEmpty()) {
             passwordEncoder.matches("dummy", DUMMY_HASH);
             loginAttemptTracker.recordIpFailure(clientIp);
             securityAuditLogger.logAudit(SecurityAuditEvent.now(
                     SecurityAuditEventType.LOGIN_FAILED, null, null, clientIp, false, "USER_NOT_FOUND", null, null));
-            throw new BusinessException(GlobalErrorCode.LOGIN_FAILED);
+            throw new BusinessException(AuthErrorCode.AUTH_LOGIN_FAILED);
         }
 
         User user = userOpt.get();
@@ -128,7 +132,7 @@ public class AuthServiceImpl implements AuthService {
             loginAttemptTracker.recordUsernameFailure(user.getUsername());
             securityAuditLogger.logAudit(SecurityAuditEvent.now(
                     SecurityAuditEventType.LOGIN_FAILED, user.getId(), user.getUsername(), clientIp, false, "ACCOUNT_DISABLED", null, null));
-            throw new BusinessException(GlobalErrorCode.LOGIN_FAILED);
+            throw new BusinessException(AuthErrorCode.AUTH_ACCOUNT_DISABLED);
         }
 
         if (Boolean.TRUE.equals(user.getDeleted())) {
@@ -137,74 +141,112 @@ public class AuthServiceImpl implements AuthService {
             loginAttemptTracker.recordUsernameFailure(user.getUsername());
             securityAuditLogger.logAudit(SecurityAuditEvent.now(
                     SecurityAuditEventType.LOGIN_FAILED, user.getId(), user.getUsername(), clientIp, false, "ACCOUNT_DELETED", null, null));
-            throw new BusinessException(GlobalErrorCode.LOGIN_FAILED);
+            throw new BusinessException(AuthErrorCode.AUTH_LOGIN_FAILED);
         }
 
-        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             loginAttemptTracker.recordUsernameFailure(user.getUsername());
             securityAuditLogger.logAudit(SecurityAuditEvent.now(
                     SecurityAuditEventType.LOGIN_FAILED, user.getId(), user.getUsername(), clientIp, false, "BAD_CREDENTIALS", null, null));
-            throw new BusinessException(GlobalErrorCode.LOGIN_FAILED);
+            throw new BusinessException(AuthErrorCode.AUTH_LOGIN_FAILED);
         }
 
         loginAttemptTracker.clearIp(clientIp);
         loginAttemptTracker.clearUsername(user.getUsername());
-
-        boolean passwordChangeRequired = passwordChangeService.isChangeRequired(user.getId());
 
         String accessToken = jwtTokenProvider.generateAccessToken(
                 user.getId(), user.getUsername(), user.getUserType().getCode());
         String refreshToken = jwtTokenProvider.generateRefreshToken(
                 user.getId(), user.getUsername(), user.getUserType().getCode(), user.getTokenVersion());
 
-        UserInfoResponse userInfo = userConverter.toUserInfoResponse(user);
-
         securityAuditLogger.logAudit(SecurityAuditEvent.now(
                 SecurityAuditEventType.LOGIN_SUCCESS, user.getId(), user.getUsername(), clientIp, true, null, null, null));
 
-        return new LoginResponse(
-                user.getId(),
-                user.getUsername(),
-                accessToken,
-                refreshToken,
-                "Bearer",
-                jwtTokenProvider.getAccessTokenExpirationMs(),
-                passwordChangeRequired,
-                userInfo);
+        return new TokenResponse(accessToken, refreshToken, jwtTokenProvider.getAccessTokenExpirationMs());
     }
 
     @Override
-    public void logout(String token, String refreshToken) {
-        if (token == null) {
+    public void logout(String accessToken) {
+        if (accessToken == null) {
             return;
         }
-
-        Claims claims = jwtTokenProvider.validateToken(token, null);
-
-        Long userId = null;
-        String username = null;
-
+        Claims claims = jwtTokenProvider.validateToken(accessToken, null);
         if (claims != null) {
             String jti = claims.get("jti", String.class);
             if (jti != null) {
                 tokenBlacklist.add(jti, claims.getExpiration().getTime());
             }
-            userId = jwtTokenProvider.getUserIdFromClaims(claims);
-            username = claims.getSubject();
-            refreshTimestamps.remove(userId);
+            Long userId = jwtTokenProvider.getUserIdFromClaims(claims);
+            if (userId != null) refreshTimestamps.remove(userId);
         }
-
-        String refreshTokenMasked = null;
-        if (refreshToken != null) {
-            refreshTokenMasked = refreshToken.length() >= 8
-                    ? refreshToken.substring(0, 8) + "***"
-                    : refreshToken + "***";
-        }
-
-        securityAuditLogger.logAudit(SecurityAuditEvent.now(
-                SecurityAuditEventType.LOGOUT, userId, username, getClientIp(), true, null, refreshTokenMasked, null));
-
         log.info("用户登出成功");
+    }
+
+    // ── Patient-facing methods ──────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public TokenResponse register(RegisterRequest request) {
+        if (userRepository.findByUsername(request.getPhone()).isPresent()) {
+            throw new BusinessException(AuthErrorCode.AUTH_MOBILE_EXISTS);
+        }
+        User user = new User();
+        user.setUsername(request.getPhone());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setNickname(request.getName());
+        user.setGender(request.getGender());
+        user.setAge(request.getAge());
+        user.setUserType(UserType.PATIENT);
+        user.setEnabled(true);
+        userRepository.save(user);
+
+        // Assign PATIENT role
+        java.util.Optional<Role> patientRoleOpt = roleRepository.findByCode("PATIENT");
+        if (patientRoleOpt.isEmpty()) {
+            Role role = new Role();
+            role.setCode("PATIENT");
+            role.setName("患者");
+            role.setEnabled(true);
+            role = roleRepository.save(role);
+            user.setRoles(new java.util.HashSet<>(java.util.Set.of(role)));
+        } else {
+            user.setRoles(new java.util.HashSet<>(java.util.Set.of(patientRoleOpt.get())));
+        }
+        userRepository.save(user);
+
+        String accessToken = jwtTokenProvider.generateAccessToken(
+                user.getId(), user.getUsername(), user.getUserType().getCode());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(
+                user.getId(), user.getUsername(), user.getUserType().getCode(), user.getTokenVersion());
+        return new TokenResponse(accessToken, refreshToken, jwtTokenProvider.getAccessTokenExpirationMs());
+    }
+
+    @Override
+    public TokenResponse login(LoginRequest request) {
+        return authenticate(request.getPhone(), request.getPassword());
+    }
+
+    @Override
+    public CurrentUserResponse getCurrentUser() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new BusinessException(AuthErrorCode.AUTH_TOKEN_INVALID);
+        }
+        String username = auth.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.AUTH_TOKEN_INVALID));
+        CurrentUserResponse resp = new CurrentUserResponse();
+        resp.setUserId(user.getId());
+        resp.setUsername(user.getUsername());
+        resp.setNickname(user.getNickname());
+        resp.setPhone(user.getPhone());
+        resp.setGender(user.getGender());
+        resp.setAge(user.getAge());
+        resp.setUserType(user.getUserType().getCode());
+        resp.setRoles(user.getRoles() != null
+                ? user.getRoles().stream().map(r -> r.getCode()).toList()
+                : java.util.Collections.emptyList());
+        return resp;
     }
 
     @Override

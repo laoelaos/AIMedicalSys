@@ -18,3 +18,8 @@ spring:
   sql:
     init:
       mode: never
+
+jwt:
+  secret: aimedical-sys-jwt-secret-key-for-integration-testing-min-256bits
+  access-token-validity: 7200
+  refresh-token-validity: 604800

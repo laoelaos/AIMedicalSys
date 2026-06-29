@@ -4,6 +4,7 @@
 -- =============================================
 
 SET NAMES utf8mb4;
+SET REFERENTIAL_INTEGRITY FALSE;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ---------------------------------------------
@@ -17,6 +18,8 @@ CREATE TABLE `sys_user` (
   `nickname`   VARCHAR(64)   NOT NULL                COMMENT '昵称',
   `phone`      VARCHAR(20)   DEFAULT NULL            COMMENT '手机号',
   `email`      VARCHAR(128)  DEFAULT NULL            COMMENT '邮箱',
+  `gender`     VARCHAR(10)   DEFAULT NULL            COMMENT '性别',
+  `age`        INT           DEFAULT NULL            COMMENT '年龄',
   `user_type`  VARCHAR(20)   NOT NULL                COMMENT '用户类型 ADMIN/DOCTOR/PATIENT',
   `enabled`    TINYINT(1)    NOT NULL DEFAULT 1      COMMENT '是否启用',
   `password_change_required` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '需要修改密码',
@@ -368,6 +371,98 @@ CREATE TABLE `medication_history` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='用药史表';
 
 -- ---------------------------------------------
+-- 19. patient_allergy (linked to patient_profile)
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `patient_allergy`;
+CREATE TABLE `patient_allergy` (
+  `id`            BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `patient_id`    BIGINT       NOT NULL                COMMENT '患者档案ID',
+  `allergen`      VARCHAR(100) NOT NULL                COMMENT '过敏原',
+  `reaction_type` VARCHAR(50)  DEFAULT NULL            COMMENT '反应类型',
+  `severity`      VARCHAR(20)  DEFAULT NULL            COMMENT '严重程度',
+  `occurred_at`   DATE         DEFAULT NULL            COMMENT '发生时间',
+  `created_at`    DATETIME     DEFAULT NULL            COMMENT '创建时间',
+  `updated_at`    DATETIME     DEFAULT NULL            COMMENT '更新时间',
+  `deleted`       TINYINT(1)   NOT NULL DEFAULT 0     COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_patient_allergy_pid` (`patient_id`),
+  CONSTRAINT `fk_patient_allergy_profile` FOREIGN KEY (`patient_id`) REFERENCES `patient_profile` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='患者过敏史表';
+
+-- ---------------------------------------------
+-- 20. patient_chronic_disease
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `patient_chronic_disease`;
+CREATE TABLE `patient_chronic_disease` (
+  `id`             BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `patient_id`     BIGINT       NOT NULL                COMMENT '患者档案ID',
+  `disease_name`   VARCHAR(100) NOT NULL                COMMENT '疾病名称',
+  `diagnosed_at`   DATE         DEFAULT NULL            COMMENT '确诊时间',
+  `current_status` VARCHAR(20)  DEFAULT NULL            COMMENT '当前状态',
+  `created_at`     DATETIME     DEFAULT NULL            COMMENT '创建时间',
+  `updated_at`     DATETIME     DEFAULT NULL            COMMENT '更新时间',
+  `deleted`        TINYINT(1)   NOT NULL DEFAULT 0     COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_patient_chronic_pid` (`patient_id`),
+  CONSTRAINT `fk_patient_chronic_profile` FOREIGN KEY (`patient_id`) REFERENCES `patient_profile` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='患者慢病史表';
+
+-- ---------------------------------------------
+-- 21. patient_family_history
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `patient_family_history`;
+CREATE TABLE `patient_family_history` (
+  `id`          BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `patient_id`  BIGINT       NOT NULL                COMMENT '患者档案ID',
+  `relationship` VARCHAR(50)  NOT NULL                COMMENT '亲属关系',
+  `disease_name` VARCHAR(100) NOT NULL                COMMENT '疾病名称',
+  `note`        VARCHAR(200) DEFAULT NULL            COMMENT '备注',
+  `created_at`  DATETIME     DEFAULT NULL            COMMENT '创建时间',
+  `updated_at`  DATETIME     DEFAULT NULL            COMMENT '更新时间',
+  `deleted`     TINYINT(1)   NOT NULL DEFAULT 0     COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_patient_family_pid` (`patient_id`),
+  CONSTRAINT `fk_patient_family_profile` FOREIGN KEY (`patient_id`) REFERENCES `patient_profile` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='患者家族史表';
+
+-- ---------------------------------------------
+-- 22. patient_surgery_history
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `patient_surgery_history`;
+CREATE TABLE `patient_surgery_history` (
+  `id`           BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `patient_id`   BIGINT       NOT NULL                COMMENT '患者档案ID',
+  `surgery_name` VARCHAR(100) NOT NULL                COMMENT '手术名称',
+  `surgery_at`   DATE         DEFAULT NULL            COMMENT '手术时间',
+  `hospital`     VARCHAR(100) DEFAULT NULL            COMMENT '医院',
+  `created_at`   DATETIME     DEFAULT NULL            COMMENT '创建时间',
+  `updated_at`   DATETIME     DEFAULT NULL            COMMENT '更新时间',
+  `deleted`      TINYINT(1)   NOT NULL DEFAULT 0     COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_patient_surgery_pid` (`patient_id`),
+  CONSTRAINT `fk_patient_surgery_profile` FOREIGN KEY (`patient_id`) REFERENCES `patient_profile` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='患者手术史表';
+
+-- ---------------------------------------------
+-- 23. patient_medication_history
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `patient_medication_history`;
+CREATE TABLE `patient_medication_history` (
+  `id`         BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `patient_id` BIGINT       NOT NULL                COMMENT '患者档案ID',
+  `drug_name`  VARCHAR(100) NOT NULL                COMMENT '药品名称',
+  `reason`     VARCHAR(200) DEFAULT NULL            COMMENT '用药原因',
+  `started_at` DATE         DEFAULT NULL            COMMENT '开始时间',
+  `ended_at`   DATE         DEFAULT NULL            COMMENT '结束时间',
+  `created_at` DATETIME     DEFAULT NULL            COMMENT '创建时间',
+  `updated_at` DATETIME     DEFAULT NULL            COMMENT '更新时间',
+  `deleted`    TINYINT(1)   NOT NULL DEFAULT 0     COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_patient_medication_pid` (`patient_id`),
+  CONSTRAINT `fk_patient_medication_profile` FOREIGN KEY (`patient_id`) REFERENCES `patient_profile` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='患者用药史表';
+
+-- ---------------------------------------------
 -- 19. sys_operation_log
 -- ---------------------------------------------
 DROP TABLE IF EXISTS `sys_operation_log`;
@@ -429,3 +524,4 @@ CREATE TABLE `sys_token` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='令牌表';
 
 SET FOREIGN_KEY_CHECKS = 1;
+SET REFERENTIAL_INTEGRITY TRUE;
