@@ -42,11 +42,5 @@ public interface MedicalRecordRepository extends JpaRepository<MedicalRecordEnti
                                                                                        Long doctorId,
                                                                                        String status);
 
-    /**
-     * 按患者ID统计病历数量（用于版本号自增）
-     *
-     * @param patientId 患者档案ID
-     * @return 病历数量
-     */
-    long countByPatientId(Long patientId);
+
 }

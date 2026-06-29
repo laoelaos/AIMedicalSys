@@ -8,8 +8,8 @@
         </div>
       </template>
 
-      <el-form :model="form" label-position="top">
-        <el-form-item label="主诉">
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+        <el-form-item label="主诉" prop="chief_complaint">
           <el-input
             v-model="form.chief_complaint"
             type="textarea"
@@ -52,12 +52,15 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
 const patientId = Number(route.params.patientId)
+
+const formRef = ref<FormInstance>()
 
 const form = reactive({
   chief_complaint: '',
@@ -66,35 +69,55 @@ const form = reactive({
   diagnosis: '',
 })
 
-function saveAsDraft() {
-  // 长文本通过 sessionStorage 传递，避免 URL 静默截断（目标页读取后清除）
-  sessionStorage.setItem(
-    'condition_entry_draft',
-    JSON.stringify({
-      chief_complaint: form.chief_complaint,
-      present_illness: form.present_illness,
-      past_history: form.past_history,
-      diagnosis: form.diagnosis,
-    })
-  )
-  router.push(`/patient/${patientId}/medical-records/new`)
+const rules: FormRules = {
+  chief_complaint: [
+    { required: true, message: '主诉不能为空', trigger: 'blur' },
+  ],
 }
 
-function goAiDiagnosis() {
-  // 长文本通过 sessionStorage 传递，避免 URL 静默截断（目标页读取后清除）
-  sessionStorage.setItem(
-    'condition_entry_draft',
-    JSON.stringify({
-      chief_complaint: form.chief_complaint,
-      present_illness: form.present_illness,
-      past_history: form.past_history,
+async function saveAsDraft() {
+  if (!formRef.value) return
+  await formRef.value.validate((valid) => {
+    if (!valid) {
+      ElMessage.warning('请填写主诉后再保存')
+      return
+    }
+    // 长文本通过 sessionStorage 传递，避免 URL 静默截断（目标页读取后清除）
+    sessionStorage.setItem(
+      'condition_entry_draft',
+      JSON.stringify({
+        chief_complaint: form.chief_complaint,
+        present_illness: form.present_illness,
+        past_history: form.past_history,
+        diagnosis: form.diagnosis,
+      })
+    )
+    router.push(`/patient/${patientId}/medical-records/new`)
+  })
+}
+
+async function goAiDiagnosis() {
+  if (!formRef.value) return
+  await formRef.value.validate((valid) => {
+    if (!valid) {
+      ElMessage.warning('请填写主诉后再进行 AI 诊断')
+      return
+    }
+    // 长文本通过 sessionStorage 传递，避免 URL 静默截断（目标页读取后清除）
+    sessionStorage.setItem(
+      'condition_entry_draft',
+      JSON.stringify({
+        chief_complaint: form.chief_complaint,
+        present_illness: form.present_illness,
+        past_history: form.past_history,
+      })
+    )
+    router.push({
+      path: '/ai/diagnosis',
+      query: {
+        patient_id: String(patientId),
+      },
     })
-  )
-  router.push({
-    path: '/ai/diagnosis',
-    query: {
-      patient_id: String(patientId),
-    },
   })
 }
 </script>

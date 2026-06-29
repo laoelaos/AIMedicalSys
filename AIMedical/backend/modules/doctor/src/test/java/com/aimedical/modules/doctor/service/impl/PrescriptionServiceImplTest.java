@@ -14,8 +14,7 @@ import com.aimedical.modules.doctor.repository.DoctorRepository;
 import com.aimedical.modules.doctor.repository.PrescriptionItemRepository;
 import com.aimedical.modules.doctor.repository.PrescriptionRepository;
 import com.aimedical.modules.doctor.service.PrescriptionService;
-import com.aimedical.modules.patient.entity.PatientEntity;
-import com.aimedical.modules.patient.repository.PatientRepository;
+import com.aimedical.modules.commonmodule.patient.PatientInfoPort;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -52,7 +51,7 @@ class PrescriptionServiceImplTest {
     private PrescriptionItemRepository prescriptionItemRepository;
 
     @Mock
-    private PatientRepository patientRepository;
+    private PatientInfoPort patientInfoPort;
 
     @Mock
     private DoctorRepository doctorRepository;
@@ -73,7 +72,7 @@ class PrescriptionServiceImplTest {
     @Test
     void create_shouldReturnNotFoundWhenPatientNotExists() {
         PrescriptionCreateRequest request = buildCreateRequest(false);
-        when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.empty());
+        when(patientInfoPort.findNameById(PATIENT_ID)).thenReturn(Optional.empty());
 
         Result<PrescriptionResponse> result = service.create(request, DOCTOR_USER_ID);
 
@@ -83,14 +82,13 @@ class PrescriptionServiceImplTest {
     @Test
     void create_shouldSaveDraftWhenSubmitForReviewFalse() {
         PrescriptionCreateRequest request = buildCreateRequest(false);
-        PatientEntity patient = buildPatient();
         PrescriptionItemEntity itemEntity = new PrescriptionItemEntity();
         PrescriptionEntity saved = new PrescriptionEntity();
         saved.setId(PRESCRIPTION_ID);
         saved.setStatus(PrescriptionStatus.DRAFT.getCode());
         PrescriptionResponse response = buildResponse(PRESCRIPTION_ID, PrescriptionStatus.DRAFT.getCode());
 
-        when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
+        when(patientInfoPort.findNameById(PATIENT_ID)).thenReturn(Optional.of("张三"));
         when(doctorRepository.findByUserId(DOCTOR_USER_ID)).thenReturn(Optional.empty());
         when(converter.toItemEntity(any(PrescriptionItemRequest.class))).thenReturn(itemEntity);
         when(prescriptionRepository.save(any(PrescriptionEntity.class))).thenReturn(saved);
@@ -108,14 +106,13 @@ class PrescriptionServiceImplTest {
     @Test
     void create_shouldSavePendingReviewWhenSubmitForReviewTrue() {
         PrescriptionCreateRequest request = buildCreateRequest(true);
-        PatientEntity patient = buildPatient();
         PrescriptionItemEntity itemEntity = new PrescriptionItemEntity();
         PrescriptionEntity saved = new PrescriptionEntity();
         saved.setId(PRESCRIPTION_ID);
         saved.setStatus(PrescriptionStatus.PENDING_REVIEW.getCode());
         PrescriptionResponse response = buildResponse(PRESCRIPTION_ID, PrescriptionStatus.PENDING_REVIEW.getCode());
 
-        when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
+        when(patientInfoPort.findNameById(PATIENT_ID)).thenReturn(Optional.of("张三"));
         when(doctorRepository.findByUserId(DOCTOR_USER_ID)).thenReturn(Optional.empty());
         when(converter.toItemEntity(any(PrescriptionItemRequest.class))).thenReturn(itemEntity);
         when(prescriptionRepository.save(any(PrescriptionEntity.class))).thenReturn(saved);
@@ -335,13 +332,6 @@ class PrescriptionServiceImplTest {
                         new BigDecimal("6"), "粒", "无"
                 ))
         );
-    }
-
-    private PatientEntity buildPatient() {
-        PatientEntity patient = new PatientEntity();
-        patient.setId(PATIENT_ID);
-        patient.setRealName("张三");
-        return patient;
     }
 
     private PrescriptionResponse buildResponse(Long id, String status) {

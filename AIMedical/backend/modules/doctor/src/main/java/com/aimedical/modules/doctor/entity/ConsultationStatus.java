@@ -7,7 +7,8 @@ import lombok.Getter;
 /**
  * 接诊队列状态枚举
  *
- * <p>状态流转：WAITING(候诊) -> CALLED(已叫号) -> IN_CONSULTATION(接诊中) -> FINISHED(完成) / SKIPPED(过号)
+ * <p>状态流转：WAITING(候诊) -> CALLED(已叫号) -> IN_CONSULTATION(接诊中) -> FINISHED(完成)；
+ * WAITING/CALLED -> SKIPPED(过号)。
  *
  * @author AIMedical Team
  * @version 1.0.0

@@ -13,11 +13,7 @@ import com.aimedical.modules.doctor.repository.DoctorRepository;
 import com.aimedical.modules.doctor.repository.PrescriptionItemRepository;
 import com.aimedical.modules.doctor.repository.PrescriptionRepository;
 import com.aimedical.modules.doctor.service.PrescriptionService;
-// T7 已知技术债务：doctor 模块直接依赖 patient 模块的 Repository，形成编译期硬依赖。
-// 完整解耦应在 common-module-api 定义 PatientInfoPort 接口，由 patient 模块实现，
-// doctor 模块仅依赖接口。Phase 3 范围内保留该依赖，待后续重构。
-import com.aimedical.modules.patient.entity.PatientEntity;
-import com.aimedical.modules.patient.repository.PatientRepository;
+import com.aimedical.modules.commonmodule.patient.PatientInfoPort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,18 +36,18 @@ public class PrescriptionServiceImpl implements PrescriptionService {
 
     private final PrescriptionRepository prescriptionRepository;
     private final PrescriptionItemRepository prescriptionItemRepository;
-    private final PatientRepository patientRepository;
+    private final PatientInfoPort patientInfoPort;
     private final DoctorRepository doctorRepository;
     private final PrescriptionConverter converter;
 
     public PrescriptionServiceImpl(PrescriptionRepository prescriptionRepository,
                                    PrescriptionItemRepository prescriptionItemRepository,
-                                   PatientRepository patientRepository,
+                                   PatientInfoPort patientInfoPort,
                                    DoctorRepository doctorRepository,
                                    PrescriptionConverter converter) {
         this.prescriptionRepository = prescriptionRepository;
         this.prescriptionItemRepository = prescriptionItemRepository;
-        this.patientRepository = patientRepository;
+        this.patientInfoPort = patientInfoPort;
         this.doctorRepository = doctorRepository;
         this.converter = converter;
     }
@@ -60,11 +56,11 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     @Transactional
     public Result<PrescriptionResponse> create(PrescriptionCreateRequest request, Long doctorUserId) {
         // 校验患者存在并获取姓名
-        Optional<PatientEntity> patientOpt = patientRepository.findById(request.patientId());
-        if (patientOpt.isEmpty()) {
+        Optional<String> patientNameOpt = patientInfoPort.findNameById(request.patientId());
+        if (patientNameOpt.isEmpty()) {
             return Result.fail(GlobalErrorCode.NOT_FOUND.getCode(), "患者档案不存在");
         }
-        String patientName = patientOpt.get().getRealName();
+        String patientName = patientNameOpt.get();
 
         // 查询医生科室（无档案时部门置空，不阻断开方）
         String department = doctorRepository.findByUserId(doctorUserId)

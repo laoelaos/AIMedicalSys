@@ -88,7 +88,9 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             return Result.success(degradedExamination());
         }
         try {
-            AiResult<ExaminationRecommendResponse> result = aiService.recommendExamination(new com.aimedical.modules.ai.api.dto.examination.ExaminationRecommendRequest()).join();
+            AiResult<ExaminationRecommendResponse> result = aiService.recommendExamination(
+                    new com.aimedical.modules.ai.api.dto.examination.ExaminationRecommendRequest(
+                            request.patientId(), request.diagnosis(), request.chiefComplaint())).join();
             if (result.isDegraded() || !result.isSuccess()) {
                 return Result.success(degradedExamination());
             }
@@ -106,7 +108,9 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             return Result.success(degradedPrescriptionAssist());
         }
         try {
-            AiResult<PrescriptionAssistResponse> result = aiService.prescriptionAssist(new com.aimedical.modules.ai.api.dto.prescription.PrescriptionAssistRequest()).join();
+            AiResult<PrescriptionAssistResponse> result = aiService.prescriptionAssist(
+                    new com.aimedical.modules.ai.api.dto.prescription.PrescriptionAssistRequest(
+                            request.patientId(), request.diagnosis(), request.chiefComplaint())).join();
             if (result.isDegraded() || !result.isSuccess()) {
                 return Result.success(degradedPrescriptionAssist());
             }
@@ -124,7 +128,9 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             return Result.success(degradedPrescriptionAudit());
         }
         try {
-            AiResult<PrescriptionCheckResponse> result = aiService.prescriptionCheck(new com.aimedical.modules.ai.api.dto.prescription.PrescriptionCheckRequest()).join();
+            AiResult<PrescriptionCheckResponse> result = aiService.prescriptionCheck(
+                    new com.aimedical.modules.ai.api.dto.prescription.PrescriptionCheckRequest(
+                            request.prescriptionId(), request.diagnosis(), request.drugNames())).join();
             if (result.isDegraded() || !result.isSuccess()) {
                 return Result.success(degradedPrescriptionAudit());
             }

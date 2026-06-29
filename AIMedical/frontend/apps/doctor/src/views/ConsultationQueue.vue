@@ -72,7 +72,7 @@
                 @click="handleFinish(row.id)"
               >完成接诊</el-button>
               <el-button
-                v-if="row.status === 'IN_CONSULTATION'"
+                v-if="row.status === 'CALLED'"
                 type="warning"
                 size="small"
                 @click="handleSkip(row.id)"

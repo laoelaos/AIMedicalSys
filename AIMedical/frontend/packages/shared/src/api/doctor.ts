@@ -130,7 +130,7 @@ export const doctorApi = {
 
   /** 按科室查询启用的病历模板列表。GET /api/doctor/medical-records/templates?department= */
   listMedicalRecordTemplates: (
-    department: string,
+    department?: string,
   ): Promise<MedicalRecordTemplateResponse[] | BusinessError> => {
     return apiGet<MedicalRecordTemplateResponse[]>('/doctor/medical-records/templates', {
       params: { department },

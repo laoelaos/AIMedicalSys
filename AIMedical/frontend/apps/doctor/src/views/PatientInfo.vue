@@ -35,12 +35,12 @@
           <el-button type="success" @click="router.push(`/ai/diagnosis?patient_id=${patientId}`)">
             AI辅助诊断
           </el-button>
-          <el-button type="success" @click="router.push(`/ai/examination?patientId=${patientId}`)">
+          <el-button type="success" @click="router.push(`/ai/examination?patient_id=${patientId}`)">
             AI开立检查
           </el-button>
           <el-button
             type="success"
-            @click="router.push(`/ai/prescription-assist?patientId=${patientId}`)"
+            @click="router.push(`/ai/prescription-assist?patient_id=${patientId}`)"
           >
             AI辅助开方
           </el-button>

@@ -444,6 +444,7 @@ CREATE TABLE `consultation_queue` (
   `called_at`     DATETIME     DEFAULT NULL            COMMENT '叫号时间',
   `finished_at`    DATETIME     DEFAULT NULL            COMMENT '完成时间',
   `remark`         VARCHAR(500) DEFAULT NULL            COMMENT '备注',
+  `lock_version`    BIGINT       NOT NULL DEFAULT 0      COMMENT 'JPA 乐观锁版本',
   `created_at`     DATETIME     DEFAULT NULL            COMMENT '创建时间',
   `updated_at`     DATETIME     DEFAULT NULL            COMMENT '更新时间',
   `deleted`        TINYINT(1)   NOT NULL DEFAULT 0       COMMENT '逻辑删除',
@@ -484,7 +485,7 @@ CREATE TABLE `medical_record` (
   `patient_id`         BIGINT        NOT NULL                COMMENT '患者档案ID',
   `doctor_id`          BIGINT        NOT NULL                COMMENT '医生用户ID',
   `department`         VARCHAR(64)   DEFAULT NULL            COMMENT '科室',
-  `version_no`         INT           NOT NULL DEFAULT 1      COMMENT '版本号',
+  `version_no`         INT           NOT NULL DEFAULT 0      COMMENT '版本号',
   `lock_version`       BIGINT        NOT NULL DEFAULT 0      COMMENT 'JPA 乐观锁版本',
   `status`             VARCHAR(20)   NOT NULL DEFAULT 'DRAFT' COMMENT '状态 DRAFT/OFFICIAL',
   `chief_complaint`    TEXT          DEFAULT NULL            COMMENT '主诉',
@@ -504,6 +505,11 @@ CREATE TABLE `medical_record` (
   KEY `idx_doctor_id` (`doctor_id`),
   KEY `idx_prescription_id` (`prescription_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='病历表';
+
+-- 同一患者+医生仅允许一份 DRAFT 草稿，防止并发创建产生重复草稿
+CREATE UNIQUE INDEX IF NOT EXISTS `uk_patient_doctor_draft`
+    ON `medical_record` (`patient_id`, `doctor_id`)
+    WHERE `status` = 'DRAFT';
 
 -- ---------------------------------------------
 -- 25. prescription  处方

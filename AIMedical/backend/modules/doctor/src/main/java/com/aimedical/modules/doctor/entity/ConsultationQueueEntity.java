@@ -4,6 +4,7 @@ import com.aimedical.common.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -60,4 +61,9 @@ public class ConsultationQueueEntity extends BaseEntity {
     /** 备注 */
     @Column(name = "remark", length = 500)
     private String remark;
+
+    /** JPA 乐观锁版本号，由 Hibernate 管理，防止并发状态变更 */
+    @Version
+    @Column(name = "lock_version", nullable = false)
+    private Long lockVersion = 0L;
 }

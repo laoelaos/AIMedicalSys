@@ -87,7 +87,7 @@ const form = reactive<AiPrescriptionAssistRequest>({
 })
 
 onMounted(() => {
-  const pid = route.query.patientId
+  const pid = route.query.patient_id
   if (pid) form.patient_id = Number(pid)
   if (route.query.diagnosis) form.diagnosis = String(route.query.diagnosis)
   if (route.query.chief_complaint)
