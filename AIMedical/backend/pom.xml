@@ -41,7 +41,7 @@
         <jacoco.version>0.8.12</jacoco.version>
         <!-- 父 pom 无源码, 默认跳过 jacoco prepare-agent 与 check; 子模块覆盖为 false 启用 -->
         <jacoco.skip>true</jacoco.skip>
-        <jacoco.skip.check>false</jacoco.skip.check>
+        <jacoco.skip.check>true</jacoco.skip.check>
     </properties>
 
     <dependencyManagement>

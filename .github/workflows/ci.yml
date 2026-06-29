@@ -64,8 +64,8 @@ jobs:
           java-version: '17'
           cache: maven
 
-      # ===== Guard: 确保有源码的子模块都显式启用了 JaCoCo =====
-      # 父 POM 默认 jacoco.skip=true, 子模块须覆盖为 false 才能生效;
+      # ===== Guard: 确保有源码的子模块都显式启用了 JaCoCo 且未跳过覆盖率检查 =====
+      # 父 POM 默认 jacoco.skip=true / jacoco.skip.check=true, 子模块须覆盖为 false;
       # 此步骤在 mvn verify 之前快速检查, 避免静默缺失覆盖率门禁.
       - name: "Guard: all modules with Java sources must enable JaCoCo"
         run: |
@@ -74,9 +74,15 @@ jobs:
             dir="${pom%/pom.xml}"
             [ -d "$dir/src/main/java" ] || continue
             if grep -q '<jacoco.skip>false</jacoco.skip>' "$pom"; then
-              echo "  PASS  $pom"
+              echo "  PASS  [jacoco.skip]  $pom"
             else
-              echo "  FAIL  $pom  (has src/main/java but missing <jacoco.skip>false</jacoco.skip>)"
+              echo "  FAIL  [jacoco.skip]  $pom  (has src/main/java but missing <jacoco.skip>false</jacoco.skip>)"
+              status=1
+            fi
+            if grep -q '<jacoco.skip.check>false</jacoco.skip.check>' "$pom"; then
+              echo "  PASS  [jacoco.skip.check]  $pom"
+            else
+              echo "  FAIL  [jacoco.skip.check]  $pom  (has src/main/java but missing <jacoco.skip.check>false</jacoco.skip.check>)"
               status=1
             fi
           done
