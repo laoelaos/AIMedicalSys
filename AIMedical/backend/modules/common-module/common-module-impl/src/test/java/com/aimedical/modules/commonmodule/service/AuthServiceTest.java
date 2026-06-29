@@ -72,7 +72,7 @@ class AuthServiceTest {
         authService = new AuthServiceImpl(
                 userRepository, roleRepository, passwordEncoder, jwtTokenProvider, userConverter,
                 passwordPolicy, passwordChangeService, rateLimitGuard,
-                tokenBlacklist, loginAttemptTracker, securityAuditLogger);
+                tokenBlacklist, loginAttemptTracker, securityAuditLogger, null);
 
         testUser = new User();
         testUser.setId(1L);
