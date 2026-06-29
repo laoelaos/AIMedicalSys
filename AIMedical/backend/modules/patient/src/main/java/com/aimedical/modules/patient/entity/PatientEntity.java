@@ -12,6 +12,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,9 +56,6 @@ public class PatientEntity extends BaseEntity {
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
-    @Column(length = 20)
-    private String phone;
-
     // CascadeType excludes REMOVE to avoid physical deletes bypassing @SQLDelete on BaseEntity;
     // child records are soft-deleted explicitly via Service-level repository.delete().
     @OneToMany(mappedBy = "patient", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
@@ -74,7 +72,4 @@ public class PatientEntity extends BaseEntity {
 
     @OneToMany(mappedBy = "patient", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     private List<PatientMedicationHistory> medicationHistories = new ArrayList<>();
-
-    @Column(length = 2000)
-    private String emergencyContact;
 }
