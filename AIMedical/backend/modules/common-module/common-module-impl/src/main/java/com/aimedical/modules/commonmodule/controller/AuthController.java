@@ -13,6 +13,7 @@ import com.aimedical.modules.commonmodule.permission.UserRepository;
 
 import jakarta.validation.Valid;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
+@PreAuthorize("isAuthenticated()")
 public class AuthController {
 
     private final AuthService authService;
@@ -37,6 +39,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @PreAuthorize("permitAll()")
     public Result<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
         TokenResponse response = authService.authenticate(request.username(), request.password());
         return Result.success(response);
@@ -53,6 +56,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
+    @PreAuthorize("permitAll()")
     public Result<TokenRefreshResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
         TokenRefreshResponse response = authService.refreshToken(request.refreshToken());
         return Result.success(response);

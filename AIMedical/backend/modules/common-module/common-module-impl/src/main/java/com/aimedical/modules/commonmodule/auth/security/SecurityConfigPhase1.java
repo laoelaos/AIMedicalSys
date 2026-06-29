@@ -83,6 +83,8 @@ public class SecurityConfigPhase1 {
                     .requestMatchers("/api/patient/register").permitAll()
                     .requestMatchers("/api/patient/login").permitAll()
                     .requestMatchers("/api/patient/**").hasRole("PATIENT")
+                    .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                    .requestMatchers("/api/doctor/**").hasRole("DOCTOR")
                     .requestMatchers("/api/ping").permitAll()
                     .requestMatchers("/actuator/health").permitAll()
                     .requestMatchers("/actuator/info").permitAll()

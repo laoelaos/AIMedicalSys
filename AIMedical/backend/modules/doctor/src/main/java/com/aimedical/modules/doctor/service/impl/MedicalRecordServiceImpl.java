@@ -119,12 +119,10 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
         if (!MedicalRecordStatus.DRAFT.getCode().equals(entity.getStatus())) {
             return Result.fail(GlobalErrorCode.MEDICAL_RECORD_INVALID_STATE);
         }
-        // 计算新版本号：该患者最新正式版本号 + 1
+        // 计算新版本号：该患者最新正式版本号 + 1（使用 findFirst 生成 LIMIT 1，避免全量载入）
         int nextVersion = medicalRecordRepository
-                .findByPatientIdAndStatusOrderByVersionNoDesc(entity.getPatientId(),
+                .findFirstByPatientIdAndStatusOrderByVersionNoDesc(entity.getPatientId(),
                         MedicalRecordStatus.OFFICIAL.getCode())
-                .stream()
-                .findFirst()
                 .map(MedicalRecordEntity::getVersionNo)
                 .map(v -> v + 1)
                 .orElse(1);

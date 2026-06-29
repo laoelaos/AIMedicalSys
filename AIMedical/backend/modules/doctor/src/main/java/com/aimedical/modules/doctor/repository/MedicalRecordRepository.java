@@ -51,4 +51,14 @@ public interface MedicalRecordRepository extends JpaRepository<MedicalRecordEnti
      * @return 病历列表
      */
     List<MedicalRecordEntity> findByPatientIdAndDoctorIdOrderByVersionNoDesc(Long patientId, Long doctorId);
+
+    /**
+     * 查询患者最新的正式版本病历（Spring Data 自动生成 LIMIT 1，避免全量载入）。
+     * 用于发布时计算下一个版本号。
+     *
+     * @param patientId 患者档案ID
+     * @param status    病历状态
+     * @return 最新版本病历（可能为空）
+     */
+    Optional<MedicalRecordEntity> findFirstByPatientIdAndStatusOrderByVersionNoDesc(Long patientId, String status);
 }

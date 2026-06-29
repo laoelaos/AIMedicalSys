@@ -5,12 +5,14 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Data;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "sys_token")
 @Data
+@ToString(exclude = {"token", "refreshToken"})
 public class TokenStore extends BaseEntity {
 
     private Long userId;

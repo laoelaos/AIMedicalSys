@@ -77,7 +77,7 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             AiDiagnosisResponse data = new AiDiagnosisResponse(List.of(), "AI 诊断建议（占位）");
             return Result.success(AiResultResponse.ok(data));
         } catch (Exception e) {
-            log.warn("AI diagnosis 调用异常，降级处理: {}", e.getMessage());
+            log.warn("AI diagnosis 调用异常，降级处理", e);
             return Result.success(degradedDiagnosis());
         }
     }
@@ -97,7 +97,7 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             AiExaminationResponse data = new AiExaminationResponse(List.of());
             return Result.success(AiResultResponse.ok(data));
         } catch (Exception e) {
-            log.warn("AI recommendExamination 调用异常，降级处理: {}", e.getMessage());
+            log.warn("AI recommendExamination 调用异常，降级处理", e);
             return Result.success(degradedExamination());
         }
     }
@@ -117,7 +117,7 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             AiPrescriptionAssistResponse data = new AiPrescriptionAssistResponse(List.of(), "AI 辅助开方建议（占位）");
             return Result.success(AiResultResponse.ok(data));
         } catch (Exception e) {
-            log.warn("AI prescriptionAssist 调用异常，降级处理: {}", e.getMessage());
+            log.warn("AI prescriptionAssist 调用异常，降级处理", e);
             return Result.success(degradedPrescriptionAssist());
         }
     }
@@ -137,7 +137,7 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             AiPrescriptionAuditResponse data = new AiPrescriptionAuditResponse("LOW", List.of(), true);
             return Result.success(AiResultResponse.ok(data));
         } catch (Exception e) {
-            log.warn("AI prescriptionCheck 调用异常，降级处理: {}", e.getMessage());
+            log.warn("AI prescriptionCheck 调用异常，降级处理", e);
             return Result.success(degradedPrescriptionAudit());
         }
     }
@@ -158,7 +158,7 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             AiMedicalRecordGenResponse data = new AiMedicalRecordGenResponse("", "", "", "", "");
             return Result.success(AiResultResponse.ok(data));
         } catch (Exception e) {
-            log.warn("AI generateMedicalRecord 调用异常，降级处理: {}", e.getMessage());
+            log.warn("AI generateMedicalRecord 调用异常，降级处理", e);
             return Result.success(degradedMedicalRecordGen());
         }
     }

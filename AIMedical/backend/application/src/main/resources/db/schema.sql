@@ -606,6 +606,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS `uk_patient_doctor_draft`
     ON `medical_record` (`patient_id`, `doctor_id`)
     WHERE `status` = 'DRAFT';
 
+-- 同一患者的正式版本号唯一，防止并发发布产生重复版本号
+CREATE UNIQUE INDEX IF NOT EXISTS `uk_patient_official_version`
+    ON `medical_record` (`patient_id`, `version_no`)
+    WHERE `status` = 'OFFICIAL';
+
 -- ---------------------------------------------
 -- 25. prescription  处方
 -- ---------------------------------------------
