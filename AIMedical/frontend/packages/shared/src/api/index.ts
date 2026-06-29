@@ -1,6 +1,6 @@
 import type { BusinessError, LoginRequest, LoginResponse, UserInfo, MenuItem, TokenResponse, TokenRefreshResponse, RegisterRequest, CurrentUserResponse } from '../types'
-import { apiGet, apiPost, apiPut } from './client'
-import { setTokens as saveTokens, clearTokens } from '../utils'
+import { apiGet, apiPost, apiPut, apiDelete } from './client'
+import { setTokens, clearTokens } from '../utils'
 
 // 重新导出 axios 客户端与底层请求函数（供外部直接使用）
 export { apiClient, apiGet, apiPost, apiPut, apiDelete, setAuthToken, clearAuthToken } from './client'
@@ -15,7 +15,7 @@ export async function loginApi(req: LoginRequest): Promise<TokenResponse | Busin
       console.error('[loginApi] token missing in response:', token)
       return { code: 'AUTH_TOKEN_MISSING' as const, message: '服务器返回异常', isBusinessError: true as const } as BusinessError
     }
-    saveTokens(token.access_token, token.refresh_token)
+    setTokens(token.access_token, token.refresh_token)
   } else if (result && (result as BusinessError).isBusinessError) {
     console.error('[loginApi] login returned business error:', (result as BusinessError).code, (result as BusinessError).message)
   }
@@ -26,7 +26,7 @@ export async function registerApi(req: RegisterRequest): Promise<TokenResponse |
   const result = await apiPost<TokenResponse>('/patient/register', req)
   if (result && !(result as BusinessError).isBusinessError) {
     const token = result as TokenResponse
-    saveTokens(token.access_token, token.refresh_token)
+    setTokens(token.access_token, token.refresh_token)
   }
   return result
 }
