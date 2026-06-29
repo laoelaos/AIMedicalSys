@@ -23,14 +23,20 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
@@ -751,6 +757,71 @@ class RegistrationServiceImplTest {
             BusinessException ex = assertThrows(BusinessException.class,
                     () -> service.getTriageRecord(1L));
             assertEquals(GlobalErrorCode.NOT_FOUND, ex.getErrorCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("getRegistrationsByPatient")
+    class GetRegistrationsByPatient {
+
+        @Test
+        @DisplayName("返回患者挂号分页")
+        void shouldReturnPage() {
+            Pageable pageable = PageRequest.of(0, 10);
+            Registration entity = registration(1L, RegistrationStatus.PENDING);
+            Page<Registration> page = new PageImpl<>(List.of(entity));
+            when(registrationRepository.findByPatientId(1L, pageable)).thenReturn(page);
+
+            Page<RegistrationDTO> result = service.getRegistrationsByPatient(1L, pageable);
+
+            assertNotNull(result);
+            assertEquals(1, result.getContent().size());
+            assertEquals(1L, result.getContent().get(0).getId());
+        }
+
+        @Test
+        @DisplayName("空页")
+        void shouldReturnEmptyPage() {
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<Registration> emptyPage = new PageImpl<>(List.of());
+            when(registrationRepository.findByPatientId(1L, pageable)).thenReturn(emptyPage);
+
+            Page<RegistrationDTO> result = service.getRegistrationsByPatient(1L, pageable);
+
+            assertNotNull(result);
+            assertTrue(result.getContent().isEmpty());
+        }
+    }
+
+    @Nested
+    @DisplayName("getRegistrationsByDoctor")
+    class GetRegistrationsByDoctor {
+
+        @Test
+        @DisplayName("返回医生挂号分页")
+        void shouldReturnPage() {
+            Pageable pageable = PageRequest.of(0, 10);
+            Registration entity = registration(1L, RegistrationStatus.CONFIRMED);
+            Page<Registration> page = new PageImpl<>(List.of(entity));
+            when(registrationRepository.findByDoctorId(1L, pageable)).thenReturn(page);
+
+            Page<RegistrationDTO> result = service.getRegistrationsByDoctor(1L, pageable);
+
+            assertNotNull(result);
+            assertEquals(1, result.getContent().size());
+        }
+
+        @Test
+        @DisplayName("空页")
+        void shouldReturnEmptyPage() {
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<Registration> emptyPage = new PageImpl<>(List.of());
+            when(registrationRepository.findByDoctorId(1L, pageable)).thenReturn(emptyPage);
+
+            Page<RegistrationDTO> result = service.getRegistrationsByDoctor(1L, pageable);
+
+            assertNotNull(result);
+            assertTrue(result.getContent().isEmpty());
         }
     }
 }

@@ -6,13 +6,17 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "charge_pre_order_item")
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(callSuper = true)
 public class ChargePreOrderItem extends BaseEntity {
 
     @Column(name = "charge_pre_order_id")

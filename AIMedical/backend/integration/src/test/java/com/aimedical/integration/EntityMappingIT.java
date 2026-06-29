@@ -433,7 +433,7 @@ class EntityMappingIT {
         user2.setNickname("用户2");
         user2.setUserType(UserType.PATIENT);
 
-        assertThrows(Exception.class, () -> {
+        assertThrows(DataIntegrityViolationException.class, () -> {
             entityManager.persist(user2);
             entityManager.flush();
         });
@@ -488,7 +488,7 @@ class EntityMappingIT {
         role2.setCode("unique_role_code");
         role2.setName("角色2");
 
-        assertThrows(Exception.class, () -> {
+        assertThrows(DataIntegrityViolationException.class, () -> {
             entityManager.persist(role2);
             entityManager.flush();
         });
@@ -536,7 +536,7 @@ class EntityMappingIT {
         post2.setCode("unique_post_code");
         post2.setName("岗位2");
 
-        assertThrows(Exception.class, () -> {
+        assertThrows(DataIntegrityViolationException.class, () -> {
             entityManager.persist(post2);
             entityManager.flush();
         });

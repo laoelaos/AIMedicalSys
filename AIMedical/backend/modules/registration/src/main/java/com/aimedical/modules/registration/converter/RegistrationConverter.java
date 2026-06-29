@@ -7,6 +7,10 @@ import com.aimedical.modules.registration.entity.TriageRecord;
 
 public class RegistrationConverter {
 
+    private RegistrationConverter() {
+        throw new UnsupportedOperationException("Utility class");
+    }
+
     public static RegistrationDTO toRegistrationDTO(Registration entity) {
         if (entity == null) {
             return null;

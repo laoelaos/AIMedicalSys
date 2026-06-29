@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 public class SimpleMessageInterpolator implements MessageInterpolator {
 
     private static final Pattern NAMED_PLACEHOLDER = Pattern.compile("\\{[^}]+\\}");
-    private static final Pattern INDEXED_PLACEHOLDER = Pattern.compile(".*\\{\\d+.*\\}.*");
+    private static final Pattern INDEXED_PLACEHOLDER = Pattern.compile(".*\\{\\d+\\}.*");
 
     @Override
     public String interpolate(String template, Object[] args) {

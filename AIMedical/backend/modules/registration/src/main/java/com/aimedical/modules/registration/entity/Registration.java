@@ -28,7 +28,7 @@ public class Registration extends BaseEntity {
     private Long doctorId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "registration_type", length = 20)
+    @Column(name = "registration_type", length = 20, nullable = false)
     private RegistrationType registrationType;
 
     @Column(name = "department", length = 64)
