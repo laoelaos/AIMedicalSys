@@ -9,9 +9,9 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- 角色
 -- ---------------------------------------------
 INSERT INTO `sys_role` (`id`, `code`, `name`, `description`, `enabled`, `created_at`, `updated_at`, `deleted`) VALUES
-(1, 'ROLE_ADMIN',   '系统管理员', '拥有系统全部权限', 1, NOW(), NOW(), 0),
-(2, 'ROLE_DOCTOR',  '医生',       '医生角色',         1, NOW(), NOW(), 0),
-(3, 'ROLE_PATIENT', '患者',       '患者角色',         1, NOW(), NOW(), 0);
+(1, 'ADMIN',   '系统管理员', '拥有系统全部权限', 1, NOW(), NOW(), 0),
+(2, 'DOCTOR',  '医生',       '医生角色',         1, NOW(), NOW(), 0),
+(3, 'PATIENT', '患者',       '患者角色',         1, NOW(), NOW(), 0);
 
 -- ---------------------------------------------
 -- 岗位
@@ -126,41 +126,23 @@ INSERT INTO `admin_profile` (`id`, `user_id`, `real_name`, `gender`, `phone`, `d
 (1, 1, '系统管理员', 'MALE', '13800000001', '信息中心', NOW(), NOW(), 0);
 
 -- ---------------------------------------------
--- 健康档案 (patient_id=1)
+-- 患者健康记录 (关联 patient_profile.id=1, 使用 patient_* 新表体系)
 -- ---------------------------------------------
-INSERT INTO `health_profile` (`id`, `patient_id`, `blood_type`, `height_cm`, `weight_kg`, `bmi`, `marital_status`, `lifestyle_note`, `created_at`, `updated_at`, `deleted`) VALUES
-(1, 1, 'A', 175.0, 70.0, 22.9, 'MARRIED', '每周运动3次，饮食规律，不吸烟不饮酒', NOW(), NOW(), 0);
-
--- ---------------------------------------------
--- 过敏史
--- ---------------------------------------------
-INSERT INTO `allergy_history` (`health_profile_id`, `allergen`, `reaction_type`, `severity`, `occurred_at`, `created_at`, `updated_at`, `deleted`) VALUES
+INSERT INTO `patient_allergy` (`patient_id`, `allergen`, `reaction_type`, `severity`, `occurred_at`, `created_at`, `updated_at`, `deleted`) VALUES
 (1, '青霉素', '皮疹',     'MILD',     '2015-03-10', NOW(), NOW(), 0),
 (1, '头孢类', '呼吸困难', 'MODERATE', '2018-07-20', NOW(), NOW(), 0);
 
--- ---------------------------------------------
--- 慢性疾病
--- ---------------------------------------------
-INSERT INTO `chronic_disease` (`health_profile_id`, `disease_name`, `diagnosed_at`, `current_status`, `created_at`, `updated_at`, `deleted`) VALUES
+INSERT INTO `patient_chronic_disease` (`patient_id`, `disease_name`, `diagnosed_at`, `current_status`, `created_at`, `updated_at`, `deleted`) VALUES
 (1, '高血压', '2022-01-15', 'STABLE', NOW(), NOW(), 0);
 
--- ---------------------------------------------
--- 家族病史
--- ---------------------------------------------
-INSERT INTO `family_history` (`health_profile_id`, `relationship`, `disease_name`, `note`, `created_at`, `updated_at`, `deleted`) VALUES
+INSERT INTO `patient_family_history` (`patient_id`, `relationship`, `disease_name`, `note`, `created_at`, `updated_at`, `deleted`) VALUES
 (1, '父亲', '冠心病', '60岁发病', NOW(), NOW(), 0),
 (1, '母亲', '糖尿病', '55岁发病', NOW(), NOW(), 0);
 
--- ---------------------------------------------
--- 手术史
--- ---------------------------------------------
-INSERT INTO `surgery_history` (`health_profile_id`, `surgery_name`, `surgery_at`, `hospital`, `created_at`, `updated_at`, `deleted`) VALUES
+INSERT INTO `patient_surgery_history` (`patient_id`, `surgery_name`, `surgery_at`, `hospital`, `created_at`, `updated_at`, `deleted`) VALUES
 (1, '阑尾切除术', '2010-06-15', '北京市第一人民医院', NOW(), NOW(), 0);
 
--- ---------------------------------------------
--- 用药史
--- ---------------------------------------------
-INSERT INTO `medication_history` (`health_profile_id`, `drug_name`, `reason`, `started_at`, `created_at`, `updated_at`, `deleted`) VALUES
+INSERT INTO `patient_medication_history` (`patient_id`, `drug_name`, `reason`, `started_at`, `created_at`, `updated_at`, `deleted`) VALUES
 (1, '硝苯地平缓释片', '高血压', '2022-02-01', NOW(), NOW(), 0);
 
 SET FOREIGN_KEY_CHECKS = 1;

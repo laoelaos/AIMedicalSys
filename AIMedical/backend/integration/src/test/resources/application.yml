@@ -20,6 +20,6 @@ spring:
       mode: never
 
 jwt:
-  secret: dGVzdC1zZWNyZXQta2V5LWZvci1pbnRlZ3JhdGlvbi10ZXN0cy1taW4tMzI=
-  access-token-expiration: 86400
-  refresh-token-expiration: 604800
+  secret: aimedical-sys-jwt-secret-key-for-integration-testing-min-256bits
+  access-token-validity: 7200
+  refresh-token-validity: 604800

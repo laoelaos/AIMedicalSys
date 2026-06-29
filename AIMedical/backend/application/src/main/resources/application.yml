@@ -3,6 +3,31 @@ spring:
     name: aimedical-sys
   profiles:
     active: phase1,dev
+  datasource:
+    url: jdbc:mysql://localhost:3306/aimedical?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+    show-sql: false
+
+  sql:
+    init:
+      mode: never
 
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/aimedical?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai}
@@ -46,9 +71,23 @@ management:
       exposure:
         include: health,info,metrics
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+# JWT配置
 jwt:
-  secret: ${JWT_SECRET:ZGV2LXNlY3JldC1rZXktZm9yLWxvY2FsLWRldmVsb3BtZW50LW9ubHktcGxlYXNlLWNoYW5nZS1pbi1wcm9kdWN0aW9u}
-  access-token-expiration: 86400
+  secret: ${JWT_SECRET:aimedical-sys-jwt-secret-key-for-development-only-min-256bits}
+  access-token-expiration: 900
   refresh-token-expiration: 604800
 
 springdoc:

@@ -14,4 +14,23 @@ public enum Gender implements BaseEnum {
 
     private final String code;
     private final String desc;
+
+    /**
+     * Parse gender from Chinese label, enum code, or enum name. Returns UNKNOWN on null/unrecognized input.
+     */
+    public static Gender fromLabel(String label) {
+        if (label == null) return UNKNOWN;
+        return switch (label.trim()) {
+            case "男", "MALE" -> MALE;
+            case "女", "FEMALE" -> FEMALE;
+            case "未知", "UNKNOWN" -> UNKNOWN;
+            default -> {
+                try {
+                    yield Gender.valueOf(label);
+                } catch (IllegalArgumentException e) {
+                    yield UNKNOWN;
+                }
+            }
+        };
+    }
 }

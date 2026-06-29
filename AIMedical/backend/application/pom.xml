@@ -91,12 +91,6 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- API docs -->
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-        </dependency>
-
         <!-- JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -111,6 +105,12 @@
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
             <scope>runtime</scope>
+        </dependency>
+
+        <!-- API docs -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         </dependency>
 
         <!-- Test -->
@@ -145,6 +145,38 @@
                     </ignoredUnusedDeclaredDependencies>
                 </configuration>
             </plugin>
+            <!-- ===== CI 门禁 3: OpenAPI 契约导出 ===== -->
+            <!--
+                仅在 application 模块启用; pre-integration-test 启动 Spring Boot,
+                integration-test 阶段从 /v3/api-docs 抓取 OpenAPI JSON 落到 target/openapi/openapi.json,
+                供 CI 与 baseline diff 比对拦截接口契约漂移.
+            -->
+            <plugin>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-maven-plugin</artifactId>
+                <version>1.4</version>
+                <configuration>
+                    <apiDocsUrl>http://localhost:8080/v3/api-docs</apiDocsUrl>
+                    <outputFileName>openapi.json</outputFileName>
+                    <outputDir>${project.build.directory}/openapi</outputDir>
+                    <skip>${skipApiDocs}</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>integration-test</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
+
+    <properties>
+        <jacoco.skip>false</jacoco.skip>
+        <jacoco.skip.check>false</jacoco.skip.check>
+        <!-- 默认导出 OpenAPI; CI smoke 阶段启用, 纯单测阶段可 -DskipApiDocs=true 跳过 -->
+        <skipApiDocs>false</skipApiDocs>
+    </properties>
 </project>

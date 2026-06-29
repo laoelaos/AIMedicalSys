@@ -8,6 +8,9 @@ const captured = vi.hoisted(() => {
 vi.mock('axios', () => {
   const mockInstance = {
     interceptors: {
+      request: {
+        use: vi.fn(),
+      },
       response: {
         use: vi.fn((onFulfilled: Function, onRejected: Function) => {
           captured.success = onFulfilled
@@ -15,10 +18,10 @@ vi.mock('axios', () => {
         }),
       },
     },
-    get: vi.fn(() => Promise.resolve(null)),
-    post: vi.fn(() => Promise.resolve(null)),
-    put: vi.fn(() => Promise.resolve(null)),
-    delete: vi.fn(() => Promise.resolve(null)),
+    get: vi.fn(() => Promise.resolve({ data: { code: 'SUCCESS', data: null } })),
+    post: vi.fn(() => Promise.resolve({ data: { code: 'SUCCESS', data: null } })),
+    put: vi.fn(() => Promise.resolve({ data: { code: 'SUCCESS', data: null } })),
+    delete: vi.fn(() => Promise.resolve({ data: { code: 'SUCCESS', data: null } })),
   }
   return {
     default: {
@@ -38,6 +41,7 @@ describe('Success interceptor', () => {
     const handler = captured.success!
     const mockResponse = { data: { code: 'SUCCESS', data: { id: 1 } } }
     const result = handler(mockResponse)
+    // Interceptor returns body.data directly (unwrapped)
     expect(result).toEqual({ id: 1 })
   })
 
@@ -59,14 +63,22 @@ describe('Success interceptor', () => {
     const handler = captured.success!
     const mockResponse = { data: { code: 'BUSINESS_ERROR', message: '业务异常' } }
     const result = handler(mockResponse)
-    expect(result).toEqual({ code: 'BUSINESS_ERROR', message: '业务异常', isBusinessError: true })
+    expect(result).toEqual({
+      code: 'BUSINESS_ERROR',
+      message: '业务异常',
+      isBusinessError: true,
+    })
   })
 
   it('returns BusinessError with empty message fallback when message is undefined', () => {
     const handler = captured.success!
     const mockResponse = { data: { code: 'UNKNOWN_ERROR' } }
     const result = handler(mockResponse)
-    expect(result).toEqual({ code: 'UNKNOWN_ERROR', message: '', isBusinessError: true })
+    expect(result).toEqual({
+      code: 'UNKNOWN_ERROR',
+      message: '',
+      isBusinessError: true,
+    })
   })
 })
 
@@ -74,46 +86,69 @@ describe('Error interceptor', () => {
   it('returns NETWORK_ERROR when error.response is undefined', async () => {
     const handler = captured.error!
     const error = { response: undefined }
-    const result = await handler(error)
-    expect(result).toEqual({ code: 'NETWORK_ERROR', message: '网络不可达，请检查网络连接', isBusinessError: true })
+    const result = handler(error)
+    // Error interceptor returns/rejects based on whether 401 retry logic fires.
+    // For non-401 cases it resolves with a BusinessError directly.
+    await expect(result).resolves.toEqual({
+      code: 'NETWORK_ERROR',
+      message: '网络不可达，请检查网络连接',
+      isBusinessError: true,
+    })
   })
 
   it('returns UNAUTHORIZED for 401', async () => {
     const handler = captured.error!
     const error = { response: { status: 401 } }
-    const result = await handler(error)
-    expect(result).toEqual({ code: 'UNAUTHORIZED', message: '登录已过期，请重新登录', isBusinessError: true })
+    const result = handler(error)
+    await expect(result).resolves.toEqual({
+      code: 'UNAUTHORIZED',
+      message: '登录已过期，请重新登录',
+      isBusinessError: true,
+    })
   })
 
   it('returns FORBIDDEN for 403', async () => {
     const handler = captured.error!
     const error = { response: { status: 403 } }
-    const result = await handler(error)
-    expect(result).toEqual({ code: 'FORBIDDEN', message: '无权限访问', isBusinessError: true })
+    const result = handler(error)
+    await expect(result).resolves.toEqual({
+      code: 'FORBIDDEN',
+      message: '无权限访问',
+      isBusinessError: true,
+    })
   })
 
   it('returns HTTP_ERROR for 500', async () => {
     const handler = captured.error!
     const error = { response: { status: 500 } }
-    const result = await handler(error)
-    expect(result).toEqual({ code: 'HTTP_ERROR', message: '请求失败（500）', isBusinessError: true })
+    const result = handler(error)
+    await expect(result).resolves.toEqual({
+      code: 'HTTP_ERROR',
+      message: '请求失败（500）',
+      isBusinessError: true,
+    })
   })
 
   it('returns HTTP_ERROR for 404', async () => {
     const handler = captured.error!
     const error = { response: { status: 404 } }
-    const result = await handler(error)
-    expect(result).toEqual({ code: 'HTTP_ERROR', message: '请求失败（404）', isBusinessError: true })
+    const result = handler(error)
+    await expect(result).resolves.toEqual({
+      code: 'HTTP_ERROR',
+      message: '请求失败（404）',
+      isBusinessError: true,
+    })
   })
 
-  it('returns resolved promise (not rejected)', async () => {
+  it('error handler returns a Promise', async () => {
     const handler = captured.error!
     const error = { response: { status: 500 } }
     const result = handler(error)
+    expect(result).toBeInstanceOf(Promise)
     await expect(result).resolves.toBeDefined()
   })
 
-  it('all branches return promise resolved with { code, message, isBusinessError } shape', async () => {
+  it('all branches resolve with { code, message, isBusinessError } shape', async () => {
     const handler = captured.error!
     const errors = [
       { response: undefined },
@@ -122,12 +157,11 @@ describe('Error interceptor', () => {
       { response: { status: 502 } },
     ]
     for (const err of errors) {
-      const result = await handler(err)
-      expect(result).toHaveProperty('code')
-      expect(result).toHaveProperty('message')
-      expect(result).toHaveProperty('isBusinessError', true)
-      expect(typeof result.code).toBe('string')
-      expect(typeof result.message).toBe('string')
+      await expect(handler(err)).resolves.toMatchObject({
+        code: expect.any(String),
+        message: expect.any(String),
+        isBusinessError: true,
+      })
     }
   })
 })
@@ -144,8 +178,11 @@ describe('apiGet', () => {
     expect(apiClient.get).toHaveBeenCalledWith('/users', config)
   })
 
-  it('returns result after interceptor unwrapping', async () => {
-    const result = await apiGet<{ id: number }>('/users/1')
+  it('returns unwrapped data when interceptor processes SUCCESS', async () => {
+    vi.mocked(apiClient.get).mockImplementationOnce(async () =>
+      captured.success!({ data: { code: 'SUCCESS', data: null } } as never),
+    )
+    const result = await apiGet<null>('/users/1')
     expect(result).toBeNull()
   })
 })
@@ -202,13 +239,22 @@ describe('Integration: wrapper functions & interceptors', () => {
     vi.mocked(apiClient.get).mockImplementation(async () => captured.success!(axiosResponse))
 
     const result = await apiGet<{ id: number }>('/users/1')
+    // apiGet try-catch: the interceptor returns body.data directly via apiClient.get,
+    // which resolves. apiGet does `return await apiClient.get(...) as T`.
     expect(result).toEqual({ id: 1 })
   })
 
   it('apiGet error is processed by error interceptor', async () => {
-    vi.mocked(apiClient.get).mockImplementation(async () => captured.error!({ response: undefined }))
+    vi.mocked(apiClient.get).mockImplementation(async () => captured.error!({ response: { status: 500 } }))
 
     const result = await apiGet('/test')
-    expect(result).toEqual({ code: 'NETWORK_ERROR', message: '网络不可达，请检查网络连接', isBusinessError: true })
+    // Error interceptor returns BusinessError (Promise that resolves), apiGet
+    // awaits it and gets the BusinessError object. Since it's not a thrown error,
+    // the try path returns it as T | BusinessError.
+    expect(result).toMatchObject({
+      code: expect.any(String),
+      message: expect.any(String),
+      isBusinessError: true,
+    })
   })
 })

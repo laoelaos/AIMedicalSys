@@ -60,7 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         Claims claims = jwtTokenProvider.validateToken(token, "access");
         if (claims == null) {
-            log.debug("JWT token validation failed");
+            log.warn("JWT token validation failed, uri={}", request.getRequestURI());
             SecurityContextHolder.clearContext();
             chain.doFilter(request, response);
             return;
@@ -68,7 +68,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String jti = extractJti(claims);
         if (jti != null && tokenBlacklist.isBlacklisted(jti)) {
-            log.debug("Token is blacklisted, jti={}", jti);
+            log.warn("Token is blacklisted, jti={}, uri={}", jti, request.getRequestURI());
             SecurityContextHolder.clearContext();
             chain.doFilter(request, response);
             return;
@@ -76,7 +76,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         Long userId = jwtTokenProvider.getUserIdFromClaims(claims);
         if (userId == null) {
-            log.debug("Failed to extract userId from claims");
+            log.warn("Failed to extract userId from claims, uri={}", request.getRequestURI());
             SecurityContextHolder.clearContext();
             chain.doFilter(request, response);
             return;
@@ -84,7 +84,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         Optional<User> userOpt = userRepository.findWithDetailsById(userId);
         if (userOpt.isEmpty()) {
-            log.debug("User not found or deleted, userId={}", userId);
+            log.warn("User not found or deleted, userId={}, uri={}", userId, request.getRequestURI());
             SecurityContextHolder.clearContext();
             chain.doFilter(request, response);
             return;
@@ -97,11 +97,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         request.setAttribute("passwordChangeRequired", user.getPasswordChangeRequired());
+        request.setAttribute("currentUserId", userId);
+        request.setAttribute("currentUsername", user.getUsername());
 
         Collection<SimpleGrantedAuthority> authorities = collectAuthorities(user);
 
         UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(userId, null, authorities);
+                new UsernamePasswordAuthenticationToken(user.getUsername(), null, authorities);
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         chain.doFilter(request, response);
