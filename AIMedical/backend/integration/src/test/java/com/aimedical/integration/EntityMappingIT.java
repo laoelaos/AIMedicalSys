@@ -24,7 +24,7 @@ import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -434,7 +434,7 @@ class EntityMappingIT {
         user2.setNickname("用户2");
         user2.setUserType(UserType.PATIENT);
 
-        assertThrows(DataIntegrityViolationException.class, () -> {
+        assertThrows(ConstraintViolationException.class, () -> {
             entityManager.persist(user2);
             entityManager.flush();
         });
@@ -489,7 +489,7 @@ class EntityMappingIT {
         role2.setCode("unique_role_code");
         role2.setName("角色2");
 
-        assertThrows(DataIntegrityViolationException.class, () -> {
+        assertThrows(ConstraintViolationException.class, () -> {
             entityManager.persist(role2);
             entityManager.flush();
         });
@@ -537,7 +537,7 @@ class EntityMappingIT {
         post2.setCode("unique_post_code");
         post2.setName("岗位2");
 
-        assertThrows(DataIntegrityViolationException.class, () -> {
+        assertThrows(ConstraintViolationException.class, () -> {
             entityManager.persist(post2);
             entityManager.flush();
         });
