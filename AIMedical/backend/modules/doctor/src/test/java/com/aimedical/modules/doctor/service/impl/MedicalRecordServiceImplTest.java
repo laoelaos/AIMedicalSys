@@ -159,8 +159,8 @@ class MedicalRecordServiceImplTest {
         MedicalRecordResponse response = buildResponse(RECORD_ID, MedicalRecordStatus.OFFICIAL.getCode(), 1);
 
         when(medicalRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(entity));
-        when(medicalRecordRepository.findByPatientIdAndStatusOrderByVersionNoDesc(
-                PATIENT_ID, MedicalRecordStatus.OFFICIAL.getCode())).thenReturn(List.of());
+        when(medicalRecordRepository.findFirstByPatientIdAndStatusOrderByVersionNoDesc(
+                PATIENT_ID, MedicalRecordStatus.OFFICIAL.getCode())).thenReturn(Optional.empty());
         when(medicalRecordRepository.save(entity)).thenReturn(entity);
         when(converter.toResponse(entity)).thenReturn(response);
 
@@ -186,8 +186,8 @@ class MedicalRecordServiceImplTest {
         MedicalRecordResponse response = buildResponse(RECORD_ID, MedicalRecordStatus.OFFICIAL.getCode(), 4);
 
         when(medicalRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(entity));
-        when(medicalRecordRepository.findByPatientIdAndStatusOrderByVersionNoDesc(
-                PATIENT_ID, MedicalRecordStatus.OFFICIAL.getCode())).thenReturn(List.of(existingOfficial));
+        when(medicalRecordRepository.findFirstByPatientIdAndStatusOrderByVersionNoDesc(
+                PATIENT_ID, MedicalRecordStatus.OFFICIAL.getCode())).thenReturn(Optional.of(existingOfficial));
         when(medicalRecordRepository.save(entity)).thenReturn(entity);
         when(converter.toResponse(entity)).thenReturn(response);
 
