@@ -47,8 +47,7 @@ apiClient.interceptors.response.use(
         try {
           const refreshResponse = await axios.post<ApiResult<{ access_token: string; refresh_token: string }>>(
             '/api/auth/refresh',
-            { refresh_token: refreshToken },
-            { headers: { Authorization: `Bearer ${refreshToken}` } }
+            { refresh_token: refreshToken }
           )
           const refreshBody = refreshResponse.data
           if (refreshBody.code === 'SUCCESS' && refreshBody.data) {
@@ -62,8 +61,9 @@ apiClient.interceptors.response.use(
             }
             return apiClient(error.config)
           }
-        } catch {
-          // Refresh failed, clear tokens and redirect to login
+        } catch (refreshError) {
+          // Refresh failed (token expired / network / server error), clear tokens
+          console.warn('[api] token refresh failed:', (refreshError as Error)?.message ?? 'unknown error')
         }
       }
       clearTokens()

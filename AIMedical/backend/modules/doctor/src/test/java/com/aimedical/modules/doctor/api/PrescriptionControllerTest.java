@@ -81,23 +81,25 @@ class PrescriptionControllerTest {
     }
 
     @Test
-    void get_shouldDelegateToServiceWithId() {
-        when(prescriptionService.getById(PRESCRIPTION_ID)).thenReturn(Result.success(buildResponse()));
+    void get_shouldDelegateToServiceWithIdAndCurrentDoctorId() {
+        when(currentUser.getUserId()).thenReturn(DOCTOR_ID);
+        when(prescriptionService.getById(PRESCRIPTION_ID, DOCTOR_ID)).thenReturn(Result.success(buildResponse()));
 
         Result<PrescriptionResponse> result = controller.get(PRESCRIPTION_ID);
 
         assertEquals("SUCCESS", result.getCode());
-        verify(prescriptionService).getById(PRESCRIPTION_ID);
+        verify(prescriptionService).getById(PRESCRIPTION_ID, DOCTOR_ID);
     }
 
     @Test
-    void listByPatient_shouldDelegateToServiceWithPatientId() {
-        when(prescriptionService.listByPatient(PATIENT_ID)).thenReturn(Result.success(List.of(buildResponse())));
+    void listByPatient_shouldDelegateToServiceWithPatientIdAndCurrentDoctorId() {
+        when(currentUser.getUserId()).thenReturn(DOCTOR_ID);
+        when(prescriptionService.listByPatient(PATIENT_ID, DOCTOR_ID)).thenReturn(Result.success(List.of(buildResponse())));
 
         Result<List<PrescriptionResponse>> result = controller.listByPatient(PATIENT_ID);
 
         assertEquals("SUCCESS", result.getCode());
-        verify(prescriptionService).listByPatient(PATIENT_ID);
+        verify(prescriptionService).listByPatient(PATIENT_ID, DOCTOR_ID);
     }
 
     @Test

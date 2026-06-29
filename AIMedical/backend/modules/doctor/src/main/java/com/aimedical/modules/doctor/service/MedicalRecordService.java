@@ -19,9 +19,9 @@ public interface MedicalRecordService {
 
     Result<MedicalRecordResponse> publish(Long id, Long doctorUserId);
 
-    Result<MedicalRecordResponse> getById(Long id);
+    Result<MedicalRecordResponse> getById(Long id, Long doctorUserId);
 
-    Result<List<MedicalRecordResponse>> listByPatient(Long patientId);
+    Result<List<MedicalRecordResponse>> listByPatient(Long patientId, Long doctorUserId);
 
     Result<List<MedicalRecordTemplateResponse>> listTemplatesByDepartment(String department);
 }

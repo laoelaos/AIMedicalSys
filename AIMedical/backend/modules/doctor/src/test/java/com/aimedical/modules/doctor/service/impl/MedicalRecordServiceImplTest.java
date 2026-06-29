@@ -203,20 +203,33 @@ class MedicalRecordServiceImplTest {
     void getById_shouldReturnNotFoundWhenNotExists() {
         when(medicalRecordRepository.findById(RECORD_ID)).thenReturn(Optional.empty());
 
-        Result<MedicalRecordResponse> result = service.getById(RECORD_ID);
+        Result<MedicalRecordResponse> result = service.getById(RECORD_ID, DOCTOR_USER_ID);
 
         assertEquals(GlobalErrorCode.MEDICAL_RECORD_NOT_FOUND.getCode(), result.getCode());
+    }
+
+    @Test
+    void getById_shouldReturnForbiddenWhenNotOwner() {
+        MedicalRecordEntity entity = new MedicalRecordEntity();
+        entity.setId(RECORD_ID);
+        entity.setDoctorId(OTHER_DOCTOR_ID);
+        when(medicalRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(entity));
+
+        Result<MedicalRecordResponse> result = service.getById(RECORD_ID, DOCTOR_USER_ID);
+
+        assertEquals(GlobalErrorCode.FORBIDDEN.getCode(), result.getCode());
     }
 
     @Test
     void getById_shouldReturnResponseWhenExists() {
         MedicalRecordEntity entity = new MedicalRecordEntity();
         entity.setId(RECORD_ID);
+        entity.setDoctorId(DOCTOR_USER_ID);
         MedicalRecordResponse response = buildResponse(RECORD_ID, MedicalRecordStatus.DRAFT.getCode(), 0);
         when(medicalRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(entity));
         when(converter.toResponse(entity)).thenReturn(response);
 
-        Result<MedicalRecordResponse> result = service.getById(RECORD_ID);
+        Result<MedicalRecordResponse> result = service.getById(RECORD_ID, DOCTOR_USER_ID);
 
         assertEquals("SUCCESS", result.getCode());
         assertNotNull(result.getData());
@@ -229,11 +242,11 @@ class MedicalRecordServiceImplTest {
         MedicalRecordEntity entity = new MedicalRecordEntity();
         entity.setId(RECORD_ID);
         MedicalRecordResponse response = buildResponse(RECORD_ID, MedicalRecordStatus.OFFICIAL.getCode(), 1);
-        when(medicalRecordRepository.findByPatientIdOrderByVersionNoDesc(PATIENT_ID))
+        when(medicalRecordRepository.findByPatientIdAndDoctorIdOrderByVersionNoDesc(PATIENT_ID, DOCTOR_USER_ID))
                 .thenReturn(List.of(entity));
         when(converter.toResponse(entity)).thenReturn(response);
 
-        Result<List<MedicalRecordResponse>> result = service.listByPatient(PATIENT_ID);
+        Result<List<MedicalRecordResponse>> result = service.listByPatient(PATIENT_ID, DOCTOR_USER_ID);
 
         assertEquals("SUCCESS", result.getCode());
         assertEquals(1, result.getData().size());

@@ -29,6 +29,7 @@ public enum GlobalErrorCode implements ErrorCode {
     MEDICAL_RECORD_INVALID_STATE("MEDICAL_RECORD_INVALID_STATE", "病历状态不允许该操作"),
     CONSULTATION_NOT_FOUND("CONSULTATION_NOT_FOUND", "叫号记录不存在"),
     CONSULTATION_NOT_CALLABLE("CONSULTATION_NOT_CALLABLE", "当前叫号记录无法执行该操作"),
+    CONFLICT("CONFLICT", "操作冲突，请刷新后重试"),
     AI_SERVICE_UNAVAILABLE("AI_SERVICE_UNAVAILABLE", "AI 服务不可用，已降级处理");
 
     private final String code;

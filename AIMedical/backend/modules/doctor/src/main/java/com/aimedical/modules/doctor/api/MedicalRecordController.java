@@ -55,17 +55,17 @@ public class MedicalRecordController {
      */
     @GetMapping("/{id}")
     public Result<MedicalRecordResponse> get(@PathVariable Long id) {
-        return medicalRecordService.getById(id);
+        return medicalRecordService.getById(id, currentDoctorId());
     }
 
     /**
-     * 按患者查询病历列表（按版本号倒序）。
+     * 按患者查询病历列表（仅当前医生为该患者创建的病历，按版本号倒序）。
      *
      * @param patientId 患者档案ID
      */
     @GetMapping
     public Result<List<MedicalRecordResponse>> listByPatient(@RequestParam Long patientId) {
-        return medicalRecordService.listByPatient(patientId);
+        return medicalRecordService.listByPatient(patientId, currentDoctorId());
     }
 
     /**

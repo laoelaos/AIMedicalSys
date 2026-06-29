@@ -28,4 +28,14 @@ public interface PrescriptionRepository extends JpaRepository<PrescriptionEntity
      * @return 处方列表
      */
     List<PrescriptionEntity> findByDoctorIdOrderByCreatedAtDesc(Long doctorId);
+
+    /**
+     * 按患者ID和医生ID查询处方列表（按创建时间倒序）。
+     * 用于越权防护：医生仅能查看本人为该患者开具的处方。
+     *
+     * @param patientId 患者档案ID
+     * @param doctorId  医生用户ID
+     * @return 处方列表
+     */
+    List<PrescriptionEntity> findByPatientIdAndDoctorIdOrderByCreatedAtDesc(Long patientId, Long doctorId);
 }

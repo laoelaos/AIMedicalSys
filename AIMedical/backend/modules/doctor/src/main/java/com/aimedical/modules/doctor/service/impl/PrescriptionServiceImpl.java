@@ -94,18 +94,24 @@ public class PrescriptionServiceImpl implements PrescriptionService {
 
     @Override
     @Transactional(readOnly = true)
-    public Result<PrescriptionResponse> getById(Long id) {
+    public Result<PrescriptionResponse> getById(Long id, Long doctorUserId) {
         return prescriptionRepository.findById(id)
-                .map(converter::toResponse)
-                .map(Result::success)
+                .map(entity -> {
+                    // 越权防护：仅处方归属医生可查看详情
+                    if (!entity.getDoctorId().equals(doctorUserId)) {
+                        return Result.<PrescriptionResponse>fail(GlobalErrorCode.FORBIDDEN, "无权查看他人处方");
+                    }
+                    return Result.success(converter.toResponse(entity));
+                })
                 .orElseGet(() -> Result.fail(GlobalErrorCode.PRESCRIPTION_NOT_FOUND));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Result<List<PrescriptionResponse>> listByPatient(Long patientId) {
+    public Result<List<PrescriptionResponse>> listByPatient(Long patientId, Long doctorUserId) {
+        // 越权防护：仅返回当前医生为该患者开具的处方，避免泄露他人处方
         List<PrescriptionResponse> list = prescriptionRepository
-                .findByPatientIdOrderByCreatedAtDesc(patientId)
+                .findByPatientIdAndDoctorIdOrderByCreatedAtDesc(patientId, doctorUserId)
                 .stream()
                 .map(converter::toResponse)
                 .toList();
@@ -163,6 +169,10 @@ public class PrescriptionServiceImpl implements PrescriptionService {
             return Result.fail(GlobalErrorCode.PRESCRIPTION_NOT_FOUND);
         }
         PrescriptionEntity entity = opt.get();
+        // 禁止处方开立医生审核自己的处方，需独立审核人把关（医疗合规要求）
+        if (auditorUserId.equals(entity.getDoctorId())) {
+            return Result.fail(GlobalErrorCode.FORBIDDEN.getCode(), "不可审核自己开立的处方，需由其他医生/药师审核");
+        }
         if (!PrescriptionStatus.PENDING_REVIEW.getCode().equals(entity.getStatus())) {
             return Result.fail(GlobalErrorCode.PRESCRIPTION_NOT_AUDITABLE);
         }

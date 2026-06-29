@@ -8,7 +8,7 @@ class GlobalErrorCodeTest {
 
     @Test
     void shouldHaveExpectedConstants() {
-        assertEquals(28, GlobalErrorCode.values().length);
+        assertEquals(29, GlobalErrorCode.values().length);
         assertNotNull(GlobalErrorCode.valueOf("SUCCESS"));
         assertNotNull(GlobalErrorCode.valueOf("SYSTEM_ERROR"));
         assertNotNull(GlobalErrorCode.valueOf("PARAM_INVALID"));

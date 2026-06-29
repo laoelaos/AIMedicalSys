@@ -130,20 +130,33 @@ class PrescriptionServiceImplTest {
     void getById_shouldReturnNotFoundWhenNotExists() {
         when(prescriptionRepository.findById(PRESCRIPTION_ID)).thenReturn(Optional.empty());
 
-        Result<PrescriptionResponse> result = service.getById(PRESCRIPTION_ID);
+        Result<PrescriptionResponse> result = service.getById(PRESCRIPTION_ID, DOCTOR_USER_ID);
 
         assertEquals(GlobalErrorCode.PRESCRIPTION_NOT_FOUND.getCode(), result.getCode());
+    }
+
+    @Test
+    void getById_shouldReturnForbiddenWhenNotOwner() {
+        PrescriptionEntity entity = new PrescriptionEntity();
+        entity.setId(PRESCRIPTION_ID);
+        entity.setDoctorId(OTHER_DOCTOR_ID);
+        when(prescriptionRepository.findById(PRESCRIPTION_ID)).thenReturn(Optional.of(entity));
+
+        Result<PrescriptionResponse> result = service.getById(PRESCRIPTION_ID, DOCTOR_USER_ID);
+
+        assertEquals(GlobalErrorCode.FORBIDDEN.getCode(), result.getCode());
     }
 
     @Test
     void getById_shouldReturnResponseWhenExists() {
         PrescriptionEntity entity = new PrescriptionEntity();
         entity.setId(PRESCRIPTION_ID);
+        entity.setDoctorId(DOCTOR_USER_ID);
         PrescriptionResponse response = buildResponse(PRESCRIPTION_ID, PrescriptionStatus.DRAFT.getCode());
         when(prescriptionRepository.findById(PRESCRIPTION_ID)).thenReturn(Optional.of(entity));
         when(converter.toResponse(entity)).thenReturn(response);
 
-        Result<PrescriptionResponse> result = service.getById(PRESCRIPTION_ID);
+        Result<PrescriptionResponse> result = service.getById(PRESCRIPTION_ID, DOCTOR_USER_ID);
 
         assertEquals("SUCCESS", result.getCode());
         assertNotNull(result.getData());
@@ -156,11 +169,11 @@ class PrescriptionServiceImplTest {
         PrescriptionEntity entity = new PrescriptionEntity();
         entity.setId(PRESCRIPTION_ID);
         PrescriptionResponse response = buildResponse(PRESCRIPTION_ID, PrescriptionStatus.DRAFT.getCode());
-        when(prescriptionRepository.findByPatientIdOrderByCreatedAtDesc(PATIENT_ID))
+        when(prescriptionRepository.findByPatientIdAndDoctorIdOrderByCreatedAtDesc(PATIENT_ID, DOCTOR_USER_ID))
                 .thenReturn(List.of(entity));
         when(converter.toResponse(entity)).thenReturn(response);
 
-        Result<List<PrescriptionResponse>> result = service.listByPatient(PATIENT_ID);
+        Result<List<PrescriptionResponse>> result = service.listByPatient(PATIENT_ID, DOCTOR_USER_ID);
 
         assertEquals("SUCCESS", result.getCode());
         assertEquals(1, result.getData().size());

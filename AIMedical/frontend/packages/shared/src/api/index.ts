@@ -12,7 +12,7 @@ export async function loginApi(req: LoginRequest): Promise<TokenResponse | Busin
   if (result && !(result as BusinessError).isBusinessError) {
     const token = result as TokenResponse
     if (!token.access_token || !token.refresh_token) {
-      console.error('[loginApi] token missing in response:', token)
+      console.error('[loginApi] token missing in response: access_token or refresh_token is empty')
       return { code: 'AUTH_TOKEN_MISSING' as const, message: '服务器返回异常', isBusinessError: true as const } as BusinessError
     }
     setTokens(token.access_token, token.refresh_token)

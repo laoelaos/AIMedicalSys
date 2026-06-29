@@ -55,17 +55,17 @@ public class PrescriptionController {
      */
     @GetMapping("/{id}")
     public Result<PrescriptionResponse> get(@PathVariable Long id) {
-        return prescriptionService.getById(id);
+        return prescriptionService.getById(id, currentDoctorId());
     }
 
     /**
-     * 按患者查询处方列表。
+     * 按患者查询处方列表（仅当前医生为该患者开具的处方）。
      *
      * @param patientId 患者档案ID
      */
     @GetMapping
     public Result<List<PrescriptionResponse>> listByPatient(@RequestParam Long patientId) {
-        return prescriptionService.listByPatient(patientId);
+        return prescriptionService.listByPatient(patientId, currentDoctorId());
     }
 
     /**

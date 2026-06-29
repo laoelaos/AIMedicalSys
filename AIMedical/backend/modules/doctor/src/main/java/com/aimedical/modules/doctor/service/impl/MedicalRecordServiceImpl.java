@@ -136,18 +136,24 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
 
     @Override
     @Transactional(readOnly = true)
-    public Result<MedicalRecordResponse> getById(Long id) {
+    public Result<MedicalRecordResponse> getById(Long id, Long doctorUserId) {
         return medicalRecordRepository.findById(id)
-                .map(converter::toResponse)
-                .map(Result::success)
+                .map(entity -> {
+                    // 越权防护：仅病历归属医生可查看详情
+                    if (!entity.getDoctorId().equals(doctorUserId)) {
+                        return Result.<MedicalRecordResponse>fail(GlobalErrorCode.FORBIDDEN, "无权查看他人病历");
+                    }
+                    return Result.success(converter.toResponse(entity));
+                })
                 .orElseGet(() -> Result.fail(GlobalErrorCode.MEDICAL_RECORD_NOT_FOUND));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Result<List<MedicalRecordResponse>> listByPatient(Long patientId) {
+    public Result<List<MedicalRecordResponse>> listByPatient(Long patientId, Long doctorUserId) {
+        // 越权防护：仅返回当前医生为该患者创建的病历，避免泄露他人病历
         List<MedicalRecordResponse> list = medicalRecordRepository
-                .findByPatientIdOrderByVersionNoDesc(patientId)
+                .findByPatientIdAndDoctorIdOrderByVersionNoDesc(patientId, doctorUserId)
                 .stream()
                 .map(converter::toResponse)
                 .toList();

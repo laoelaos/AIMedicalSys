@@ -19,9 +19,9 @@ public interface PrescriptionService {
 
     Result<PrescriptionResponse> create(PrescriptionCreateRequest request, Long doctorUserId);
 
-    Result<PrescriptionResponse> getById(Long id);
+    Result<PrescriptionResponse> getById(Long id, Long doctorUserId);
 
-    Result<List<PrescriptionResponse>> listByPatient(Long patientId);
+    Result<List<PrescriptionResponse>> listByPatient(Long patientId, Long doctorUserId);
 
     Result<List<PrescriptionResponse>> listByDoctor(Long doctorUserId);
 

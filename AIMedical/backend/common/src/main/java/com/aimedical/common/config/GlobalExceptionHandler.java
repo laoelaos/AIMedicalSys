@@ -7,8 +7,10 @@ import com.aimedical.common.result.Result;
 import com.aimedical.common.util.MessageInterpolator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -106,6 +108,31 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest()
                 .body(Result.fail(GlobalErrorCode.PARAM_INVALID.getCode(),
                         "缺少必需参数: " + e.getParameterName()));
+    }
+
+    /**
+     * 处理 JPA 乐观锁冲突（@Version 并发更新失败），返回 409 Conflict。
+     *
+     * <p>触发场景：叫号/接诊并发状态变更（ConsultationQueueEntity @Version）、
+     * 病历/处方并发修改等。
+     */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<Result<Void>> handleOptimisticLock(ObjectOptimisticLockingFailureException e) {
+        log.warn("Optimistic locking conflict: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Result.fail(GlobalErrorCode.CONFLICT.getCode(), "数据已被他人更新，请刷新后重试"));
+    }
+
+    /**
+     * 处理数据完整性约束冲突（唯一索引/外键约束），返回 409 Conflict。
+     *
+     * <p>触发场景：并发创建病历草稿命中 (patient_id, doctor_id, DRAFT) 唯一索引等。
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Result<Void>> handleDataIntegrityViolation(DataIntegrityViolationException e) {
+        log.warn("Data integrity violation: {}", e.getMostSpecificCause().getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Result.fail(GlobalErrorCode.CONFLICT.getCode(), "操作冲突，数据已存在或被约束拒绝"));
     }
 
     @ExceptionHandler(Exception.class)

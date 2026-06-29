@@ -78,23 +78,25 @@ class MedicalRecordControllerTest {
     }
 
     @Test
-    void get_shouldDelegateToServiceWithId() {
-        when(medicalRecordService.getById(RECORD_ID)).thenReturn(Result.success(buildResponse()));
+    void get_shouldDelegateToServiceWithIdAndCurrentDoctorId() {
+        when(currentUser.getUserId()).thenReturn(DOCTOR_ID);
+        when(medicalRecordService.getById(RECORD_ID, DOCTOR_ID)).thenReturn(Result.success(buildResponse()));
 
         Result<MedicalRecordResponse> result = controller.get(RECORD_ID);
 
         assertEquals("SUCCESS", result.getCode());
-        verify(medicalRecordService).getById(RECORD_ID);
+        verify(medicalRecordService).getById(RECORD_ID, DOCTOR_ID);
     }
 
     @Test
-    void listByPatient_shouldDelegateToServiceWithPatientId() {
-        when(medicalRecordService.listByPatient(PATIENT_ID)).thenReturn(Result.success(List.of(buildResponse())));
+    void listByPatient_shouldDelegateToServiceWithPatientIdAndCurrentDoctorId() {
+        when(currentUser.getUserId()).thenReturn(DOCTOR_ID);
+        when(medicalRecordService.listByPatient(PATIENT_ID, DOCTOR_ID)).thenReturn(Result.success(List.of(buildResponse())));
 
         Result<List<MedicalRecordResponse>> result = controller.listByPatient(PATIENT_ID);
 
         assertEquals("SUCCESS", result.getCode());
-        verify(medicalRecordService).listByPatient(PATIENT_ID);
+        verify(medicalRecordService).listByPatient(PATIENT_ID, DOCTOR_ID);
     }
 
     @Test

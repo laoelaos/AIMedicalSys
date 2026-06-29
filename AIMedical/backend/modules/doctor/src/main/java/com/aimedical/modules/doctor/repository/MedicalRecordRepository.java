@@ -42,5 +42,13 @@ public interface MedicalRecordRepository extends JpaRepository<MedicalRecordEnti
                                                                                        Long doctorId,
                                                                                        String status);
 
-
+    /**
+     * 按患者ID和医生ID查询病历列表（按版本号倒序）。
+     * 用于越权防护：医生仅能查看本人为该患者创建的病历。
+     *
+     * @param patientId 患者档案ID
+     * @param doctorId  医生用户ID
+     * @return 病历列表
+     */
+    List<MedicalRecordEntity> findByPatientIdAndDoctorIdOrderByVersionNoDesc(Long patientId, Long doctorId);
 }
