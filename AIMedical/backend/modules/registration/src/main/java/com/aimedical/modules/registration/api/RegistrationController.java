@@ -66,15 +66,15 @@ public class RegistrationController {
         return Result.success(registrationService.markNoShow(id));
     }
 
-    @PostMapping("/{registrationId}/triage")
-    public Result<TriageRecordDTO> createTriageRecord(@PathVariable Long registrationId,
+    @PostMapping("/{id}/triage")
+    public Result<TriageRecordDTO> createTriageRecord(@PathVariable Long id,
                                                       @Valid @RequestBody TriageRecordDTO dto) {
-        dto.setRegistrationId(registrationId);
+        dto.setRegistrationId(id);
         return Result.success(registrationService.createTriageRecord(dto));
     }
 
-    @GetMapping("/{registrationId}/triage")
-    public Result<TriageRecordDTO> getTriageRecord(@PathVariable Long registrationId) {
-        return Result.success(registrationService.getTriageRecord(registrationId));
+    @GetMapping("/{id}/triage")
+    public Result<TriageRecordDTO> getTriageRecord(@PathVariable Long id) {
+        return Result.success(registrationService.getTriageRecord(id));
     }
 }

@@ -42,9 +42,6 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final PatientService patientService;
     private final DoctorService doctorService;
 
-    /** 排号生成的锁对象，保证同一医生同一日期的排号原子性 */
-    private final Object queueLock = new Object();
-
     public RegistrationServiceImpl(RegistrationRepository registrationRepository,
                                    TriageRecordRepository triageRecordRepository,
                                    PatientService patientService,
@@ -231,10 +228,10 @@ public class RegistrationServiceImpl implements RegistrationService {
         if (scheduledDate == null || doctorId == null) {
             throw new BusinessException(GlobalErrorCode.PARAM_INVALID, "医生ID和预约日期不能为空");
         }
-        synchronized (queueLock) {
-            long count = registrationRepository.countByScheduledDateAndDoctorId(scheduledDate, doctorId);
-            return (int) count + 1;
-        }
+        // 多实例部署下由数据库 UNIQUE(doctor_id, scheduled_date, queue_number) 约束保证唯一性，
+        // 冲突时由 saveRegistrationWithRetry 重试。
+        long count = registrationRepository.countByScheduledDateAndDoctorId(scheduledDate, doctorId);
+        return (int) count + 1;
     }
 
     private String determineCancelType(LocalDate scheduledDate, String scheduledTimeSlot) {
@@ -283,7 +280,7 @@ public class RegistrationServiceImpl implements RegistrationService {
      */
     private Registration saveWithOptimisticLock(Registration entity, String operation) {
         try {
-            return registrationRepository.save(entity);
+            return registrationRepository.saveAndFlush(entity);
         } catch (OptimisticLockException e) {
             throw new BusinessException(GlobalErrorCode.SYSTEM_ERROR,
                     operation + "失败：数据已被其他操作修改，请刷新后重试");

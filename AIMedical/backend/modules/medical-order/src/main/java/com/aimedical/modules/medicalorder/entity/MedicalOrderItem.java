@@ -12,6 +12,13 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
+/**
+ * 医嘱明细实体，属于 MedicalOrder 聚合根的内部实体。
+ * <p>
+ * 采用 DDD 聚合根设计：通过 orderId 外键关联到 MedicalOrder，
+ * 不使用 JPA {@code @ManyToOne} 关系映射，由聚合根 Service 层负责加载与持久化，
+ * 避免双向关系映射的复杂性。
+ */
 @Entity
 @Table(name = "medical_order_item")
 @Getter

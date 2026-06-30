@@ -40,6 +40,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -52,6 +54,14 @@ public class MedicalOrderServiceImpl implements MedicalOrderService {
     private final PatientService patientService;
     private final DoctorService doctorService;
     private final RegistrationRepository registrationRepository;
+
+    /** 合法的状态转换矩阵：from -> {to1, to2, ...} */
+    private static final Map<OrderStatus, Set<OrderStatus>> VALID_TRANSITIONS = Map.of(
+            OrderStatus.DRAFT, Set.of(OrderStatus.SUBMITTED, OrderStatus.CANCELLED),
+            OrderStatus.SUBMITTED, Set.of(OrderStatus.CHARGED, OrderStatus.CANCELLED),
+            OrderStatus.CHARGED, Set.of(OrderStatus.DISPENSED, OrderStatus.COMPLETED),
+            OrderStatus.DISPENSED, Set.of(OrderStatus.COMPLETED)
+    );
 
     public MedicalOrderServiceImpl(MedicalOrderRepository orderRepository,
                                    MedicalOrderItemRepository itemRepository,
@@ -151,6 +161,7 @@ public class MedicalOrderServiceImpl implements MedicalOrderService {
         if (order.getOrderStatus() != OrderStatus.DRAFT) {
             throw new BusinessException(GlobalErrorCode.ORDER_STATUS_INVALID, "只有草稿状态的订单才能提交");
         }
+        validateTransition(order.getOrderStatus(), OrderStatus.SUBMITTED, "提交订单");
 
         List<MedicalOrderItem> items = itemRepository.findByOrderId(id);
         if (items == null || items.isEmpty()) {
@@ -182,6 +193,14 @@ public class MedicalOrderServiceImpl implements MedicalOrderService {
         order.setOrderStatus(OrderStatus.CANCELLED);
         order = saveOrderWithOptimisticLock(order, "取消订单");
 
+        // 同步取消关联的收费前置单（仅 PENDING 状态才取消）
+        chargePreOrderRepository.findByOrderId(id).ifPresent(chargePreOrder -> {
+            if (chargePreOrder.getChargeStatus() == ChargeStatus.PENDING) {
+                chargePreOrder.setChargeStatus(ChargeStatus.CANCELLED);
+                chargePreOrderRepository.save(chargePreOrder);
+            }
+        });
+
         return enrichOrderDto(order);
     }
 
@@ -194,6 +213,7 @@ public class MedicalOrderServiceImpl implements MedicalOrderService {
         if (order.getOrderStatus() != OrderStatus.SUBMITTED) {
             throw new BusinessException(GlobalErrorCode.ORDER_STATUS_INVALID, "只有已提交的订单才能收费");
         }
+        validateTransition(order.getOrderStatus(), OrderStatus.CHARGED, "收费");
 
         order.setOrderStatus(OrderStatus.CHARGED);
         order = saveOrderWithOptimisticLock(order, "收费");
@@ -232,6 +252,7 @@ public class MedicalOrderServiceImpl implements MedicalOrderService {
         if (status != OrderStatus.CHARGED && status != OrderStatus.DISPENSED) {
             throw new BusinessException(GlobalErrorCode.ORDER_STATUS_INVALID, "只有已收费或已发药的订单才能完成");
         }
+        validateTransition(order.getOrderStatus(), OrderStatus.COMPLETED, "完成订单");
 
         order.setOrderStatus(OrderStatus.COMPLETED);
         order = saveOrderWithOptimisticLock(order, "完成订单");
@@ -336,6 +357,13 @@ public class MedicalOrderServiceImpl implements MedicalOrderService {
         MedicalOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new BusinessException(GlobalErrorCode.NOT_FOUND, "订单不存在: " + orderId));
 
+        // 处方契约要求订单至少为已提交状态
+        OrderStatus status = order.getOrderStatus();
+        if (status == OrderStatus.DRAFT || status == OrderStatus.CANCELLED) {
+            throw new BusinessException(GlobalErrorCode.ORDER_STATUS_INVALID,
+                    "订单状态不允许生成处方契约，需至少为已提交状态");
+        }
+
         List<MedicalOrderItem> items = itemRepository.findByOrderId(orderId).stream()
                 .filter(item -> item.getItemType() == ItemType.DRUG)
                 .collect(Collectors.toList());
@@ -360,6 +388,17 @@ public class MedicalOrderServiceImpl implements MedicalOrderService {
         String timestamp = String.format("%06d", LocalDateTime.now().getNano() / 1000 % 1000000);
         String random = String.format("%06d", SECURE_RANDOM.nextInt(1000000));
         return prefix + "-" + date + "-" + timestamp + "-" + random;
+    }
+
+    /**
+     * 校验状态转换是否合法，基于集中定义的 {@link #VALID_TRANSITIONS} 矩阵。
+     */
+    private void validateTransition(OrderStatus from, OrderStatus to, String operation) {
+        Set<OrderStatus> allowed = VALID_TRANSITIONS.get(from);
+        if (allowed == null || !allowed.contains(to)) {
+            throw new BusinessException(GlobalErrorCode.ORDER_STATUS_INVALID,
+                    operation + "失败：不允许从 " + from.getDesc() + " 转换到 " + to.getDesc());
+        }
     }
 
     /**

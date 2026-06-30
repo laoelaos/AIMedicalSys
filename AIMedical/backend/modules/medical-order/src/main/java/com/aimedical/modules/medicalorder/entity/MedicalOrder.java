@@ -12,6 +12,13 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
+/**
+ * 医嘱聚合根。
+ * <p>
+ * 采用 DDD 聚合根设计：MedicalOrderItem 作为独立实体通过 orderId 外键关联，
+ * 不使用 JPA {@code @OneToMany} 关系映射，以避免 N+1 查询、级联删除等隐式行为，
+ * 同时保持聚合根对明细的生命周期管理权。
+ */
 @Entity
 @Table(name = "medical_order")
 @Getter

@@ -324,7 +324,7 @@ class RegistrationServiceImplTest {
         void pendingConfirmSuccess() {
             Registration entity = registration(1L, RegistrationStatus.PENDING);
             when(registrationRepository.findById(1L)).thenReturn(Optional.of(entity));
-            when(registrationRepository.save(any(Registration.class)))
+            when(registrationRepository.saveAndFlush(any(Registration.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
 
             RegistrationDTO result = service.confirmRegistration(1L);
@@ -358,7 +358,7 @@ class RegistrationServiceImplTest {
         void optimisticLockThrows() {
             Registration entity = registration(1L, RegistrationStatus.PENDING);
             when(registrationRepository.findById(1L)).thenReturn(Optional.of(entity));
-            when(registrationRepository.save(any(Registration.class)))
+            when(registrationRepository.saveAndFlush(any(Registration.class)))
                     .thenThrow(new OptimisticLockException("conflict"));
 
             BusinessException ex = assertThrows(BusinessException.class,
@@ -376,7 +376,7 @@ class RegistrationServiceImplTest {
         void confirmedCompleteSuccess() {
             Registration entity = registration(1L, RegistrationStatus.CONFIRMED);
             when(registrationRepository.findById(1L)).thenReturn(Optional.of(entity));
-            when(registrationRepository.save(any(Registration.class)))
+            when(registrationRepository.saveAndFlush(any(Registration.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
 
             RegistrationDTO result = service.completeRegistration(1L);
@@ -421,7 +421,7 @@ class RegistrationServiceImplTest {
         void pendingOnlineCancelSuccess() {
             Registration entity = registration(1L, RegistrationStatus.PENDING);
             when(registrationRepository.findById(1L)).thenReturn(Optional.of(entity));
-            when(registrationRepository.save(any(Registration.class)))
+            when(registrationRepository.saveAndFlush(any(Registration.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
 
             RegistrationDTO result = service.cancelRegistration(1L, request());
@@ -437,7 +437,7 @@ class RegistrationServiceImplTest {
         void confirmedOnlineCancelSuccess() {
             Registration entity = registration(1L, RegistrationStatus.CONFIRMED);
             when(registrationRepository.findById(1L)).thenReturn(Optional.of(entity));
-            when(registrationRepository.save(any(Registration.class)))
+            when(registrationRepository.saveAndFlush(any(Registration.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
 
             RegistrationDTO result = service.cancelRegistration(1L, request());
@@ -452,7 +452,7 @@ class RegistrationServiceImplTest {
             Registration entity = registration(1L, RegistrationStatus.PENDING);
             entity.setScheduledTimeSlot("AM");
             when(registrationRepository.findById(1L)).thenReturn(Optional.of(entity));
-            when(registrationRepository.save(any(Registration.class)))
+            when(registrationRepository.saveAndFlush(any(Registration.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
 
             RegistrationDTO result = service.cancelRegistration(1L, request());
@@ -466,7 +466,7 @@ class RegistrationServiceImplTest {
             Registration entity = registration(1L, RegistrationStatus.PENDING);
             entity.setScheduledTimeSlot("PM");
             when(registrationRepository.findById(1L)).thenReturn(Optional.of(entity));
-            when(registrationRepository.save(any(Registration.class)))
+            when(registrationRepository.saveAndFlush(any(Registration.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
 
             RegistrationDTO result = service.cancelRegistration(1L, request());
@@ -571,7 +571,7 @@ class RegistrationServiceImplTest {
         void optimisticLockThrows() {
             Registration entity = registration(1L, RegistrationStatus.PENDING);
             when(registrationRepository.findById(1L)).thenReturn(Optional.of(entity));
-            when(registrationRepository.save(any(Registration.class)))
+            when(registrationRepository.saveAndFlush(any(Registration.class)))
                     .thenThrow(new OptimisticLockException("conflict"));
 
             BusinessException ex = assertThrows(BusinessException.class,
@@ -589,7 +589,7 @@ class RegistrationServiceImplTest {
         void confirmedMarkNoShowSuccess() {
             Registration entity = registration(1L, RegistrationStatus.CONFIRMED);
             when(registrationRepository.findById(1L)).thenReturn(Optional.of(entity));
-            when(registrationRepository.save(any(Registration.class)))
+            when(registrationRepository.saveAndFlush(any(Registration.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
 
             RegistrationDTO result = service.markNoShow(1L);

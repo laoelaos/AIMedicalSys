@@ -59,7 +59,9 @@ class MedicalOrderEnumsTest {
         assertThat(ChargeStatus.CHARGED.getDesc()).isEqualTo("已收费");
         assertThat(ChargeStatus.REFUNDED.getCode()).isEqualTo("REFUNDED");
         assertThat(ChargeStatus.REFUNDED.getDesc()).isEqualTo("已退费");
-        assertThat(ChargeStatus.values()).hasSize(3);
+        assertThat(ChargeStatus.CANCELLED.getCode()).isEqualTo("CANCELLED");
+        assertThat(ChargeStatus.CANCELLED.getDesc()).isEqualTo("已取消");
+        assertThat(ChargeStatus.values()).hasSize(4);
     }
 
     @Test
