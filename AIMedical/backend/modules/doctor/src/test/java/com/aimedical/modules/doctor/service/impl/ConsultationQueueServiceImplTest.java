@@ -82,7 +82,7 @@ class ConsultationQueueServiceImplTest {
 
     @Test
     void callNext_shouldReturnNotFoundWhenNoWaiting() {
-        when(queueRepository.findByDoctorIdAndStatusOrderByRegisteredAtAsc(200L, "WAITING"))
+        when(queueRepository.findByDoctorIdAndStatusForUpdate(200L, "WAITING"))
                 .thenReturn(List.of());
 
         Result<ConsultationQueueResponse> result = service.callNext(200L);
@@ -94,8 +94,10 @@ class ConsultationQueueServiceImplTest {
     void callNext_shouldCallFirstWaitingAndSetCalledStatus() {
         ConsultationQueueEntity entity = buildEntity(1L, ConsultationStatus.WAITING.getCode(), 200L);
         ConsultationQueueResponse response = buildResponse(1L);
-        when(queueRepository.findByDoctorIdAndStatusOrderByRegisteredAtAsc(200L, "WAITING"))
+        when(queueRepository.findByDoctorIdAndStatusForUpdate(200L, "WAITING"))
                 .thenReturn(List.of(entity));
+        when(queueRepository.findActiveForUpdate(eq(200L), anyList()))
+                .thenReturn(List.of());
         when(queueRepository.save(entity)).thenReturn(entity);
         when(converter.toResponse(entity)).thenReturn(response);
 
@@ -105,6 +107,20 @@ class ConsultationQueueServiceImplTest {
         assertEquals(ConsultationStatus.CALLED.getCode(), entity.getStatus());
         assertNotNull(entity.getCalledAt());
         verify(queueRepository).save(entity);
+    }
+
+    @Test
+    void callNext_shouldReturnNotCallableWhenActiveConsultationExists() {
+        ConsultationQueueEntity waiting = buildEntity(1L, ConsultationStatus.WAITING.getCode(), 200L);
+        ConsultationQueueEntity active = buildEntity(2L, ConsultationStatus.CALLED.getCode(), 200L);
+        when(queueRepository.findByDoctorIdAndStatusForUpdate(200L, "WAITING"))
+                .thenReturn(List.of(waiting));
+        when(queueRepository.findActiveForUpdate(eq(200L), anyList()))
+                .thenReturn(List.of(active));
+
+        Result<ConsultationQueueResponse> result = service.callNext(200L);
+
+        assertEquals(GlobalErrorCode.CONSULTATION_NOT_CALLABLE.getCode(), result.getCode());
     }
 
     @Test

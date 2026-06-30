@@ -13,8 +13,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.aimedical.common.exception.GlobalErrorCode;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -117,9 +118,11 @@ class ConsultationQueueControllerTest {
     }
 
     @Test
-    void anyEndpoint_shouldThrowWhenUserIdIsNull() {
+    void anyEndpoint_shouldReturnUnauthorizedWhenUserIdIsNull() {
         when(currentUser.getUserId()).thenReturn(null);
 
-        assertThrows(IllegalStateException.class, () -> controller.listMyQueue());
+        Result<List<ConsultationQueueResponse>> result = controller.listMyQueue();
+
+        assertEquals(GlobalErrorCode.UNAUTHORIZED.getCode(), result.getCode());
     }
 }

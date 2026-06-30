@@ -5,6 +5,14 @@ import com.aimedical.modules.ai.api.AiResult;
 import com.aimedical.modules.ai.api.AiService;
 import com.aimedical.modules.ai.api.dto.diagnosis.DiagnosisRequest;
 import com.aimedical.modules.ai.api.dto.diagnosis.DiagnosisResponse;
+import com.aimedical.modules.ai.api.dto.examination.ExaminationRecommendRequest;
+import com.aimedical.modules.ai.api.dto.examination.ExaminationRecommendResponse;
+import com.aimedical.modules.ai.api.dto.medicalrecord.MedicalRecordGenRequest;
+import com.aimedical.modules.ai.api.dto.medicalrecord.MedicalRecordGenResponse;
+import com.aimedical.modules.ai.api.dto.prescription.PrescriptionAssistRequest;
+import com.aimedical.modules.ai.api.dto.prescription.PrescriptionAssistResponse;
+import com.aimedical.modules.ai.api.dto.prescription.PrescriptionCheckRequest;
+import com.aimedical.modules.ai.api.dto.prescription.PrescriptionCheckResponse;
 import com.aimedical.modules.doctor.dto.request.AiDiagnosisRequest;
 import com.aimedical.modules.doctor.dto.request.AiExaminationRequest;
 import com.aimedical.modules.doctor.dto.request.AiMedicalRecordGenRequest;
@@ -16,6 +24,7 @@ import com.aimedical.modules.doctor.dto.response.AiMedicalRecordGenResponse;
 import com.aimedical.modules.doctor.dto.response.AiPrescriptionAssistResponse;
 import com.aimedical.modules.doctor.dto.response.AiPrescriptionAuditResponse;
 import com.aimedical.modules.doctor.dto.response.AiResultResponse;
+import com.aimedical.modules.doctor.entity.AiRiskLevel;
 import com.aimedical.modules.doctor.service.DoctorAiService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -202,5 +211,105 @@ class DoctorAiServiceImplTest {
         assertTrue(result.getData().degraded());
         assertNotNull(result.getData().fallbackReason());
         verify(aiService).diagnosis(any(DiagnosisRequest.class));
+    }
+
+    @Test
+    void recommendExamination_shouldMapAiDataWhenServiceSucceeds() {
+        ExaminationRecommendResponse aiData = new ExaminationRecommendResponse();
+        ExaminationRecommendResponse.ExaminationItem item1 =
+                new ExaminationRecommendResponse.ExaminationItem("血常规", "检验", "排查感染");
+        ExaminationRecommendResponse.ExaminationItem item2 =
+                new ExaminationRecommendResponse.ExaminationItem("心电图", "检查", "排查心脏异常");
+        aiData.setItems(List.of(item1, item2));
+        when(aiService.recommendExamination(any(ExaminationRecommendRequest.class)))
+                .thenReturn(CompletableFuture.completedFuture(AiResult.success(aiData)));
+
+        DoctorAiService nonDegrading = nonDegradingService();
+        Result<AiResultResponse<AiExaminationResponse>> result =
+                nonDegrading.recommendExamination(new AiExaminationRequest(100L, "感冒", "头痛"), 200L);
+
+        assertEquals("SUCCESS", result.getCode());
+        assertFalse(result.getData().degraded());
+        List<AiExaminationResponse.ExaminationItem> items = result.getData().data().items();
+        assertEquals(2, items.size());
+        assertEquals("血常规", items.get(0).name());
+        assertEquals("检验", items.get(0).category());
+        assertEquals("心电图", items.get(1).name());
+        verify(aiService).recommendExamination(any(ExaminationRecommendRequest.class));
+    }
+
+    @Test
+    void prescriptionAssist_shouldMapAiDataWhenServiceSucceeds() {
+        PrescriptionAssistResponse aiData = new PrescriptionAssistResponse();
+        PrescriptionAssistResponse.RecommendedDrug drug =
+                new PrescriptionAssistResponse.RecommendedDrug(
+                        "阿莫西林", "0.25g", "每次1粒", "每日三次", "抗感染");
+        aiData.setDrugs(List.of(drug));
+        aiData.setSummary("建议抗感染治疗");
+        when(aiService.prescriptionAssist(any(PrescriptionAssistRequest.class)))
+                .thenReturn(CompletableFuture.completedFuture(AiResult.success(aiData)));
+
+        DoctorAiService nonDegrading = nonDegradingService();
+        Result<AiResultResponse<AiPrescriptionAssistResponse>> result =
+                nonDegrading.prescriptionAssist(new AiPrescriptionAssistRequest(100L, "感冒", "头痛"), 200L);
+
+        assertEquals("SUCCESS", result.getCode());
+        assertFalse(result.getData().degraded());
+        AiPrescriptionAssistResponse data = result.getData().data();
+        assertEquals(1, data.drugs().size());
+        assertEquals("阿莫西林", data.drugs().get(0).drugName());
+        assertEquals("0.25g", data.drugs().get(0).specification());
+        assertEquals("建议抗感染治疗", data.summary());
+        verify(aiService).prescriptionAssist(any(PrescriptionAssistRequest.class));
+    }
+
+    @Test
+    void prescriptionAudit_shouldMapAiDataWhenServiceSucceeds() {
+        PrescriptionCheckResponse aiData = new PrescriptionCheckResponse();
+        aiData.setRiskLevel("HIGH");
+        aiData.setWarnings(List.of("与现有药物存在相互作用"));
+        aiData.setPassed(false);
+        when(aiService.prescriptionCheck(any(PrescriptionCheckRequest.class)))
+                .thenReturn(CompletableFuture.completedFuture(AiResult.success(aiData)));
+
+        DoctorAiService nonDegrading = nonDegradingService();
+        Result<AiResultResponse<AiPrescriptionAuditResponse>> result =
+                nonDegrading.prescriptionAudit(
+                        new AiPrescriptionAuditRequest(1L, "感冒", List.of("阿莫西林")), 200L);
+
+        assertEquals("SUCCESS", result.getCode());
+        assertFalse(result.getData().degraded());
+        AiPrescriptionAuditResponse data = result.getData().data();
+        assertEquals(AiRiskLevel.HIGH, data.riskLevel());
+        assertEquals(1, data.warnings().size());
+        assertFalse(data.passed());
+        verify(aiService).prescriptionCheck(any(PrescriptionCheckRequest.class));
+    }
+
+    @Test
+    void generateMedicalRecord_shouldMapAiDataWhenServiceSucceeds() {
+        MedicalRecordGenResponse aiData = new MedicalRecordGenResponse();
+        aiData.setChiefComplaint("头痛三天");
+        aiData.setPresentIllness("三天前无明显诱因出现头痛");
+        aiData.setPastHistory("高血压五年");
+        aiData.setDiagnosis("偏头痛");
+        aiData.setTreatmentPlan("布洛芬口服");
+        when(aiService.generateMedicalRecord(any(MedicalRecordGenRequest.class)))
+                .thenReturn(CompletableFuture.completedFuture(AiResult.success(aiData)));
+
+        DoctorAiService nonDegrading = nonDegradingService();
+        Result<AiResultResponse<AiMedicalRecordGenResponse>> result =
+                nonDegrading.generateMedicalRecord(
+                        new AiMedicalRecordGenRequest(100L, 1L, "头痛", "无", "无", "感冒"), 200L);
+
+        assertEquals("SUCCESS", result.getCode());
+        assertFalse(result.getData().degraded());
+        AiMedicalRecordGenResponse data = result.getData().data();
+        assertEquals("头痛三天", data.chiefComplaint());
+        assertEquals("三天前无明显诱因出现头痛", data.presentIllness());
+        assertEquals("高血压五年", data.pastHistory());
+        assertEquals("偏头痛", data.diagnosis());
+        assertEquals("布洛芬口服", data.treatmentPlan());
+        verify(aiService).generateMedicalRecord(any(MedicalRecordGenRequest.class));
     }
 }
