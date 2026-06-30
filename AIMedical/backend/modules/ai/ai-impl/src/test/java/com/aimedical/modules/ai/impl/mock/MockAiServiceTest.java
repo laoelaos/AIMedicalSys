@@ -21,6 +21,7 @@ import com.aimedical.modules.ai.api.dto.triage.TriageResponse;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 class MockAiServiceTest {
@@ -33,8 +34,22 @@ class MockAiServiceTest {
     }
 
     @Test
-    void triageShouldReturnMockData() {
-        var future = service.triage(new TriageRequest());
+    void triageShouldReturnQuestionOnFirstRequest() {
+        TriageRequest req = new TriageRequest();
+        req.setChiefComplaint("头痛三天");
+        var future = service.triage(req);
+        var data = future.join().getData();
+        assertNotNull(data.getSessionId());
+        assertFalse(data.isComplete());
+        assertNotNull(data.getQuestion());
+    }
+
+    @Test
+    void triageShouldReturnFullResultWithResponses() {
+        TriageRequest req = new TriageRequest();
+        req.setChiefComplaint("头痛三天");
+        req.setAdditionalResponses(List.of("持续了三天", "有恶心症状"));
+        var future = service.triage(req);
         assertNotNull(future);
         assertTrue(future.isDone());
         var result = future.join();
@@ -42,9 +57,13 @@ class MockAiServiceTest {
         assertFalse(result.isDegraded());
         assertNotNull(result.getData());
         var data = result.getData();
-        assertNotNull(data.getRecommendedDepartments());
-        assertEquals("mock_departmentName", data.getRecommendedDepartments().get(0).getDepartmentName());
-        assertEquals("mock_reason", data.getReason());
+        assertNotNull(data.getSessionId());
+        assertTrue(data.isComplete());
+        assertNotNull(data.getDepartments());
+        assertEquals("神经内科", data.getDepartments().get(0).getDepartmentName());
+        assertEquals(Integer.valueOf(92), data.getDepartments().get(0).getScore());
+        assertNotNull(data.getDoctors());
+        assertEquals("王主任", data.getDoctors().get(0).getDoctorName());
     }
 
     @Test

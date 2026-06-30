@@ -4,25 +4,31 @@ import java.util.List;
 
 public class TriageResponse {
 
-    private List<RecommendedDepartment> recommendedDepartments;
+    private String sessionId;
+    private boolean isComplete;
+    private String question;
+    private List<RecommendedDepartment> departments;
+    private List<RecommendedDoctor> doctors;
     private String reason;
 
     public TriageResponse() {
     }
 
-    public List<RecommendedDepartment> getRecommendedDepartments() {
-        return recommendedDepartments;
-    }
+    public String getSessionId() { return sessionId; }
+    public void setSessionId(String v) { this.sessionId = v; }
 
-    public void setRecommendedDepartments(List<RecommendedDepartment> recommendedDepartments) {
-        this.recommendedDepartments = recommendedDepartments;
-    }
+    public boolean isComplete() { return isComplete; }
+    public void setComplete(boolean v) { isComplete = v; }
 
-    public String getReason() {
-        return reason;
-    }
+    public String getQuestion() { return question; }
+    public void setQuestion(String v) { this.question = v; }
 
-    public void setReason(String reason) {
-        this.reason = reason;
-    }
+    public List<RecommendedDepartment> getDepartments() { return departments; }
+    public void setDepartments(List<RecommendedDepartment> v) { this.departments = v; }
+
+    public List<RecommendedDoctor> getDoctors() { return doctors; }
+    public void setDoctors(List<RecommendedDoctor> v) { this.doctors = v; }
+
+    public String getReason() { return reason; }
+    public void setReason(String v) { this.reason = v; }
 }

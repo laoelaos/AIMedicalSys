@@ -10,4 +10,6 @@ import java.util.List;
 public interface RegistrationRepository extends JpaRepository<RegistrationEntity, Long> {
 
     List<RegistrationEntity> findByUserIdAndDeletedFalseOrderByCreatedAtDesc(Long userId);
+
+    boolean existsByUserIdAndTimeSlotAndStatusNotAndDeletedFalse(Long userId, String timeSlot, String status);
 }

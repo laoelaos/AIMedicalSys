@@ -523,5 +523,48 @@ CREATE TABLE `sys_token` (
   KEY `idx_user_id_expires_at` (`user_id`, `expires_at`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='令牌表';
 
+-- ---------------------------------------------
+-- 22. registration
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `registration`;
+CREATE TABLE `registration` (
+  `id`                BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id`           BIGINT       NOT NULL                COMMENT '用户ID',
+  `registration_type` VARCHAR(20)  NOT NULL                COMMENT '挂号类型(OUTPATIENT/EXAMINATION)',
+  `doctor_name`       VARCHAR(100) DEFAULT NULL            COMMENT '医生姓名',
+  `department_name`   VARCHAR(100) DEFAULT NULL            COMMENT '科室名称',
+  `exam_item_name`    VARCHAR(200) DEFAULT NULL            COMMENT '检查项目名称',
+  `exam_item_id`      BIGINT       DEFAULT NULL            COMMENT '检查项目ID',
+  `time_slot`         VARCHAR(50)  DEFAULT NULL            COMMENT '预约时段',
+  `status`            VARCHAR(20)  NOT NULL DEFAULT 'PENDING' COMMENT '状态',
+  `created_at`        DATETIME     DEFAULT NULL            COMMENT '创建时间',
+  `updated_at`        DATETIME     DEFAULT NULL            COMMENT '更新时间',
+  `deleted`           TINYINT(1)   NOT NULL DEFAULT 0     COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id_status` (`user_id`, `status`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='挂号记录表';
+
+-- ---------------------------------------------
+-- 23. triage_record
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `triage_record`;
+CREATE TABLE `triage_record` (
+  `id`                      BIGINT        NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `patient_id`              BIGINT        NOT NULL                COMMENT '患者ID',
+  `chief_complaint`         VARCHAR(2000) NOT NULL                COMMENT '主诉',
+  `session_id`              VARCHAR(100)  DEFAULT NULL            COMMENT '会话标识',
+  `recommended_departments` VARCHAR(4000) DEFAULT NULL            COMMENT '推荐科室(逗号分隔)',
+  `recommended_doctors`     VARCHAR(4000) DEFAULT NULL            COMMENT '推荐医生(逗号分隔)',
+  `is_degraded`             TINYINT(1)    NOT NULL DEFAULT 0     COMMENT '是否降级',
+  `rule_version`            VARCHAR(50)   DEFAULT NULL            COMMENT '规则版本',
+  `rule_set_id`             VARCHAR(50)   DEFAULT NULL            COMMENT '规则集ID',
+  `matched_rules`           VARCHAR(2000) DEFAULT NULL            COMMENT '命中规则(逗号分隔)',
+  `created_at`              DATETIME      DEFAULT NULL            COMMENT '创建时间',
+  `updated_at`              DATETIME      DEFAULT NULL            COMMENT '更新时间',
+  `deleted`                 TINYINT(1)    NOT NULL DEFAULT 0     COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_patient_id_created_at` (`patient_id`, `created_at`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='分诊记录表';
+
 SET FOREIGN_KEY_CHECKS = 1;
 SET REFERENTIAL_INTEGRITY TRUE;

@@ -33,8 +33,10 @@ import com.aimedical.modules.ai.api.dto.prescription.PrescriptionCheckResponse;
 import com.aimedical.modules.ai.api.dto.schedule.ScheduleRequest;
 import com.aimedical.modules.ai.api.dto.schedule.ScheduleResponse;
 import com.aimedical.modules.ai.api.dto.triage.RecommendedDepartment;
+import com.aimedical.modules.ai.api.dto.triage.RecommendedDoctor;
 import com.aimedical.modules.ai.api.dto.triage.TriageRequest;
 import com.aimedical.modules.ai.api.dto.triage.TriageResponse;
+import java.util.UUID;
 
 @Service
 @ConditionalOnProperty(name = "ai.mock.enabled", havingValue = "true", matchIfMissing = true)
@@ -42,11 +44,30 @@ public class MockAiService implements AiService {
 
     @Override
     public CompletableFuture<AiResult<TriageResponse>> triage(TriageRequest request) {
-        RecommendedDepartment dept = new RecommendedDepartment();
-        dept.setDepartmentName("mock_departmentName");
         TriageResponse response = new TriageResponse();
-        response.setRecommendedDepartments(List.of(dept));
-        response.setReason("mock_reason");
+        response.setSessionId(request.getSessionId() != null
+                ? request.getSessionId()
+                : UUID.randomUUID().toString().substring(0, 8));
+
+        if (request.getAdditionalResponses() == null || request.getAdditionalResponses().isEmpty()) {
+            response.setComplete(false);
+            response.setQuestion("请问这个症状持续多久了？有没有其他伴随症状？之前是否因此就医或服用过药物？");
+        } else {
+            response.setComplete(true);
+            RecommendedDepartment dept = new RecommendedDepartment();
+            dept.setDepartmentId(1);
+            dept.setDepartmentName("神经内科");
+            dept.setScore(92);
+            response.setDepartments(List.of(dept));
+
+            RecommendedDoctor doc = new RecommendedDoctor();
+            doc.setDoctorId(101);
+            doc.setDoctorName("王主任");
+            doc.setAvailableSlotCount(5);
+            doc.setScore(95);
+            response.setDoctors(List.of(doc));
+            response.setReason("根据主诉综合分析，建议优先就诊神经内科以排除相关疾病");
+        }
         return CompletableFuture.completedFuture(AiResult.success(response));
     }
 

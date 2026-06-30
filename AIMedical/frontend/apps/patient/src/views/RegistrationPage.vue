@@ -258,7 +258,7 @@ function getMocks(): RegistrationRecord[] {
   return [
     {
       id: 1001, registration_type: 'OUTPATIENT', doctor_name: '王主任', department_name: '神经内科',
-      time_slot: '07-01 08:00-08:30', status: 'CONFIRMED', created_at: '2026-06-29 10:30', can_cancel: true,
+      time_slot: '07-01 08:00-08:30', status: 'PENDING', created_at: '2026-06-29 10:30', can_cancel: true,
     },
     {
       id: 1002, registration_type: 'EXAMINATION', exam_item_name: '头颅 CT',

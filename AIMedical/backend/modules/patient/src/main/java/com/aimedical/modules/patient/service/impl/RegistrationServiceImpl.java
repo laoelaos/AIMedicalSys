@@ -33,6 +33,12 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Override
     @Transactional
     public RegistrationResponse create(RegistrationRequest req, Long userId) {
+        if (req.getTimeSlot() != null
+                && registrationRepository.existsByUserIdAndTimeSlotAndStatusNotAndDeletedFalse(
+                        userId, req.getTimeSlot(), "CANCELLED")) {
+            throw new BusinessException(GlobalErrorCode.DUPLICATE, "该时段已有有效挂号，请勿重复提交");
+        }
+
         RegistrationEntity entity = new RegistrationEntity();
         entity.setUserId(userId);
         entity.setRegistrationType(req.getRegistrationType());
@@ -41,7 +47,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         entity.setExamItemName(req.getExamItemName());
         entity.setExamItemId(req.getExamItemId());
         entity.setTimeSlot(req.getTimeSlot());
-        entity.setStatus("CONFIRMED");
+        entity.setStatus("PENDING");
         entity = registrationRepository.save(entity);
         log.info("Registration created: id={}, userId={}, type={}", entity.getId(), userId, req.getRegistrationType());
         return toResponse(entity);
@@ -87,6 +93,13 @@ public class RegistrationServiceImpl implements RegistrationService {
             return resp;
         }
 
+        if (entity.getTimeSlot() != null) {
+            CancelResponse timeWindowCheck = checkTimeWindow(entity.getTimeSlot());
+            if (timeWindowCheck != null) {
+                return timeWindowCheck;
+            }
+        }
+
         CancelResponse resp = new CancelResponse();
         resp.setSuccess(true);
         resp.setMessage("挂号已成功取消");
@@ -101,6 +114,33 @@ public class RegistrationServiceImpl implements RegistrationService {
         registrationRepository.save(entity);
         log.info("Registration cancelled: id={}, userId={}", regId, userId);
         return resp;
+    }
+
+    private CancelResponse checkTimeWindow(String timeSlot) {
+        try {
+            String[] parts = timeSlot.split(" ");
+            if (parts.length < 2) return null;
+            String datePart = parts[0];
+            String startTime = parts[1].split("-")[0];
+
+            int year = LocalDateTime.now().getYear();
+            LocalDateTime slotDateTime = LocalDateTime.parse(
+                    year + "-" + datePart + "T" + startTime + ":00",
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+            );
+
+            long hoursUntil = ChronoUnit.HOURS.between(LocalDateTime.now(), slotDateTime);
+            if (hoursUntil < 2) {
+                CancelResponse resp = new CancelResponse();
+                resp.setSuccess(false);
+                resp.setOverWindow(true);
+                resp.setMessage("已超过自助取消时间窗，请联系线下窗口");
+                return resp;
+            }
+        } catch (Exception e) {
+            log.warn("Failed to parse time_slot for window check: {}", timeSlot, e);
+        }
+        return null;
     }
 
     private RegistrationResponse toResponse(RegistrationEntity e) {

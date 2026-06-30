@@ -21,7 +21,8 @@ public enum GlobalErrorCode implements ErrorCode {
     TOKEN_REFRESH_FAILED("TOKEN_REFRESH_FAILED", "令牌刷新失败，请重新登录"),
     PASSWORD_CHANGE_REQUIRED("PASSWORD_CHANGE_REQUIRED", "需要修改密码"),
     CHILDREN_EXIST("CHILDREN_EXIST", "存在子菜单，无法删除"),
-    PASSWORD_MISMATCH("PASSWORD_MISMATCH", "旧密码不正确");
+    PASSWORD_MISMATCH("PASSWORD_MISMATCH", "旧密码不正确"),
+    DUPLICATE("DUPLICATE", "重复提交");
 
     private final String code;
     private final String message;

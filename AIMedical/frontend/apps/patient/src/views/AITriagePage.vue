@@ -185,14 +185,14 @@ function buildTriageRequest(): TriageRequest {
 
 async function handleSubmit() {
   if (!canSubmit.value) return
+  if (failureCount.value >= 3) return
   submitting.value = true
   try {
     const req = buildTriageRequest()
     const result = await triageApi.triage(req)
     await processTriageResult(result)
   } catch {
-    // API 调用抛出异常时使用 Mock 兜底
-    processMockTriage()
+    handleFailure()
   } finally {
     submitting.value = false
   }
@@ -201,6 +201,7 @@ async function handleSubmit() {
 async function handleFollowUp() {
   const text = additionalResponse.value.trim()
   if (!text) return
+  if (failureCount.value >= 3) return
   submitting.value = true
   additionalResponses.value.push(text)
   additionalResponse.value = ''
@@ -214,8 +215,7 @@ async function handleFollowUp() {
     const result = await triageApi.triage(req)
     await processTriageResult(result)
   } catch {
-    // API 异常 + 有追问 → 直接给出最终结果
-    processMockResult()
+    handleFailure()
   } finally {
     submitting.value = false
   }
@@ -229,7 +229,7 @@ async function processTriageResult(result: TriageResponse | BusinessError) {
       await loadDepartments()
       return
     }
-    processMockTriage()
+    handleFailure()
     return
   }
 
@@ -247,92 +247,8 @@ async function processTriageResult(result: TriageResponse | BusinessError) {
     currentQuestion.value = data.question
     failureCount.value = 0
   } else {
-    processMockTriage()
+    handleFailure()
   }
-}
-
-function processMockTriage() {
-  if (!sessionId.value) {
-    // 首次提交 → 追问
-    sessionId.value = 'mock-session-' + Date.now()
-    currentQuestion.value = getMockQuestion()
-    failureCount.value = 0
-  } else {
-    // 已有 session → 直接给结果
-    processMockResult()
-  }
-}
-
-function processMockResult() {
-  lastResult.value = {
-    session_id: sessionId.value || 'mock-session',
-    is_complete: true,
-    reason: getMockReason(),
-    departments: getMockDepartments(),
-    doctors: getMockDoctors(),
-  }
-  triageComplete.value = true
-  currentQuestion.value = ''
-  failureCount.value = 0
-}
-
-function getMockQuestion(): string {
-  const complaints = chiefComplaint.value.toLowerCase()
-  if (complaints.includes('头') || complaints.includes('疼')) {
-    return '请问头痛是持续性的还是阵发性的？有没有伴有恶心、眩晕或视力模糊等症状？'
-  }
-  if (complaints.includes('发烧') || complaints.includes('发热') || complaints.includes('体温')) {
-    return '请问发烧持续了几天？有没有吃过退烧药？是否有咳嗽、咽痛等伴随症状？'
-  }
-  if (complaints.includes('咳嗽') || complaints.includes('喉咙')) {
-    return '请问咳嗽是干咳还是有痰？痰的颜色是什么样的？是否伴有胸闷或呼吸困难？'
-  }
-  if (complaints.includes('肚') || complaints.includes('胃') || complaints.includes('腹')) {
-    return '请问疼痛的具体位置在哪里（上腹/下腹/左侧/右侧）？有没有腹泻、恶心或呕吐的情况？'
-  }
-  return '请问这个症状是什么时候开始的？之前是否因此就医或服用过药物？有没有其他伴随症状？'
-}
-
-function getMockReason(): string {
-  const complaints = chiefComplaint.value.toLowerCase()
-  if (complaints.includes('头') || complaints.includes('疼')) {
-    return '根据您的头痛症状描述，结合可能伴随的眩晕和恶心表现，建议优先就诊神经内科以排除偏头痛、紧张性头痛或神经系统其他疾病。'
-  }
-  if (complaints.includes('发烧') || complaints.includes('发热') || complaints.includes('体温')) {
-    return '根据您的发热症状描述，怀疑为上呼吸道感染或其它感染性疾病，建议就诊普通内科进行进一步检查。'
-  }
-  return '根据您的主诉，AI 综合分析认为您可能存在相关科室的常见疾病，建议优先就诊以获得专业诊断。具体病因需医生面诊结合检查确认。'
-}
-
-function getMockDepartments(): TriageDepartment[] {
-  const complaints = chiefComplaint.value.toLowerCase()
-  if (complaints.includes('头') || complaints.includes('疼') || complaints.includes('晕')) {
-    return [
-      { department_id: 1, department_name: '神经内科', score: 92 },
-      { department_id: 2, department_name: '普通内科', score: 65 },
-      { department_id: 3, department_name: '中医科', score: 38 },
-    ]
-  }
-  if (complaints.includes('发烧') || complaints.includes('发热') || complaints.includes('咳嗽')) {
-    return [
-      { department_id: 4, department_name: '呼吸内科', score: 88 },
-      { department_id: 5, department_name: '普通内科', score: 72 },
-      { department_id: 6, department_name: '感染科', score: 45 },
-    ]
-  }
-  return [
-    { department_id: 7, department_name: '普通内科', score: 75 },
-    { department_id: 8, department_name: '全科门诊', score: 60 },
-    { department_id: 9, department_name: '中医科', score: 35 },
-  ]
-}
-
-function getMockDoctors(): { doctor_id: number; doctor_name: string; available_slot_count: number; score: number }[] {
-  return [
-    { doctor_id: 101, doctor_name: '王主任', available_slot_count: 5, score: 95 },
-    { doctor_id: 102, doctor_name: '张副主任', available_slot_count: 3, score: 82 },
-    { doctor_id: 103, doctor_name: '李主治医师', available_slot_count: 8, score: 70 },
-  ]
 }
 
 function handleFailure() {
