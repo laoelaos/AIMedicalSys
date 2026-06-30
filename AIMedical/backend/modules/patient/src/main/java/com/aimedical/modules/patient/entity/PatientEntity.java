@@ -12,6 +12,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,18 +25,36 @@ public class PatientEntity extends BaseEntity {
     @Column(name = "user_id", unique = true, nullable = false)
     private Long userId;
 
-    @Column(nullable = false)
+    @Column(name = "real_name", length = 64, nullable = false)
     private String realName;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private Gender gender;
 
-    @Column(length = 500)
-    private String avatarUrl;
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
 
-    @Column(length = 20)
+    @Column(name = "age")
+    private Integer age;
+
+    @Column(name = "id_card", length = 32)
+    private String idCard;
+
+    @Column(name = "phone", length = 20)
     private String phone;
+
+    @Column(name = "emergency_contact", length = 64)
+    private String emergencyContact;
+
+    @Column(name = "emergency_phone", length = 20)
+    private String emergencyPhone;
+
+    @Column(name = "address", length = 255)
+    private String address;
+
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
 
     // CascadeType excludes REMOVE to avoid physical deletes bypassing @SQLDelete on BaseEntity;
     // child records are soft-deleted explicitly via Service-level repository.delete().
@@ -53,7 +72,4 @@ public class PatientEntity extends BaseEntity {
 
     @OneToMany(mappedBy = "patient", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     private List<PatientMedicationHistory> medicationHistories = new ArrayList<>();
-
-    @Column(length = 2000)
-    private String emergencyContact;
 }

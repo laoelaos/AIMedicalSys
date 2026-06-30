@@ -11,7 +11,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Set;
 
@@ -21,9 +23,10 @@ import java.util.Set;
  * <p>系统用户，支持多种用户类型（管理员/医生/患者）。
  */
 @Entity
-@Table(name = "sys_user", uniqueConstraints = {
-    @UniqueConstraint(name = "uk_sys_user_username", columnNames = "username")
-})
+@Table(name = "sys_user")
+@Getter
+@Setter
+@EqualsAndHashCode(callSuper = true)
 public class User extends BaseEntity {
 
     @Column(nullable = false, unique = true)
@@ -82,9 +85,8 @@ public class User extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "post_id"))
     private Set<Post> posts;
 
-    public String getUsername() {
-        return username;
-    }
+    @Column(length = 500)
+    private String remark;
 
     public void setUsername(String username) {
         this.username = username;

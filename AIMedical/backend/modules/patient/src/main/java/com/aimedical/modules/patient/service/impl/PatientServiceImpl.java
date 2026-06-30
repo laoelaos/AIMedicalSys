@@ -355,4 +355,16 @@ public class PatientServiceImpl implements PatientService {
             return null;
         }
     }
+
+    @Override
+    public boolean existsById(Long id) {
+        return patientRepository.existsById(id);
+    }
+
+    @Override
+    public String getRealName(Long id) {
+        return patientRepository.findById(id)
+                .map(patient -> patient.getRealName())
+                .orElse(null);
+    }
 }

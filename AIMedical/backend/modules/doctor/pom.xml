@@ -9,6 +9,11 @@
     <artifactId>doctor</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <jacoco.skip>false</jacoco.skip>
+        <jacoco.skip.check>false</jacoco.skip.check>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -54,9 +59,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <properties>
-        <jacoco.skip>false</jacoco.skip>
-        <jacoco.skip.check>false</jacoco.skip.check>
-    </properties>
 </project>

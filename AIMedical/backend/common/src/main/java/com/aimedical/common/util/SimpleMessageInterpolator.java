@@ -5,18 +5,25 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.text.MessageFormat;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 public class SimpleMessageInterpolator implements MessageInterpolator {
 
     private static final Logger log = LoggerFactory.getLogger(SimpleMessageInterpolator.class);
+    private static final Pattern NAMED_PLACEHOLDER = Pattern.compile("\\{[^}]+\\}");
+    private static final Pattern INDEXED_PLACEHOLDER = Pattern.compile(".*\\{\\d+\\}.*");
 
     @Override
     public String interpolate(String template, Object[] args) {
+        if (template == null) {
+            return null;
+        }
         if (args == null || args.length == 0) {
             return template;
         }
-        if (template.matches(".*\\{\\d+.*\\}.*")) {
+        if (INDEXED_PLACEHOLDER.matcher(template).matches()) {
             try {
                 return MessageFormat.format(template, args);
             } catch (IllegalArgumentException e) {
@@ -27,8 +34,14 @@ public class SimpleMessageInterpolator implements MessageInterpolator {
             }
         }
         String result = template;
+        Matcher matcher = NAMED_PLACEHOLDER.matcher(result);
         for (Object arg : args) {
-            result = result.replaceFirst("\\{[^}]+\\}", String.valueOf(arg));
+            if (!matcher.find()) {
+                break;
+            }
+            String replacement = Matcher.quoteReplacement(String.valueOf(arg));
+            result = matcher.replaceFirst(replacement);
+            matcher = NAMED_PLACEHOLDER.matcher(result);
         }
         return result;
     }

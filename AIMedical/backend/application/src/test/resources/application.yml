@@ -16,3 +16,8 @@ spring:
   sql:
     init:
       mode: never
+
+jwt:
+  secret: dGVzdC1zZWNyZXQta2V5LWZvci1pbnRlZ3JhdGlvbi10ZXN0cy1taW4tMzI=
+  access-token-expiration: 86400
+  refresh-token-expiration: 604800

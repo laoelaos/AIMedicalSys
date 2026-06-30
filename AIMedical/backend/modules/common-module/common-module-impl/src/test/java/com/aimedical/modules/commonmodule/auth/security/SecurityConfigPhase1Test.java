@@ -18,6 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import jakarta.servlet.Filter;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -93,7 +94,7 @@ class SecurityConfigPhase1Test {
         SecurityFilterChain chain = config.filterChain(http, globalRateLimitFilter, jwtAuthenticationFilter, passwordChangeCheckFilter, messageInterpolator);
         List<Filter> filters = chain.getFilters();
 
-        List<Class<? extends Filter>> classes = filters.stream().map(Filter::getClass).toList();
+        List<Class<? extends Filter>> classes = filters.stream().map(Filter::getClass).collect(Collectors.toList());
         int idxGlobal = classes.indexOf(GlobalRateLimitFilter.class);
         int idxJwt   = classes.indexOf(JwtAuthenticationFilter.class);
         int idxPwd   = classes.indexOf(PasswordChangeCheckFilter.class);

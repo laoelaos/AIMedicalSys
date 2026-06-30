@@ -46,4 +46,8 @@ public interface PatientService {
     Result<MedicationHistoryResponse> addMedication(MedicationHistoryRequest request);
     Result<MedicationHistoryResponse> updateMedication(Long id, MedicationHistoryRequest request);
     Result<Void> deleteMedication(Long id);
+
+    // Cross-module queries
+    boolean existsById(Long id);
+    String getRealName(Long id);
 }

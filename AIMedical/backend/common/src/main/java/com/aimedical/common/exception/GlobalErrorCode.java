@@ -1,5 +1,8 @@
 package com.aimedical.common.exception;
 
+import lombok.Getter;
+
+@Getter
 public enum GlobalErrorCode implements ErrorCode {
 
     SUCCESS("SUCCESS", "成功"),
@@ -30,7 +33,13 @@ public enum GlobalErrorCode implements ErrorCode {
     CONSULTATION_NOT_FOUND("CONSULTATION_NOT_FOUND", "叫号记录不存在"),
     CONSULTATION_NOT_CALLABLE("CONSULTATION_NOT_CALLABLE", "当前叫号记录无法执行该操作"),
     CONFLICT("CONFLICT", "操作冲突，请刷新后重试"),
-    AI_SERVICE_UNAVAILABLE("AI_SERVICE_UNAVAILABLE", "AI 服务不可用，已降级处理");
+    AI_SERVICE_UNAVAILABLE("AI_SERVICE_UNAVAILABLE", "AI 服务不可用，已降级处理"),
+    REGISTRATION_STATUS_INVALID("REGISTRATION_STATUS_INVALID", "当前挂号状态不允许此操作"),
+    REGISTRATION_CANCEL_FORBIDDEN("REGISTRATION_CANCEL_FORBIDDEN", "预约时间距现在不足2小时，无法在线取消，请到窗口线下办理"),
+    ORDER_STATUS_INVALID("ORDER_STATUS_INVALID", "当前订单状态不允许此操作"),
+    ORDER_ITEM_EMPTY("ORDER_ITEM_EMPTY", "订单至少需要包含一个项目"),
+    CHARGE_PRE_ORDER_EXISTS("CHARGE_PRE_ORDER_EXISTS", "该订单已生成收费前置单，不可重复生成"),
+    TRIAGE_RECORD_EXISTS("TRIAGE_RECORD_EXISTS", "该挂号已存在分诊记录，不可重复创建");
 
     private final String code;
     private final String message;
@@ -38,15 +47,5 @@ public enum GlobalErrorCode implements ErrorCode {
     GlobalErrorCode(String code, String message) {
         this.code = code;
         this.message = message;
-    }
-
-    @Override
-    public String getCode() {
-        return code;
-    }
-
-    @Override
-    public String getMessage() {
-        return message;
     }
 }
