@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface TriageRecordRepository extends JpaRepository<TriageRecordEntity, Long> {
+public interface PatientTriageRecordRepository extends JpaRepository<TriageRecordEntity, Long> {
 
     List<TriageRecordEntity> findByPatientIdAndDeletedFalseOrderByCreatedAtDesc(Long patientId);
 

@@ -6,7 +6,7 @@ import com.aimedical.modules.patient.dto.RegistrationResponse;
 
 import java.util.List;
 
-public interface RegistrationService {
+public interface PatientRegistrationService {
 
     RegistrationResponse create(RegistrationRequest req, Long userId);
 

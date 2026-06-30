@@ -6,7 +6,7 @@ import com.aimedical.modules.commonmodule.api.dto.CurrentUserResponse;
 import com.aimedical.modules.patient.dto.CancelResponse;
 import com.aimedical.modules.patient.dto.RegistrationRequest;
 import com.aimedical.modules.patient.dto.RegistrationResponse;
-import com.aimedical.modules.patient.service.RegistrationService;
+import com.aimedical.modules.patient.service.PatientRegistrationService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,12 +14,12 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/patient/registration")
-public class RegistrationController {
+public class PatientRegistrationController {
 
-    private final RegistrationService registrationService;
+    private final PatientRegistrationService registrationService;
     private final AuthService authService;
 
-    public RegistrationController(RegistrationService registrationService, AuthService authService) {
+    public PatientRegistrationController(PatientRegistrationService registrationService, AuthService authService) {
         this.registrationService = registrationService;
         this.authService = authService;
     }

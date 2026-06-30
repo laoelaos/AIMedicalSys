@@ -147,7 +147,6 @@ class GlobalErrorCodeTest {
     }
 
     @Test
-    @Test
     void duplicateShouldReturnCorrectCodeAndMessage() {
         assertEquals("DUPLICATE", GlobalErrorCode.DUPLICATE.getCode());
         assertEquals("重复提交", GlobalErrorCode.DUPLICATE.getMessage());

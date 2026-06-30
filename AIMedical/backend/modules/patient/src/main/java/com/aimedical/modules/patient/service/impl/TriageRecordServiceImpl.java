@@ -5,7 +5,7 @@ import com.aimedical.common.exception.GlobalErrorCode;
 import com.aimedical.modules.patient.dto.TriageRecordRequest;
 import com.aimedical.modules.patient.dto.TriageRecordResponse;
 import com.aimedical.modules.patient.entity.TriageRecordEntity;
-import com.aimedical.modules.patient.repository.TriageRecordRepository;
+import com.aimedical.modules.patient.repository.PatientTriageRecordRepository;
 import com.aimedical.modules.patient.service.TriageRecordService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,9 +24,9 @@ public class TriageRecordServiceImpl implements TriageRecordService {
 
     private static final Logger log = LoggerFactory.getLogger(TriageRecordServiceImpl.class);
 
-    private final TriageRecordRepository triageRecordRepository;
+    private final PatientTriageRecordRepository triageRecordRepository;
 
-    public TriageRecordServiceImpl(TriageRecordRepository triageRecordRepository) {
+    public TriageRecordServiceImpl(PatientTriageRecordRepository triageRecordRepository) {
         this.triageRecordRepository = triageRecordRepository;
     }
 

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface RegistrationRepository extends JpaRepository<RegistrationEntity, Long> {
+public interface PatientRegistrationRepository extends JpaRepository<RegistrationEntity, Long> {
 
     List<RegistrationEntity> findByUserIdAndDeletedFalseOrderByCreatedAtDesc(Long userId);
 

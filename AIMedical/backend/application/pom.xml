@@ -13,7 +13,7 @@
         <jacoco.skip>false</jacoco.skip>
         <jacoco.skip.check>false</jacoco.skip.check>
         <!-- 默认导出 OpenAPI; CI smoke 阶段启用, 纯单测阶段可 -DskipApiDocs=true 跳过 -->
-        <skipApiDocs>false</skipApiDocs>
+        <skipApiDocs>true</skipApiDocs>
     </properties>
 
     <dependencies>

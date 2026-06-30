@@ -6,8 +6,8 @@ import com.aimedical.modules.patient.dto.CancelResponse;
 import com.aimedical.modules.patient.dto.RegistrationRequest;
 import com.aimedical.modules.patient.dto.RegistrationResponse;
 import com.aimedical.modules.patient.entity.RegistrationEntity;
-import com.aimedical.modules.patient.repository.RegistrationRepository;
-import com.aimedical.modules.patient.service.RegistrationService;
+import com.aimedical.modules.patient.repository.PatientRegistrationRepository;
+import com.aimedical.modules.patient.service.PatientRegistrationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -20,13 +20,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class RegistrationServiceImpl implements RegistrationService {
+public class PatientRegistrationServiceImpl implements PatientRegistrationService {
 
-    private static final Logger log = LoggerFactory.getLogger(RegistrationServiceImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(PatientRegistrationServiceImpl.class);
 
-    private final RegistrationRepository registrationRepository;
+    private final PatientRegistrationRepository registrationRepository;
 
-    public RegistrationServiceImpl(RegistrationRepository registrationRepository) {
+    public PatientRegistrationServiceImpl(PatientRegistrationRepository registrationRepository) {
         this.registrationRepository = registrationRepository;
     }
 
