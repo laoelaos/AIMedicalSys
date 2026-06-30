@@ -11,18 +11,37 @@ import java.math.BigDecimal;
 @Data
 public class DoctorEntity extends BaseEntity {
 
-    @Column(nullable = false)
+    @Column(name = "user_id", unique = true, nullable = false)
     private Long userId;
 
-    @Column(nullable = false)
+    @Column(name = "real_name", length = 64, nullable = false)
     private String realName;
 
-    @Column(length = 50)
+    @Column(name = "gender", length = 20)
+    private String gender;
+
+    @Column(name = "title", length = 64)
     private String title;
 
-    @Column(length = 100)
+    @Column(name = "department", length = 64)
     private String department;
 
-    @Column(precision = 10, scale = 2)
+    @Column(name = "specialty", length = 255)
+    private String specialty;
+
+    @Column(name = "introduction", columnDefinition = "TEXT")
+    private String introduction;
+
+    @Column(name = "license_no", length = 64)
+    private String licenseNo;
+
+    @Column(name = "practice_years")
+    private Integer practiceYears;
+
+    @Column(name = "consultation_fee", precision = 10, scale = 2)
     private BigDecimal consultationFee;
+
+    @Column(name = "remark", length = 500)
+    private String remark;
+
 }

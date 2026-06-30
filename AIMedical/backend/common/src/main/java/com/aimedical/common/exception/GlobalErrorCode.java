@@ -1,5 +1,8 @@
 package com.aimedical.common.exception;
 
+import lombok.Getter;
+
+@Getter
 public enum GlobalErrorCode implements ErrorCode {
 
     SUCCESS("SUCCESS", "成功"),
@@ -21,7 +24,13 @@ public enum GlobalErrorCode implements ErrorCode {
     TOKEN_REFRESH_FAILED("TOKEN_REFRESH_FAILED", "令牌刷新失败，请重新登录"),
     PASSWORD_CHANGE_REQUIRED("PASSWORD_CHANGE_REQUIRED", "需要修改密码"),
     CHILDREN_EXIST("CHILDREN_EXIST", "存在子菜单，无法删除"),
-    PASSWORD_MISMATCH("PASSWORD_MISMATCH", "旧密码不正确");
+    PASSWORD_MISMATCH("PASSWORD_MISMATCH", "旧密码不正确"),
+    REGISTRATION_STATUS_INVALID("REGISTRATION_STATUS_INVALID", "当前挂号状态不允许此操作"),
+    REGISTRATION_CANCEL_FORBIDDEN("REGISTRATION_CANCEL_FORBIDDEN", "预约时间距现在不足2小时，无法在线取消，请到窗口线下办理"),
+    ORDER_STATUS_INVALID("ORDER_STATUS_INVALID", "当前订单状态不允许此操作"),
+    ORDER_ITEM_EMPTY("ORDER_ITEM_EMPTY", "订单至少需要包含一个项目"),
+    CHARGE_PRE_ORDER_EXISTS("CHARGE_PRE_ORDER_EXISTS", "该订单已生成收费前置单，不可重复生成"),
+    TRIAGE_RECORD_EXISTS("TRIAGE_RECORD_EXISTS", "该挂号已存在分诊记录，不可重复创建");
 
     private final String code;
     private final String message;
@@ -29,15 +38,5 @@ public enum GlobalErrorCode implements ErrorCode {
     GlobalErrorCode(String code, String message) {
         this.code = code;
         this.message = message;
-    }
-
-    @Override
-    public String getCode() {
-        return code;
-    }
-
-    @Override
-    public String getMessage() {
-        return message;
     }
 }

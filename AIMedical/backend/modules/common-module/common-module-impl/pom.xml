@@ -1,4 +1,6 @@
-<project>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.aimedical</groupId>
@@ -8,6 +10,11 @@
     </parent>
     <artifactId>common-module-impl</artifactId>
     <packaging>jar</packaging>
+
+    <properties>
+        <jacoco.skip>false</jacoco.skip>
+        <jacoco.skip.check>false</jacoco.skip.check>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -62,12 +69,7 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>runtime</scope>
+            <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <properties>
-        <jacoco.skip>false</jacoco.skip>
-        <jacoco.skip.check>false</jacoco.skip.check>
-    </properties>
 </project>
