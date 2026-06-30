@@ -9,6 +9,11 @@
     <artifactId>patient</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <jacoco.skip>false</jacoco.skip>
+        <jacoco.skip.check>false</jacoco.skip.check>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -53,11 +58,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <properties>
-        <jacoco.skip>false</jacoco.skip>
-        <jacoco.skip.check>false</jacoco.skip.check>
-        <jacoco.min.line.coverage>0.10</jacoco.min.line.coverage>
-        <jacoco.min.branch.coverage>0.00</jacoco.min.branch.coverage>
-    </properties>
 </project>

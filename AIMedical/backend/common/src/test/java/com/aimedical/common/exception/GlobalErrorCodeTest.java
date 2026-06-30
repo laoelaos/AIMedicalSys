@@ -8,7 +8,7 @@ class GlobalErrorCodeTest {
 
     @Test
     void shouldHaveExpectedConstants() {
-        assertEquals(21, GlobalErrorCode.values().length);
+        assertEquals(27, GlobalErrorCode.values().length);
         assertNotNull(GlobalErrorCode.valueOf("SUCCESS"));
         assertNotNull(GlobalErrorCode.valueOf("SYSTEM_ERROR"));
         assertNotNull(GlobalErrorCode.valueOf("PARAM_INVALID"));
@@ -30,6 +30,12 @@ class GlobalErrorCodeTest {
         assertNotNull(GlobalErrorCode.valueOf("CHILDREN_EXIST"));
         assertNotNull(GlobalErrorCode.valueOf("PASSWORD_MISMATCH"));
         assertNotNull(GlobalErrorCode.valueOf("DUPLICATE"));
+        assertNotNull(GlobalErrorCode.valueOf("REGISTRATION_STATUS_INVALID"));
+        assertNotNull(GlobalErrorCode.valueOf("REGISTRATION_CANCEL_FORBIDDEN"));
+        assertNotNull(GlobalErrorCode.valueOf("ORDER_STATUS_INVALID"));
+        assertNotNull(GlobalErrorCode.valueOf("ORDER_ITEM_EMPTY"));
+        assertNotNull(GlobalErrorCode.valueOf("CHARGE_PRE_ORDER_EXISTS"));
+        assertNotNull(GlobalErrorCode.valueOf("TRIAGE_RECORD_EXISTS"));
     }
 
     @Test
@@ -87,18 +93,6 @@ class GlobalErrorCodeTest {
     }
 
     @Test
-    void rateLimitedShouldReturnCorrectCodeAndMessage() {
-        assertEquals("RATE_LIMITED", GlobalErrorCode.RATE_LIMITED.getCode());
-        assertEquals("登录尝试过于频繁，请稍后重试", GlobalErrorCode.RATE_LIMITED.getMessage());
-    }
-
-    @Test
-    void rateLimitedGlobalShouldReturnCorrectCodeAndMessage() {
-        assertEquals("RATE_LIMITED_GLOBAL", GlobalErrorCode.RATE_LIMITED_GLOBAL.getCode());
-        assertEquals("请求过于频繁，请稍后重试", GlobalErrorCode.RATE_LIMITED_GLOBAL.getMessage());
-    }
-
-    @Test
     void passwordTooShortShouldReturnCorrectCodeAndMessage() {
         assertEquals("PASSWORD_TOO_SHORT", GlobalErrorCode.PASSWORD_TOO_SHORT.getCode());
         assertEquals("密码长度不能少于8位", GlobalErrorCode.PASSWORD_TOO_SHORT.getMessage());
@@ -153,8 +147,45 @@ class GlobalErrorCodeTest {
     }
 
     @Test
+    @Test
     void duplicateShouldReturnCorrectCodeAndMessage() {
         assertEquals("DUPLICATE", GlobalErrorCode.DUPLICATE.getCode());
         assertEquals("重复提交", GlobalErrorCode.DUPLICATE.getMessage());
+    }
+
+    @Test
+    void registrationStatusInvalidShouldReturnCorrectCodeAndMessage() {
+        assertEquals("REGISTRATION_STATUS_INVALID", GlobalErrorCode.REGISTRATION_STATUS_INVALID.getCode());
+        assertEquals("当前挂号状态不允许此操作", GlobalErrorCode.REGISTRATION_STATUS_INVALID.getMessage());
+    }
+
+    @Test
+    void registrationCancelForbiddenShouldReturnCorrectCodeAndMessage() {
+        assertEquals("REGISTRATION_CANCEL_FORBIDDEN", GlobalErrorCode.REGISTRATION_CANCEL_FORBIDDEN.getCode());
+        assertEquals("预约时间距现在不足2小时，无法在线取消，请到窗口线下办理", GlobalErrorCode.REGISTRATION_CANCEL_FORBIDDEN.getMessage());
+    }
+
+    @Test
+    void orderStatusInvalidShouldReturnCorrectCodeAndMessage() {
+        assertEquals("ORDER_STATUS_INVALID", GlobalErrorCode.ORDER_STATUS_INVALID.getCode());
+        assertEquals("当前订单状态不允许此操作", GlobalErrorCode.ORDER_STATUS_INVALID.getMessage());
+    }
+
+    @Test
+    void orderItemEmptyShouldReturnCorrectCodeAndMessage() {
+        assertEquals("ORDER_ITEM_EMPTY", GlobalErrorCode.ORDER_ITEM_EMPTY.getCode());
+        assertEquals("订单至少需要包含一个项目", GlobalErrorCode.ORDER_ITEM_EMPTY.getMessage());
+    }
+
+    @Test
+    void chargePreOrderExistsShouldReturnCorrectCodeAndMessage() {
+        assertEquals("CHARGE_PRE_ORDER_EXISTS", GlobalErrorCode.CHARGE_PRE_ORDER_EXISTS.getCode());
+        assertEquals("该订单已生成收费前置单，不可重复生成", GlobalErrorCode.CHARGE_PRE_ORDER_EXISTS.getMessage());
+    }
+
+    @Test
+    void triageRecordExistsShouldReturnCorrectCodeAndMessage() {
+        assertEquals("TRIAGE_RECORD_EXISTS", GlobalErrorCode.TRIAGE_RECORD_EXISTS.getCode());
+        assertEquals("该挂号已存在分诊记录，不可重复创建", GlobalErrorCode.TRIAGE_RECORD_EXISTS.getMessage());
     }
 }

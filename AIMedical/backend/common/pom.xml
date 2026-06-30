@@ -13,6 +13,12 @@
     <artifactId>common</artifactId>
     <packaging>jar</packaging>
 
+    <!-- 启用本模块的 jacoco 覆盖率阈值校验 (覆盖父 pom 默认 skip=true) -->
+    <properties>
+        <jacoco.skip>false</jacoco.skip>
+        <jacoco.skip.check>false</jacoco.skip.check>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -45,10 +51,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <!-- 启用本模块的 jacoco 覆盖率阈值校验 (覆盖父 pom 默认 skip=true) -->
-    <properties>
-        <jacoco.skip>false</jacoco.skip>
-        <jacoco.skip.check>false</jacoco.skip.check>
-    </properties>
 </project>

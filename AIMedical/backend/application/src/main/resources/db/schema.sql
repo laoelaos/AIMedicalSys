@@ -30,6 +30,8 @@ CREATE TABLE `sys_user` (
     `deleted`    TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_username` (`username`),
+  UNIQUE KEY `uk_phone` (`phone`),
+  UNIQUE KEY `uk_email` (`email`),
   KEY `idx_username_user_type` (`username`, `user_type`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='系统用户表';
 
@@ -42,15 +44,15 @@ CREATE TABLE `sys_role` (
   `code`        VARCHAR(64)   NOT NULL                COMMENT '角色编码',
   `name`        VARCHAR(64)   DEFAULT NULL            COMMENT '角色名称',
   `description` VARCHAR(500)  DEFAULT NULL            COMMENT '角色描述',
-  `enabled`     TINYINT(1)    NOT NULL DEFAULT 1      COMMENT '是否启用',
-  `sort`          INT           NOT NULL DEFAULT 0      COMMENT '排序',
+  `enabled`     TINYINT(1)    DEFAULT 1               COMMENT '是否启用',
+  `sort`        INT           DEFAULT 0               COMMENT '排序号',
   `remark`      VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
+  `version`     BIGINT        DEFAULT 0               COMMENT '乐观锁版本号',
   `created_at`  DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`  DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`     TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`     TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_code` (`code`),
-  KEY `idx_code` (`code`)
+  UNIQUE KEY `uk_code` (`code`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='系统角色表';
 
 -- ---------------------------------------------
@@ -63,15 +65,15 @@ CREATE TABLE `sys_post` (
   `name`        VARCHAR(64)   DEFAULT NULL            COMMENT '岗位名称',
   `description` VARCHAR(500)  DEFAULT NULL            COMMENT '岗位描述',
   `role_id`     BIGINT        DEFAULT NULL            COMMENT '关联角色ID',
-  `enabled`     TINYINT(1)    NOT NULL DEFAULT 1      COMMENT '是否启用',
+  `enabled`     TINYINT(1)    DEFAULT 1               COMMENT '是否启用',
   `sort`        INT           DEFAULT 0               COMMENT '排序',
   `remark`      VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
+  `version`     BIGINT        DEFAULT 0               COMMENT '乐观锁版本号',
   `created_at`  DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`  DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`     TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`     TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_code` (`code`),
-  KEY `idx_code` (`code`),
   CONSTRAINT `fk_sys_post_role` FOREIGN KEY (`role_id`) REFERENCES `sys_role` (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='系统岗位表';
 
@@ -89,15 +91,16 @@ CREATE TABLE `sys_function` (
   `component`     VARCHAR(255)  DEFAULT NULL            COMMENT '前端组件',
   `icon`          VARCHAR(64)   DEFAULT NULL            COMMENT '图标',
   `sort`          INT           DEFAULT 0               COMMENT '排序',
-  `visible`       TINYINT(1)    NOT NULL DEFAULT 1      COMMENT '是否可见',
+  `visible`       TINYINT(1)    DEFAULT 1               COMMENT '是否可见',
   `perms`         VARCHAR(128)  DEFAULT NULL            COMMENT '权限字符串',
   `query_method`  VARCHAR(10)   DEFAULT NULL            COMMENT '请求方法 GET/POST...',
   `description`   VARCHAR(500)  DEFAULT NULL            COMMENT '描述',
-  `enabled`       TINYINT(1)    NOT NULL DEFAULT 1      COMMENT '是否启用',
+  `enabled`       TINYINT(1)    DEFAULT 1               COMMENT '是否启用',
   `remark`        VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
+  `version`       BIGINT        DEFAULT 0               COMMENT '乐观锁版本号',
   `created_at`    DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`    DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`       TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`       TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_code` (`code`),
   KEY `idx_code_type` (`code`, `type`),
@@ -114,9 +117,10 @@ CREATE TABLE `sys_dict_type` (
   `dict_type`  VARCHAR(100)  NOT NULL                COMMENT '字典类型',
   `status`     TINYINT(1)    DEFAULT 1               COMMENT '状态',
   `remark`     VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
+  `version`    BIGINT        DEFAULT 0               COMMENT '乐观锁版本号',
   `created_at` DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at` DATETIME      DEFAULT NULL            COMMENT '更新时间',
-    `deleted`    TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`    TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_dict_type` (`dict_type`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='字典类型表';
@@ -136,9 +140,10 @@ CREATE TABLE `sys_dict_data` (
   `is_default` TINYINT(1)    DEFAULT 0               COMMENT '是否默认',
   `status`     TINYINT(1)    DEFAULT 1               COMMENT '状态',
   `remark`     VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
+  `version`    BIGINT        DEFAULT 0               COMMENT '乐观锁版本号',
   `created_at` DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at` DATETIME      DEFAULT NULL            COMMENT '更新时间',
-    `deleted`    TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`    TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   KEY `idx_dict_type` (`dict_type`),
   CONSTRAINT `fk_sys_dict_data_type` FOREIGN KEY (`dict_type`) REFERENCES `sys_dict_type` (`dict_type`)
@@ -198,11 +203,14 @@ CREATE TABLE `patient_profile` (
   `address`             VARCHAR(255)  DEFAULT NULL            COMMENT '地址',
   `avatar_url`          VARCHAR(500)  DEFAULT NULL            COMMENT '头像URL',
   `remark`              VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
+  `version`             BIGINT        DEFAULT 0               COMMENT '乐观锁版本号',
   `created_at`          DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`          DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`             TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`             TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_id` (`user_id`),
+  UNIQUE KEY `uk_id_card` (`id_card`),
+  KEY `idx_phone` (`phone`),
   CONSTRAINT `fk_patient_profile_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='患者档案表';
 
@@ -223,11 +231,14 @@ CREATE TABLE `doctor_profile` (
   `practice_years`     INT            DEFAULT NULL            COMMENT '从业年限',
   `consultation_fee`   DECIMAL(10, 2) DEFAULT NULL            COMMENT '咨询费用',
   `remark`             VARCHAR(500)   DEFAULT NULL            COMMENT '备注',
+  `version`            BIGINT         DEFAULT 0               COMMENT '乐观锁版本号',
   `created_at`         DATETIME       DEFAULT NULL            COMMENT '创建时间',
   `updated_at`         DATETIME       DEFAULT NULL            COMMENT '更新时间',
-  `deleted`            TINYINT(1)     NOT NULL DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`            TINYINT(1)     DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_id` (`user_id`),
+  UNIQUE KEY `uk_license_no` (`license_no`),
+  KEY `idx_department` (`department`),
   CONSTRAINT `fk_doctor_profile_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='医生档案表';
 
@@ -243,9 +254,10 @@ CREATE TABLE `admin_profile` (
   `phone`      VARCHAR(20)   DEFAULT NULL            COMMENT '手机号',
   `department` VARCHAR(64)   DEFAULT NULL            COMMENT '部门',
   `remark`     VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
+  `version`    BIGINT        DEFAULT 0               COMMENT '乐观锁版本号',
   `created_at` DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at` DATETIME      DEFAULT NULL            COMMENT '更新时间',
-    `deleted`    TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`    TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_id` (`user_id`),
   CONSTRAINT `fk_admin_profile_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`)
@@ -264,9 +276,10 @@ CREATE TABLE `health_profile` (
   `bmi`            DECIMAL(4, 1) DEFAULT NULL            COMMENT 'BMI指数',
   `marital_status` VARCHAR(32)   DEFAULT NULL            COMMENT '婚姻状况',
   `lifestyle_note` TEXT          DEFAULT NULL            COMMENT '生活方式备注',
+  `version`        BIGINT        DEFAULT 0               COMMENT '乐观锁版本号',
   `created_at`     DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`     DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`        TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`        TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_patient_id` (`patient_id`),
   CONSTRAINT `fk_health_profile_patient` FOREIGN KEY (`patient_id`) REFERENCES `patient_profile` (`id`)
@@ -285,9 +298,10 @@ CREATE TABLE `allergy_history` (
   `occurred_at`       DATE          DEFAULT NULL            COMMENT '发生时间',
   `note`              VARCHAR(500)  DEFAULT NULL            COMMENT '说明',
   `remark`            VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
+  `version`           BIGINT        DEFAULT 0               COMMENT '乐观锁版本号',
   `created_at`        DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`        DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`           TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`           TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   KEY `idx_health_profile_id` (`health_profile_id`),
   CONSTRAINT `fk_allergy_history_health` FOREIGN KEY (`health_profile_id`) REFERENCES `health_profile` (`id`)
@@ -304,9 +318,10 @@ CREATE TABLE `chronic_disease` (
   `diagnosed_at`      DATE          DEFAULT NULL            COMMENT '确诊时间',
   `current_status`    VARCHAR(20)   DEFAULT NULL            COMMENT '当前状态',
   `remark`            VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
+  `version`           BIGINT        DEFAULT 0               COMMENT '乐观锁版本号',
   `created_at`        DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`        DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`           TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`           TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   KEY `idx_health_profile_id` (`health_profile_id`),
   CONSTRAINT `fk_chronic_disease_health` FOREIGN KEY (`health_profile_id`) REFERENCES `health_profile` (`id`)
@@ -323,9 +338,10 @@ CREATE TABLE `family_history` (
   `disease_name`      VARCHAR(255)  NOT NULL                COMMENT '疾病名称',
   `note`              VARCHAR(500)  DEFAULT NULL            COMMENT '说明',
   `remark`            VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
+  `version`           BIGINT        DEFAULT 0               COMMENT '乐观锁版本号',
   `created_at`        DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`        DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`           TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`           TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   KEY `idx_health_profile_id` (`health_profile_id`),
   CONSTRAINT `fk_family_history_health` FOREIGN KEY (`health_profile_id`) REFERENCES `health_profile` (`id`)
@@ -342,9 +358,10 @@ CREATE TABLE `surgery_history` (
   `surgery_at`        DATE          DEFAULT NULL            COMMENT '手术时间',
   `hospital`          VARCHAR(255)  DEFAULT NULL            COMMENT '医院',
   `remark`            VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
+  `version`           BIGINT        DEFAULT 0               COMMENT '乐观锁版本号',
   `created_at`        DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`        DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`           TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`           TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   KEY `idx_health_profile_id` (`health_profile_id`),
   CONSTRAINT `fk_surgery_history_health` FOREIGN KEY (`health_profile_id`) REFERENCES `health_profile` (`id`)
@@ -362,9 +379,10 @@ CREATE TABLE `medication_history` (
   `started_at`        DATE          DEFAULT NULL            COMMENT '开始时间',
   `ended_at`          DATE          DEFAULT NULL            COMMENT '结束时间',
   `remark`            VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
+  `version`           BIGINT        DEFAULT 0               COMMENT '乐观锁版本号',
   `created_at`        DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`        DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`           TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`           TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
   KEY `idx_health_profile_id` (`health_profile_id`),
   CONSTRAINT `fk_medication_history_health` FOREIGN KEY (`health_profile_id`) REFERENCES `health_profile` (`id`)
@@ -512,12 +530,13 @@ CREATE TABLE `sys_token` (
   `id`            BIGINT        NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `user_id`       BIGINT        DEFAULT NULL            COMMENT '用户ID',
   `token`         VARCHAR(768)  NOT NULL                COMMENT '令牌',
-  `refresh_token` VARCHAR(2048) DEFAULT NULL            COMMENT '刷新令牌',
+  `refresh_token` VARCHAR(768)  DEFAULT NULL            COMMENT '刷新令牌',
   `token_type`    VARCHAR(20)   DEFAULT NULL            COMMENT '令牌类型',
   `expires_at`    DATETIME      DEFAULT NULL            COMMENT '过期时间',
   `created_at`    DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`    DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`       TINYINT(1)    NOT NULL DEFAULT 0               COMMENT '逻辑删除',
+  `deleted`       TINYINT(1)    DEFAULT 0               COMMENT '逻辑删除',
+  `version`       BIGINT        DEFAULT 0               COMMENT '乐观锁版本号',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_token` (`token`),
   KEY `idx_user_id_expires_at` (`user_id`, `expires_at`)
@@ -528,22 +547,37 @@ CREATE TABLE `sys_token` (
 -- ---------------------------------------------
 DROP TABLE IF EXISTS `registration`;
 CREATE TABLE `registration` (
-  `id`                BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `user_id`           BIGINT       NOT NULL                COMMENT '用户ID',
-  `registration_type` VARCHAR(20)  NOT NULL                COMMENT '挂号类型(OUTPATIENT/EXAMINATION)',
-  `doctor_name`       VARCHAR(100) DEFAULT NULL            COMMENT '医生姓名',
-  `doctor_id`         BIGINT       DEFAULT NULL            COMMENT '医生ID',
-  `department_name`   VARCHAR(100) DEFAULT NULL            COMMENT '科室名称',
-  `exam_item_name`    VARCHAR(200) DEFAULT NULL            COMMENT '检查项目名称',
-  `exam_item_id`      BIGINT       DEFAULT NULL            COMMENT '检查项目ID',
-  `triage_record_id`  BIGINT       DEFAULT NULL            COMMENT '关联分诊记录ID',
-  `time_slot`         VARCHAR(50)  DEFAULT NULL            COMMENT '预约时段',
-  `status`            VARCHAR(20)  NOT NULL DEFAULT 'PENDING' COMMENT '状态',
-  `created_at`        DATETIME     DEFAULT NULL            COMMENT '创建时间',
-  `updated_at`        DATETIME     DEFAULT NULL            COMMENT '更新时间',
-  `deleted`           TINYINT(1)   NOT NULL DEFAULT 0     COMMENT '逻辑删除',
+  `id`                BIGINT         NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `patient_id`        BIGINT         DEFAULT NULL            COMMENT '患者档案ID',
+  `doctor_id`         BIGINT         DEFAULT NULL            COMMENT '医生档案ID',
+  `registration_type` VARCHAR(20)    NOT NULL                COMMENT '挂号类型 OUTPATIENT/EXAMINATION/EMERGENCY',
+  `department`        VARCHAR(64)    DEFAULT NULL            COMMENT '科室',
+  `scheduled_date`    DATE           DEFAULT NULL            COMMENT '预约日期',
+  `scheduled_time_slot` VARCHAR(20)  DEFAULT NULL            COMMENT '时间段 HH:mm-HH:mm',
+  `exam_item_name`    VARCHAR(200)   DEFAULT NULL            COMMENT '检查项目名称',
+  `exam_item_id`      BIGINT         DEFAULT NULL            COMMENT '检查项目ID',
+  `triage_record_id`  BIGINT         DEFAULT NULL            COMMENT '关联分诊记录ID',
+  `status`            VARCHAR(20)    NOT NULL DEFAULT 'PENDING' COMMENT '状态 PENDING/CONFIRMED/COMPLETED/CANCELLED/NO_SHOW',
+  `cancel_reason`     VARCHAR(500)   DEFAULT NULL            COMMENT '取消原因',
+  `cancel_time`       DATETIME       DEFAULT NULL            COMMENT '取消时间',
+  `cancel_type`       VARCHAR(20)    DEFAULT NULL            COMMENT '取消方式 ONLINE/OFFLINE',
+  `triage_level`      VARCHAR(20)    DEFAULT NULL            COMMENT '分诊级别 LEVEL_1/LEVEL_2/LEVEL_3/LEVEL_4',
+  `chief_complaint`   VARCHAR(500)   DEFAULT NULL            COMMENT '主诉',
+  `registration_fee`  DECIMAL(10, 2) DEFAULT NULL            COMMENT '挂号费',
+  `queue_number`      INT            DEFAULT NULL            COMMENT '排队号',
+  `version`           BIGINT         DEFAULT 0               COMMENT '乐观锁版本号',
+  `remark`            VARCHAR(500)   DEFAULT NULL            COMMENT '备注',
+  `created_at`        DATETIME       DEFAULT NULL            COMMENT '创建时间',
+  `updated_at`        DATETIME       DEFAULT NULL            COMMENT '更新时间',
+  `deleted`           TINYINT(1)     DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
-  KEY `idx_user_id_status` (`user_id`, `status`)
+  KEY `idx_patient_id` (`patient_id`),
+  KEY `idx_doctor_id` (`doctor_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_scheduled_date` (`scheduled_date`),
+  UNIQUE KEY `uk_doctor_date_queue` (`doctor_id`, `scheduled_date`, `queue_number`),
+  CONSTRAINT `fk_registration_patient` FOREIGN KEY (`patient_id`) REFERENCES `patient_profile` (`id`),
+  CONSTRAINT `fk_registration_doctor` FOREIGN KEY (`doctor_id`) REFERENCES `doctor_profile` (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='挂号记录表';
 
 -- ---------------------------------------------
@@ -551,22 +585,142 @@ CREATE TABLE `registration` (
 -- ---------------------------------------------
 DROP TABLE IF EXISTS `triage_record`;
 CREATE TABLE `triage_record` (
-  `id`                      BIGINT        NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `patient_id`              BIGINT        NOT NULL                COMMENT '患者ID',
-  `chief_complaint`         VARCHAR(2000) NOT NULL                COMMENT '主诉',
-  `session_id`              VARCHAR(100)  DEFAULT NULL            COMMENT '会话标识',
-  `recommended_departments` VARCHAR(4000) DEFAULT NULL            COMMENT '推荐科室(逗号分隔)',
-  `recommended_doctors`     VARCHAR(4000) DEFAULT NULL            COMMENT '推荐医生(逗号分隔)',
-  `is_degraded`             TINYINT(1)    NOT NULL DEFAULT 0     COMMENT '是否降级',
-  `rule_version`            VARCHAR(50)   DEFAULT NULL            COMMENT '规则版本',
-  `rule_set_id`             VARCHAR(50)   DEFAULT NULL            COMMENT '规则集ID',
-  `matched_rules`           VARCHAR(2000) DEFAULT NULL            COMMENT '命中规则(逗号分隔)',
-  `created_at`              DATETIME      DEFAULT NULL            COMMENT '创建时间',
-  `updated_at`              DATETIME      DEFAULT NULL            COMMENT '更新时间',
-  `deleted`                 TINYINT(1)    NOT NULL DEFAULT 0     COMMENT '逻辑删除',
+  `id`                      BIGINT         NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `registration_id`         BIGINT         DEFAULT NULL            COMMENT '挂号记录ID',
+  `patient_id`              BIGINT         DEFAULT NULL            COMMENT '患者档案ID',
+  `nurse_id`                BIGINT         DEFAULT NULL            COMMENT '分诊护士ID(admin_profile)',
+  `chief_complaint`         VARCHAR(2000)  DEFAULT NULL            COMMENT '主诉',
+  `session_id`              VARCHAR(100)   DEFAULT NULL            COMMENT 'AI会话标识',
+  `recommended_departments` VARCHAR(4000)  DEFAULT NULL            COMMENT 'AI推荐科室(逗号分隔)',
+  `recommended_doctors`     VARCHAR(4000)  DEFAULT NULL            COMMENT 'AI推荐医生(逗号分隔)',
+  `is_degraded`             TINYINT(1)     DEFAULT 0               COMMENT 'AI是否降级',
+  `rule_version`            VARCHAR(50)    DEFAULT NULL            COMMENT 'AI规则版本',
+  `rule_set_id`             VARCHAR(50)    DEFAULT NULL            COMMENT 'AI规则集ID',
+  `matched_rules`           VARCHAR(2000)  DEFAULT NULL            COMMENT 'AI命中规则(逗号分隔)',
+  `symptoms`                TEXT           DEFAULT NULL            COMMENT '护士分诊-症状描述',
+  `temperature`             DECIMAL(4, 1)  DEFAULT NULL            COMMENT '护士分诊-体温',
+  `blood_pressure`          VARCHAR(20)    DEFAULT NULL            COMMENT '护士分诊-血压',
+  `heart_rate`              INT            DEFAULT NULL            COMMENT '护士分诊-心率',
+  `triage_department`       VARCHAR(64)    DEFAULT NULL            COMMENT '分诊科室',
+  `triage_level`            VARCHAR(20)    DEFAULT NULL            COMMENT '分诊级别 LEVEL_1/LEVEL_2/LEVEL_3/LEVEL_4',
+  `triage_note`             VARCHAR(500)   DEFAULT NULL            COMMENT '分诊备注',
+  `version`                 BIGINT         DEFAULT 0               COMMENT '乐观锁版本号',
+  `created_at`              DATETIME       DEFAULT NULL            COMMENT '创建时间',
+  `updated_at`              DATETIME       DEFAULT NULL            COMMENT '更新时间',
+  `deleted`                 TINYINT(1)     DEFAULT 0               COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
-  KEY `idx_patient_id_created_at` (`patient_id`, `created_at`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='分诊记录表';
+  KEY `idx_registration_id` (`registration_id`),
+  KEY `idx_patient_id` (`patient_id`),
+  CONSTRAINT `fk_triage_registration` FOREIGN KEY (`registration_id`) REFERENCES `registration` (`id`),
+  CONSTRAINT `fk_triage_patient` FOREIGN KEY (`patient_id`) REFERENCES `patient_profile` (`id`),
+  CONSTRAINT `fk_triage_nurse` FOREIGN KEY (`nurse_id`) REFERENCES `admin_profile` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='分诊记录表(AI智能分诊+护士分诊)';
 
+-- ---------------------------------------------
+-- 24. medical_order
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `medical_order`;
+CREATE TABLE `medical_order` (
+  `id`              BIGINT         NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `patient_id`      BIGINT         DEFAULT NULL            COMMENT '患者档案ID',
+  `doctor_id`       BIGINT         DEFAULT NULL            COMMENT '医生档案ID',
+  `registration_id` BIGINT         DEFAULT NULL            COMMENT '挂号记录ID',
+  `order_no`        VARCHAR(32)    NOT NULL                COMMENT '医嘱编号',
+  `order_type`      VARCHAR(20)    NOT NULL                COMMENT '医嘱类型 DRUG/EXAMINATION/LAB_TEST',
+  `order_status`    VARCHAR(20)    NOT NULL DEFAULT 'DRAFT' COMMENT '状态 DRAFT/SUBMITTED/CHARGED/DISPENSED/COMPLETED/CANCELLED',
+  `diagnosis`       TEXT           DEFAULT NULL            COMMENT '诊断',
+  `total_amount`    DECIMAL(10, 2) DEFAULT NULL            COMMENT '总金额',
+  `is_urgent`       TINYINT(1)     DEFAULT 0               COMMENT '是否紧急',
+  `version`         BIGINT         DEFAULT 0               COMMENT '乐观锁版本号',
+  `remark`          VARCHAR(500)   DEFAULT NULL            COMMENT '备注',
+  `created_at`      DATETIME       DEFAULT NULL            COMMENT '创建时间',
+  `updated_at`      DATETIME       DEFAULT NULL            COMMENT '更新时间',
+  `deleted`         TINYINT(1)     DEFAULT 0               COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_order_no` (`order_no`),
+  KEY `idx_patient_id` (`patient_id`),
+  KEY `idx_doctor_id` (`doctor_id`),
+  KEY `idx_status` (`order_status`),
+  CONSTRAINT `fk_medical_order_patient` FOREIGN KEY (`patient_id`) REFERENCES `patient_profile` (`id`),
+  CONSTRAINT `fk_medical_order_doctor` FOREIGN KEY (`doctor_id`) REFERENCES `doctor_profile` (`id`),
+  CONSTRAINT `fk_medical_order_registration` FOREIGN KEY (`registration_id`) REFERENCES `registration` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='医嘱主表';
+
+-- ---------------------------------------------
+-- 25. medical_order_item
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `medical_order_item`;
+CREATE TABLE `medical_order_item` (
+  `id`          BIGINT         NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `order_id`    BIGINT         DEFAULT NULL            COMMENT '医嘱ID',
+  `item_type`   VARCHAR(20)    NOT NULL                COMMENT '项目类型 DRUG/EXAMINATION/LAB_TEST',
+  `item_code`   VARCHAR(64)    DEFAULT NULL            COMMENT '项目编码',
+  `item_name`   VARCHAR(255)   NOT NULL                COMMENT '项目名称',
+  `specification` VARCHAR(255) DEFAULT NULL            COMMENT '规格',
+  `quantity`    DECIMAL(10, 2) DEFAULT NULL            COMMENT '数量',
+  `unit`        VARCHAR(20)    DEFAULT NULL            COMMENT '单位',
+  `unit_price`  DECIMAL(10, 2) DEFAULT NULL            COMMENT '单价',
+  `amount`      DECIMAL(10, 2) DEFAULT NULL            COMMENT '金额',
+  `dosage`      VARCHAR(100)   DEFAULT NULL            COMMENT '每次用量',
+  `usage_method` VARCHAR(100)  DEFAULT NULL            COMMENT '用法',
+  `frequency`   VARCHAR(50)    DEFAULT NULL            COMMENT '频次',
+  `days`        INT            DEFAULT NULL            COMMENT '天数',
+  `version`     BIGINT         DEFAULT 0               COMMENT '乐观锁版本号',
+  `remark`      VARCHAR(500)   DEFAULT NULL            COMMENT '备注',
+  `created_at`  DATETIME       DEFAULT NULL            COMMENT '创建时间',
+  `updated_at`  DATETIME       DEFAULT NULL            COMMENT '更新时间',
+  `deleted`     TINYINT(1)     DEFAULT 0               COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_order_id` (`order_id`),
+  KEY `idx_item_code` (`item_code`),
+  CONSTRAINT `fk_medical_order_item_order` FOREIGN KEY (`order_id`) REFERENCES `medical_order` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='医嘱明细表';
+
+-- ---------------------------------------------
+-- 26. charge_pre_order
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `charge_pre_order`;
+CREATE TABLE `charge_pre_order` (
+  `id`            BIGINT         NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `order_id`      BIGINT         DEFAULT NULL            COMMENT '医嘱ID',
+  `patient_id`    BIGINT         DEFAULT NULL            COMMENT '患者档案ID',
+  `charge_no`     VARCHAR(32)    NOT NULL                COMMENT '收费单号',
+  `total_amount`  DECIMAL(10, 2) DEFAULT NULL            COMMENT '总金额',
+  `charge_status` VARCHAR(20)    NOT NULL DEFAULT 'PENDING' COMMENT '状态 PENDING/CHARGED/REFUNDED',
+  `version`       BIGINT         DEFAULT 0               COMMENT '乐观锁版本号',
+  `remark`        VARCHAR(500)   DEFAULT NULL            COMMENT '备注',
+  `created_at`    DATETIME       DEFAULT NULL            COMMENT '创建时间',
+  `updated_at`    DATETIME       DEFAULT NULL            COMMENT '更新时间',
+  `deleted`       TINYINT(1)     DEFAULT 0               COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_charge_no` (`charge_no`),
+  UNIQUE KEY `uk_order_id` (`order_id`),
+  KEY `idx_patient_id` (`patient_id`),
+  CONSTRAINT `fk_charge_pre_order_order` FOREIGN KEY (`order_id`) REFERENCES `medical_order` (`id`),
+  CONSTRAINT `fk_charge_pre_order_patient` FOREIGN KEY (`patient_id`) REFERENCES `patient_profile` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='收费前置单';
+
+-- ---------------------------------------------
+-- 27. charge_pre_order_item
+-- ---------------------------------------------
+DROP TABLE IF EXISTS `charge_pre_order_item`;
+CREATE TABLE `charge_pre_order_item` (
+  `id`                   BIGINT         NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `charge_pre_order_id`  BIGINT         DEFAULT NULL            COMMENT '收费前置单ID',
+  `order_item_id`        BIGINT         DEFAULT NULL            COMMENT '医嘱明细ID',
+  `item_name`            VARCHAR(255)   DEFAULT NULL            COMMENT '项目名称',
+  `quantity`             DECIMAL(10, 2) DEFAULT NULL            COMMENT '数量',
+  `unit_price`           DECIMAL(10, 2) DEFAULT NULL            COMMENT '单价',
+  `amount`               DECIMAL(10, 2) DEFAULT NULL            COMMENT '金额',
+  `charge_item_type`     VARCHAR(20)    DEFAULT NULL            COMMENT '收费项目类型',
+  `version`              BIGINT         DEFAULT 0               COMMENT '乐观锁版本号',
+  `created_at`           DATETIME       DEFAULT NULL            COMMENT '创建时间',
+  `updated_at`           DATETIME       DEFAULT NULL            COMMENT '更新时间',
+  `deleted`              TINYINT(1)     DEFAULT 0               COMMENT '逻辑删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_charge_pre_order_id` (`charge_pre_order_id`),
+  CONSTRAINT `fk_charge_item_pre_order` FOREIGN KEY (`charge_pre_order_id`) REFERENCES `charge_pre_order` (`id`),
+  CONSTRAINT `fk_charge_item_order_item` FOREIGN KEY (`order_item_id`) REFERENCES `medical_order_item` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='收费前置单明细';
 SET FOREIGN_KEY_CHECKS = 1;
 SET REFERENTIAL_INTEGRITY TRUE;

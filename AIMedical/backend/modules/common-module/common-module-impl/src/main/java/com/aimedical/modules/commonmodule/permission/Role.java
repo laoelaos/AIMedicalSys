@@ -8,11 +8,17 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Set;
 
 @Entity
 @Table(name = "sys_role")
+@Getter
+@Setter
+@EqualsAndHashCode(callSuper = true)
 public class Role extends BaseEntity {
 
     @Column(nullable = false, unique = true)
@@ -34,76 +40,23 @@ public class Role extends BaseEntity {
     @Column(nullable = false)
     private Integer sort = 0;
 
+    @Column(length = 500)
+    private String remark;
+
     @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
     private Set<Post> posts;
 
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
     private Set<User> users;
 
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Boolean getEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(Boolean enabled) {
-        this.enabled = enabled;
-    }
-
     @PrePersist
     private void validateBeforePersist() {
         if (enabled == null) {
-            throw new org.hibernate.PropertyValueException(
-                    "not-null property references a null or transient value: "
-                            + Role.class.getName() + ".enabled",
-                    "enabled",
-                    Role.class.getName());
+            enabled = true;
+        }
+        if (sort == null) {
+            sort = 0;
         }
     }
 
-    public Integer getSort() {
-        return sort;
-    }
-
-    public void setSort(Integer sort) {
-        this.sort = sort;
-    }
-
-    public Set<Post> getPosts() {
-        return posts;
-    }
-
-    public void setPosts(Set<Post> posts) {
-        this.posts = posts;
-    }
-
-    public Set<User> getUsers() {
-        return users;
-    }
-
-    public void setUsers(Set<User> users) {
-        this.users = users;
-    }
 }

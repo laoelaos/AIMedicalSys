@@ -36,11 +36,6 @@ class ParentPomTest {
     }
 
     @Test
-    void dependencyManagementShouldNotContainSpringBootStarters() throws Exception {
-        String base = "/project/dependencyManagement/dependencies/dependency";
-    }
-
-    @Test
     void dependencyManagementShouldNotContainBusinessModules() throws Exception {
         String base = "/project/dependencyManagement/dependencies/dependency";
         assertFalse(exists(base + "[groupId='com.aimedical' and artifactId='patient']"));

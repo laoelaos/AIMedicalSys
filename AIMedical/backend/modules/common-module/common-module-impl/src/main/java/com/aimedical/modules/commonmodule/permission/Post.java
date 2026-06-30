@@ -10,11 +10,17 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Set;
 
 @Entity
 @Table(name = "sys_post")
+@Getter
+@Setter
+@EqualsAndHashCode(callSuper = true)
 public class Post extends BaseEntity {
 
     @Column(nullable = false, unique = true)
@@ -42,67 +48,7 @@ public class Post extends BaseEntity {
     @ManyToMany(mappedBy = "posts", fetch = FetchType.LAZY)
     private Set<User> users;
 
-    public String getCode() {
-        return code;
-    }
+    @Column(length = 500)
+    private String remark;
 
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Boolean getEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(Boolean enabled) {
-        this.enabled = enabled;
-    }
-
-    public Integer getSort() {
-        return sort;
-    }
-
-    public void setSort(Integer sort) {
-        this.sort = sort;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
-    }
-
-    public Set<PermissionFunction> getFunctions() {
-        return functions;
-    }
-
-    public void setFunctions(Set<PermissionFunction> functions) {
-        this.functions = functions;
-    }
-
-    public Set<User> getUsers() {
-        return users;
-    }
-
-    public void setUsers(Set<User> users) {
-        this.users = users;
-    }
 }
