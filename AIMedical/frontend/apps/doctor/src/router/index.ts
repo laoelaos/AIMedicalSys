@@ -76,6 +76,13 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true },
       },
       {
+        // 编辑已有病历草稿：使用独立命名路由与 path param，避免"new 实际是编辑"的语义混乱
+        path: '/patient/:patientId/medical-records/:recordId/edit',
+        name: 'MedicalRecordEdit',
+        component: () => import('../views/MedicalRecordForm.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
         path: '/patient/:patientId/prescriptions/new',
         name: 'PrescriptionForm',
         component: () => import('../views/PrescriptionForm.vue'),

@@ -1,5 +1,7 @@
 package com.aimedical.modules.doctor.dto.response;
 
+import com.aimedical.modules.doctor.entity.AiRiskLevel;
+
 import java.util.List;
 
 /**
@@ -9,7 +11,7 @@ import java.util.List;
  * @version 1.0.0
  */
 public record AiPrescriptionAuditResponse(
-    String riskLevel,
+    AiRiskLevel riskLevel,
     List<String> warnings,
     boolean passed
 ) {

@@ -19,6 +19,7 @@ import com.aimedical.modules.doctor.dto.response.AiMedicalRecordGenResponse;
 import com.aimedical.modules.doctor.dto.response.AiPrescriptionAssistResponse;
 import com.aimedical.modules.doctor.dto.response.AiPrescriptionAuditResponse;
 import com.aimedical.modules.doctor.dto.response.AiResultResponse;
+import com.aimedical.modules.doctor.entity.AiRiskLevel;
 import com.aimedical.modules.doctor.service.DoctorAiService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,8 +74,13 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             if (result.isDegraded() || !result.isSuccess()) {
                 return Result.success(degradedDiagnosis());
             }
-            // 当前 AI DTO 为占位，成功时返回空建议，前端展示成功态
-            AiDiagnosisResponse data = new AiDiagnosisResponse(List.of(), "AI 诊断建议（占位）");
+            DiagnosisResponse aiData = result.getData();
+            if (aiData == null) {
+                return Result.success(degradedDiagnosis());
+            }
+            AiDiagnosisResponse data = new AiDiagnosisResponse(
+                    aiData.getPossibleDiagnoses() != null ? aiData.getPossibleDiagnoses() : List.of(),
+                    aiData.getSummary() != null ? aiData.getSummary() : "");
             return Result.success(AiResultResponse.ok(data));
         } catch (Exception e) {
             log.warn("AI diagnosis 调用异常，降级处理", e);
@@ -94,7 +100,16 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             if (result.isDegraded() || !result.isSuccess()) {
                 return Result.success(degradedExamination());
             }
-            AiExaminationResponse data = new AiExaminationResponse(List.of());
+            ExaminationRecommendResponse aiData = result.getData();
+            if (aiData == null) {
+                return Result.success(degradedExamination());
+            }
+            List<AiExaminationResponse.ExaminationItem> items = aiData.getItems() == null
+                    ? List.of()
+                    : aiData.getItems().stream()
+                            .map(i -> new AiExaminationResponse.ExaminationItem(i.getName(), i.getCategory(), i.getReason()))
+                            .toList();
+            AiExaminationResponse data = new AiExaminationResponse(items);
             return Result.success(AiResultResponse.ok(data));
         } catch (Exception e) {
             log.warn("AI recommendExamination 调用异常，降级处理", e);
@@ -114,7 +129,19 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             if (result.isDegraded() || !result.isSuccess()) {
                 return Result.success(degradedPrescriptionAssist());
             }
-            AiPrescriptionAssistResponse data = new AiPrescriptionAssistResponse(List.of(), "AI 辅助开方建议（占位）");
+            PrescriptionAssistResponse aiData = result.getData();
+            if (aiData == null) {
+                return Result.success(degradedPrescriptionAssist());
+            }
+            List<AiPrescriptionAssistResponse.RecommendedDrug> drugs = aiData.getDrugs() == null
+                    ? List.of()
+                    : aiData.getDrugs().stream()
+                            .map(d -> new AiPrescriptionAssistResponse.RecommendedDrug(
+                                    d.getDrugName(), d.getSpecification(), d.getDosage(),
+                                    d.getFrequency(), d.getReason()))
+                            .toList();
+            AiPrescriptionAssistResponse data = new AiPrescriptionAssistResponse(drugs,
+                    aiData.getSummary() != null ? aiData.getSummary() : "");
             return Result.success(AiResultResponse.ok(data));
         } catch (Exception e) {
             log.warn("AI prescriptionAssist 调用异常，降级处理", e);
@@ -134,7 +161,14 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             if (result.isDegraded() || !result.isSuccess()) {
                 return Result.success(degradedPrescriptionAudit());
             }
-            AiPrescriptionAuditResponse data = new AiPrescriptionAuditResponse("LOW", List.of(), true);
+            PrescriptionCheckResponse aiData = result.getData();
+            if (aiData == null) {
+                return Result.success(degradedPrescriptionAudit());
+            }
+            AiPrescriptionAuditResponse data = new AiPrescriptionAuditResponse(
+                    parseRiskLevel(aiData.getRiskLevel()),
+                    aiData.getWarnings() != null ? aiData.getWarnings() : List.of(),
+                    aiData.isPassed());
             return Result.success(AiResultResponse.ok(data));
         } catch (Exception e) {
             log.warn("AI prescriptionCheck 调用异常，降级处理", e);
@@ -155,12 +189,43 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             if (result.isDegraded() || !result.isSuccess()) {
                 return Result.success(degradedMedicalRecordGen());
             }
-            AiMedicalRecordGenResponse data = new AiMedicalRecordGenResponse("", "", "", "", "");
+            MedicalRecordGenResponse aiData = result.getData();
+            if (aiData == null) {
+                return Result.success(degradedMedicalRecordGen());
+            }
+            AiMedicalRecordGenResponse data = new AiMedicalRecordGenResponse(
+                    nullToEmpty(aiData.getChiefComplaint()),
+                    nullToEmpty(aiData.getPresentIllness()),
+                    nullToEmpty(aiData.getPastHistory()),
+                    nullToEmpty(aiData.getDiagnosis()),
+                    nullToEmpty(aiData.getTreatmentPlan()));
             return Result.success(AiResultResponse.ok(data));
         } catch (Exception e) {
             log.warn("AI generateMedicalRecord 调用异常，降级处理", e);
             return Result.success(degradedMedicalRecordGen());
         }
+    }
+
+    // ---------- 工具方法 ----------
+
+    private static String nullToEmpty(String s) {
+        return s != null ? s : "";
+    }
+
+    /**
+     * 将 AI 返回的风险等级字符串解析为 {@link AiRiskLevel} 枚举，
+     * 无法匹配时返回 null（表示未知风险，由前端/审核人人工判断）。
+     */
+    private static AiRiskLevel parseRiskLevel(String code) {
+        if (code == null) {
+            return null;
+        }
+        for (AiRiskLevel level : AiRiskLevel.values()) {
+            if (level.getCode().equals(code)) {
+                return level;
+            }
+        }
+        return null;
     }
 
     // ---------- 降级兜底数据 ----------
@@ -192,7 +257,7 @@ public class DoctorAiServiceImpl implements DoctorAiService {
 
     private AiResultResponse<AiPrescriptionAuditResponse> degradedPrescriptionAudit() {
         return AiResultResponse.degraded(
-                new AiPrescriptionAuditResponse("UNKNOWN",
+                new AiPrescriptionAuditResponse(null,
                         List.of("AI 处方审核服务不可用，请药师进行人工审核，重点关注过敏史、配伍禁忌与用法用量"),
                         false),
                 DEGRADE_REASON_DEMO);

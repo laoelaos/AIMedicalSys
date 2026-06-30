@@ -72,9 +72,6 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         entity.setPatientName(patientName);
         entity.setDoctorId(doctorUserId);
         entity.setDepartment(department);
-        entity.setStatus(request.submitForReview()
-                ? PrescriptionStatus.PENDING_REVIEW.getCode()
-                : PrescriptionStatus.DRAFT.getCode());
         entity.setDiagnosis(request.diagnosis());
         entity.setRemark(request.remark());
         entity.setAiChecked(false);
@@ -87,6 +84,15 @@ public class PrescriptionServiceImpl implements PrescriptionService {
             items.add(item);
         }
         entity.setItems(items);
+
+        // 明细非空校验：submitForReview=true 时强制要求至少一项药品，
+        // 防止无明细处方进入审核流程（与 submitForReview() 共用校验逻辑）
+        if (request.submitForReview() && itemsEmpty(entity)) {
+            return Result.fail(GlobalErrorCode.PARAM_INVALID.getCode(), "处方明细不能为空，请添加至少一项药品");
+        }
+        entity.setStatus(request.submitForReview()
+                ? PrescriptionStatus.PENDING_REVIEW.getCode()
+                : PrescriptionStatus.DRAFT.getCode());
 
         PrescriptionEntity saved = prescriptionRepository.save(entity);
         return Result.success(converter.toResponse(saved));
@@ -148,7 +154,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
             return Result.fail(GlobalErrorCode.PRESCRIPTION_INVALID_STATE);
         }
         // 校验处方明细非空：禁止无明细的处方进入审核流程
-        if (entity.getItems() == null || entity.getItems().isEmpty()) {
+        if (itemsEmpty(entity)) {
             return Result.fail(GlobalErrorCode.PARAM_INVALID.getCode(), "处方明细不能为空，请添加至少一项药品");
         }
         entity.setStatus(PrescriptionStatus.PENDING_REVIEW.getCode());
@@ -189,5 +195,12 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         entity.setAuditedAt(LocalDateTime.now());
         PrescriptionEntity saved = prescriptionRepository.save(entity);
         return Result.success(converter.toResponse(saved));
+    }
+
+    /**
+     * 判断处方明细是否为空（null 或空集合），create/submitForReview 共用。
+     */
+    private boolean itemsEmpty(PrescriptionEntity entity) {
+        return entity.getItems() == null || entity.getItems().isEmpty();
     }
 }

@@ -71,12 +71,8 @@ import type { MedicalRecordTemplateResponse } from '@aimedical/shared'
 const route = useRoute()
 const router = useRouter()
 const patientId = Number(route.params.patientId)
-// 编辑模式：优先从路由 param（recordId）读取，回退 query.id（详情页编辑按钮仍用 query）
-const editingId = route.params.recordId
-  ? Number(route.params.recordId)
-  : route.query.id
-    ? Number(route.query.id)
-    : null
+// 编辑模式：仅 MedicalRecordEdit 命名路由携带 recordId path param；新建路由无此参数
+const editingId = route.params.recordId ? Number(route.params.recordId) : null
 const isEditing = computed(() => editingId !== null)
 
 const loading = ref(false)

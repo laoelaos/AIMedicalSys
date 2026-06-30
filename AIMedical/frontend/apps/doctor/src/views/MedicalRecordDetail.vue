@@ -13,7 +13,7 @@
             <el-button @click="router.push(`/patient/${patientId}/medical-records`)">返回列表</el-button>
             <el-button
               v-if="record && record.status === 'DRAFT'"
-              @click="router.push(`/patient/${patientId}/medical-records/new?id=${record.id}`)"
+              @click="router.push({ name: 'MedicalRecordEdit', params: { patientId, recordId: record.id } })"
             >编辑</el-button>
           </div>
         </div>

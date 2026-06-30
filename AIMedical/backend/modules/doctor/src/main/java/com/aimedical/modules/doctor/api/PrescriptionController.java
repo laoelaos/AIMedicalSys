@@ -69,6 +69,14 @@ public class PrescriptionController {
     }
 
     /**
+     * 查询当前医生开立的所有处方（医生工作台"我的处方"）。
+     */
+    @GetMapping("/by-doctor")
+    public Result<List<PrescriptionResponse>> listByDoctor() {
+        return prescriptionService.listByDoctor(currentDoctorId());
+    }
+
+    /**
      * 提交处方审核（DRAFT/REJECTED -> PENDING_REVIEW）。
      */
     @PostMapping("/{id}/submit")

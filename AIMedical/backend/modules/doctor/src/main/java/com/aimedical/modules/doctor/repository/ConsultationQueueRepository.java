@@ -1,7 +1,11 @@
 package com.aimedical.modules.doctor.repository;
 
 import com.aimedical.modules.doctor.entity.ConsultationQueueEntity;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -30,4 +34,28 @@ public interface ConsultationQueueRepository extends JpaRepository<ConsultationQ
      * @return 队列列表
      */
     List<ConsultationQueueEntity> findByDoctorIdAndStatusInOrderByRegisteredAtAsc(Long doctorId, List<String> statuses);
+
+    /**
+     * 带悲观锁的活跃记录查询：用于 callNext 并发叫号时串行化，
+     * 防止"两路都通过活跃校验后争抢同一 WAITING 记录"。
+     *
+     * @param doctorId 医生用户ID
+     * @param statuses 活跃状态集合
+     * @return 队列列表（持有行锁直到事务结束）
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT q FROM ConsultationQueueEntity q WHERE q.doctorId = :doctorId AND q.status IN :statuses ORDER BY q.registeredAt ASC")
+    List<ConsultationQueueEntity> findActiveForUpdate(@Param("doctorId") Long doctorId, @Param("statuses") List<String> statuses);
+
+    /**
+     * 带悲观锁的候诊记录查询：callNext 取首条 WAITING 时加锁，
+     * 保证并发叫号按序串行化。
+     *
+     * @param doctorId 医生用户ID
+     * @param status   状态
+     * @return 队列列表（持有行锁直到事务结束）
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT q FROM ConsultationQueueEntity q WHERE q.doctorId = :doctorId AND q.status = :status ORDER BY q.registeredAt ASC")
+    List<ConsultationQueueEntity> findByDoctorIdAndStatusForUpdate(@Param("doctorId") Long doctorId, @Param("status") String status);
 }

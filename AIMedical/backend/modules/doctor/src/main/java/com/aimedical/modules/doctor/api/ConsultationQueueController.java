@@ -1,5 +1,6 @@
 package com.aimedical.modules.doctor.api;
 
+import com.aimedical.common.exception.GlobalErrorCode;
 import com.aimedical.common.result.Result;
 import com.aimedical.modules.commonmodule.auth.CurrentUser;
 import com.aimedical.modules.doctor.dto.response.ConsultationQueueResponse;
@@ -40,7 +41,11 @@ public class ConsultationQueueController {
      */
     @GetMapping
     public Result<List<ConsultationQueueResponse>> listMyQueue() {
-        return queueService.listMyQueue(currentDoctorId());
+        Long doctorId = currentDoctorId();
+        if (doctorId == null) {
+            return Result.fail(GlobalErrorCode.UNAUTHORIZED.getCode(), "无法获取当前登录医生ID");
+        }
+        return queueService.listMyQueue(doctorId);
     }
 
     /**
@@ -48,7 +53,11 @@ public class ConsultationQueueController {
      */
     @GetMapping("/waiting")
     public Result<List<ConsultationQueueResponse>> listWaiting() {
-        return queueService.listWaiting(currentDoctorId());
+        Long doctorId = currentDoctorId();
+        if (doctorId == null) {
+            return Result.fail(GlobalErrorCode.UNAUTHORIZED.getCode(), "无法获取当前登录医生ID");
+        }
+        return queueService.listWaiting(doctorId);
     }
 
     /**
@@ -56,7 +65,11 @@ public class ConsultationQueueController {
      */
     @PostMapping("/call-next")
     public Result<ConsultationQueueResponse> callNext() {
-        return queueService.callNext(currentDoctorId());
+        Long doctorId = currentDoctorId();
+        if (doctorId == null) {
+            return Result.fail(GlobalErrorCode.UNAUTHORIZED.getCode(), "无法获取当前登录医生ID");
+        }
+        return queueService.callNext(doctorId);
     }
 
     /**
@@ -64,7 +77,11 @@ public class ConsultationQueueController {
      */
     @PostMapping("/{id}/start")
     public Result<ConsultationQueueResponse> startConsultation(@PathVariable Long id) {
-        return queueService.startConsultation(id, currentDoctorId());
+        Long doctorId = currentDoctorId();
+        if (doctorId == null) {
+            return Result.fail(GlobalErrorCode.UNAUTHORIZED.getCode(), "无法获取当前登录医生ID");
+        }
+        return queueService.startConsultation(id, doctorId);
     }
 
     /**
@@ -72,7 +89,11 @@ public class ConsultationQueueController {
      */
     @PostMapping("/{id}/finish")
     public Result<ConsultationQueueResponse> finishConsultation(@PathVariable Long id) {
-        return queueService.finishConsultation(id, currentDoctorId());
+        Long doctorId = currentDoctorId();
+        if (doctorId == null) {
+            return Result.fail(GlobalErrorCode.UNAUTHORIZED.getCode(), "无法获取当前登录医生ID");
+        }
+        return queueService.finishConsultation(id, doctorId);
     }
 
     /**
@@ -80,14 +101,17 @@ public class ConsultationQueueController {
      */
     @PostMapping("/{id}/skip")
     public Result<ConsultationQueueResponse> skip(@PathVariable Long id) {
-        return queueService.skip(id, currentDoctorId());
+        Long doctorId = currentDoctorId();
+        if (doctorId == null) {
+            return Result.fail(GlobalErrorCode.UNAUTHORIZED.getCode(), "无法获取当前登录医生ID");
+        }
+        return queueService.skip(id, doctorId);
     }
 
+    /**
+     * 获取当前登录医生 ID，未登录返回 null（由调用方判断并返回 UNAUTHORIZED 业务错误）。
+     */
     private Long currentDoctorId() {
-        Long userId = currentUser.getUserId();
-        if (userId == null) {
-            throw new IllegalStateException("无法获取当前登录医生ID");
-        }
-        return userId;
+        return currentUser.getUserId();
     }
 }

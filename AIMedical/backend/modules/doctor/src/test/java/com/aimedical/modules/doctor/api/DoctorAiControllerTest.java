@@ -13,6 +13,7 @@ import com.aimedical.modules.doctor.dto.response.AiMedicalRecordGenResponse;
 import com.aimedical.modules.doctor.dto.response.AiPrescriptionAssistResponse;
 import com.aimedical.modules.doctor.dto.response.AiPrescriptionAuditResponse;
 import com.aimedical.modules.doctor.dto.response.AiResultResponse;
+import com.aimedical.modules.doctor.entity.AiRiskLevel;
 import com.aimedical.modules.doctor.service.DoctorAiService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -98,7 +99,7 @@ class DoctorAiControllerTest {
         AiPrescriptionAuditRequest request = new AiPrescriptionAuditRequest(1L, "感冒", List.of("阿莫西林"));
         when(currentUser.getUserId()).thenReturn(DOCTOR_ID);
         when(doctorAiService.prescriptionAudit(request, DOCTOR_ID))
-                .thenReturn(Result.success(AiResultResponse.ok(new AiPrescriptionAuditResponse("LOW", List.of(), true))));
+                .thenReturn(Result.success(AiResultResponse.ok(new AiPrescriptionAuditResponse(AiRiskLevel.LOW, List.of(), true))));
 
         Result<AiResultResponse<AiPrescriptionAuditResponse>> result = controller.prescriptionAudit(request);
 

@@ -83,15 +83,7 @@ async function saveAsDraft() {
       return
     }
     // 长文本通过 sessionStorage 传递，避免 URL 静默截断（目标页读取后清除）
-    sessionStorage.setItem(
-      'condition_entry_draft',
-      JSON.stringify({
-        chief_complaint: form.chief_complaint,
-        present_illness: form.present_illness,
-        past_history: form.past_history,
-        diagnosis: form.diagnosis,
-      })
-    )
+    sessionStorage.setItem('condition_entry_draft', JSON.stringify(buildDraftSnapshot()))
     router.push(`/patient/${patientId}/medical-records/new`)
   })
 }
@@ -104,14 +96,7 @@ async function goAiDiagnosis() {
       return
     }
     // 长文本通过 sessionStorage 传递，避免 URL 静默截断（目标页读取后清除）
-    sessionStorage.setItem(
-      'condition_entry_draft',
-      JSON.stringify({
-        chief_complaint: form.chief_complaint,
-        present_illness: form.present_illness,
-        past_history: form.past_history,
-      })
-    )
+    sessionStorage.setItem('condition_entry_draft', JSON.stringify(buildDraftSnapshot()))
     router.push({
       path: '/ai/diagnosis',
       query: {
@@ -119,6 +104,19 @@ async function goAiDiagnosis() {
       },
     })
   })
+}
+
+/**
+ * 构建病情录入草稿快照，供 saveAsDraft 与 goAiDiagnosis 共享字段定义，
+ * 避免两条路径字段不一致（如遗漏 diagnosis 导致 AI 诊断页拿不到初步诊断）。
+ */
+function buildDraftSnapshot() {
+  return {
+    chief_complaint: form.chief_complaint,
+    present_illness: form.present_illness,
+    past_history: form.past_history,
+    diagnosis: form.diagnosis,
+  }
 }
 </script>
 

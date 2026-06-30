@@ -52,17 +52,30 @@ public class MockAiService implements AiService {
 
     @Override
     public CompletableFuture<AiResult<DiagnosisResponse>> diagnosis(DiagnosisRequest request) {
-        return CompletableFuture.completedFuture(AiResult.success(new DiagnosisResponse()));
+        DiagnosisResponse response = new DiagnosisResponse();
+        response.setPossibleDiagnoses(List.of("mock_diagnosis_1", "mock_diagnosis_2"));
+        response.setSummary("mock_diagnosis_summary");
+        return CompletableFuture.completedFuture(AiResult.success(response));
     }
 
     @Override
     public CompletableFuture<AiResult<PrescriptionCheckResponse>> prescriptionCheck(PrescriptionCheckRequest request) {
-        return CompletableFuture.completedFuture(AiResult.success(new PrescriptionCheckResponse()));
+        PrescriptionCheckResponse response = new PrescriptionCheckResponse();
+        response.setRiskLevel("LOW");
+        response.setWarnings(List.of());
+        response.setPassed(true);
+        return CompletableFuture.completedFuture(AiResult.success(response));
     }
 
     @Override
     public CompletableFuture<AiResult<MedicalRecordGenResponse>> generateMedicalRecord(MedicalRecordGenRequest request) {
-        return CompletableFuture.completedFuture(AiResult.success(new MedicalRecordGenResponse()));
+        MedicalRecordGenResponse response = new MedicalRecordGenResponse();
+        response.setChiefComplaint("mock_chief_complaint");
+        response.setPresentIllness("mock_present_illness");
+        response.setPastHistory("mock_past_history");
+        response.setDiagnosis("mock_diagnosis");
+        response.setTreatmentPlan("mock_treatment_plan");
+        return CompletableFuture.completedFuture(AiResult.success(response));
     }
 
     @Override
@@ -87,12 +100,23 @@ public class MockAiService implements AiService {
 
     @Override
     public CompletableFuture<AiResult<ExaminationRecommendResponse>> recommendExamination(ExaminationRecommendRequest request) {
-        return CompletableFuture.completedFuture(AiResult.success(new ExaminationRecommendResponse()));
+        ExaminationRecommendResponse response = new ExaminationRecommendResponse();
+        response.setItems(List.of(
+                new ExaminationRecommendResponse.ExaminationItem("mock_exam_1", "检验", "mock_reason_1"),
+                new ExaminationRecommendResponse.ExaminationItem("mock_exam_2", "检查", "mock_reason_2")
+        ));
+        return CompletableFuture.completedFuture(AiResult.success(response));
     }
 
     @Override
     public CompletableFuture<AiResult<PrescriptionAssistResponse>> prescriptionAssist(PrescriptionAssistRequest request) {
-        return CompletableFuture.completedFuture(AiResult.success(new PrescriptionAssistResponse()));
+        PrescriptionAssistResponse response = new PrescriptionAssistResponse();
+        response.setDrugs(List.of(
+                new PrescriptionAssistResponse.RecommendedDrug(
+                        "mock_drug_1", "mock_spec_1", "mock_dosage_1", "mock_frequency_1", "mock_reason_1")
+        ));
+        response.setSummary("mock_prescription_assist_summary");
+        return CompletableFuture.completedFuture(AiResult.success(response));
     }
 
     @Override
