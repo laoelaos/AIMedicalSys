@@ -370,9 +370,28 @@ async function submitOutpatient() {
     ElMessage.warning('请完整选择科室、医生和时段')
     return
   }
-  // Mock success
-  ElMessage.success('门诊挂号成功！')
-  router.push('/home')
+  submitting.value = true
+  try {
+    const result = await registrationApi.create({
+      registration_type: 'OUTPATIENT',
+      doctor_id: outpatient.doctorId ?? undefined,
+      doctor_name: outpatient.doctorName,
+      department_id: outpatient.deptId ?? undefined,
+      department_name: outpatient.deptName,
+      time_slot_id: outpatient.slotId ?? undefined,
+      time_slot: outpatient.slotTime,
+    })
+    if ((result as BusinessError).isBusinessError) {
+      ElMessage.error((result as BusinessError).message)
+    } else {
+      ElMessage.success('门诊挂号成功！')
+      router.push('/home')
+    }
+  } catch {
+    ElMessage.error('挂号请求失败')
+  } finally {
+    submitting.value = false
+  }
 }
 
 async function submitExam() {
@@ -380,9 +399,27 @@ async function submitExam() {
     ElMessage.error('预约检查失败：未选择检查项目 (exam_item_id 缺失)')
     return
   }
-  // Mock success
-  ElMessage.success('检查预约成功！')
-  router.push('/home')
+  submitting.value = true
+  try {
+    const result = await registrationApi.create({
+      registration_type: 'EXAMINATION',
+      exam_item_id: exam.itemId ?? undefined,
+      exam_item_name: exam.itemName,
+      exam_category: exam.category ?? undefined,
+      time_slot_id: exam.slotId ?? undefined,
+      time_slot: exam.slotTime,
+    })
+    if ((result as BusinessError).isBusinessError) {
+      ElMessage.error((result as BusinessError).message)
+    } else {
+      ElMessage.success('检查预约成功！')
+      router.push('/home')
+    }
+  } catch {
+    ElMessage.error('挂号请求失败')
+  } finally {
+    submitting.value = false
+  }
 }
 
 function statusType(status: string): '' | 'success' | 'info' | 'warning' | 'danger' {

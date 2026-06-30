@@ -7,6 +7,7 @@ import com.aimedical.modules.patient.dto.CancelResponse;
 import com.aimedical.modules.patient.dto.RegistrationRequest;
 import com.aimedical.modules.patient.dto.RegistrationResponse;
 import com.aimedical.modules.patient.service.RegistrationService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,7 +25,7 @@ public class RegistrationController {
     }
 
     @PostMapping
-    public Result<RegistrationResponse> create(@RequestBody RegistrationRequest request) {
+    public Result<RegistrationResponse> create(@Valid @RequestBody RegistrationRequest request) {
         CurrentUserResponse user = authService.getCurrentUser();
         return Result.success(registrationService.create(request, user.getUserId()));
     }

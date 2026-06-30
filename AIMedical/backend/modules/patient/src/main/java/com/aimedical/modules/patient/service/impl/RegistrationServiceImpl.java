@@ -43,6 +43,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         entity.setUserId(userId);
         entity.setRegistrationType(req.getRegistrationType());
         entity.setDoctorName(req.getDoctorName());
+        entity.setDoctorId(req.getDoctorId());
         entity.setDepartmentName(req.getDepartmentName());
         entity.setExamItemName(req.getExamItemName());
         entity.setExamItemId(req.getExamItemId());

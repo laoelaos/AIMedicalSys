@@ -22,6 +22,9 @@ public class RegistrationEntity extends BaseEntity {
     @Column(name = "doctor_name", length = 100)
     private String doctorName;
 
+    @Column(name = "doctor_id")
+    private Long doctorId;
+
     @Column(name = "department_name", length = 100)
     private String departmentName;
 
@@ -30,6 +33,9 @@ public class RegistrationEntity extends BaseEntity {
 
     @Column(name = "exam_item_id")
     private Long examItemId;
+
+    @Column(name = "triage_record_id")
+    private Long triageRecordId;
 
     @Column(name = "time_slot", length = 50)
     private String timeSlot;

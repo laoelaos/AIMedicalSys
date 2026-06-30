@@ -58,6 +58,7 @@ public class TriageController {
                 }
 
                 if (aiResp.isComplete()) {
+                    aiResp.setDegraded(false);
                     if (aiResp.getDepartments() == null || aiResp.getDepartments().isEmpty()) {
                         aiResp.setDepartments(buildFallbackDepartments(request.getChiefComplaint()));
                     }
@@ -90,6 +91,7 @@ public class TriageController {
                 ? request.getSessionId()
                 : "sess-" + UUID.randomUUID().toString().substring(0, 8));
         resp.setComplete(true);
+        resp.setDegraded(true);
         resp.setDepartments(buildFallbackDepartments(request.getChiefComplaint()));
         resp.setDoctors(buildFallbackDoctors());
         resp.setReason("AI 服务繁忙，已根据常见分诊规则给出推荐");

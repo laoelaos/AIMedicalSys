@@ -242,6 +242,7 @@ export interface TriageResponse {
   session_id: string
   question?: string
   is_complete: boolean
+  is_degraded?: boolean
   departments?: TriageDepartment[]
   doctors?: TriageDoctor[]
   reason?: string

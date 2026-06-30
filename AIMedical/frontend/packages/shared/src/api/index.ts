@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
-import type { ApiResult, BusinessError, LoginRequest, TokenResponse, TokenRefreshResponse, UserInfo, MenuItem, TriageRequest, TriageResponse, TriageDepartment, ConsultRequest, ConsultResponse, AppointmentSlot, RegistrationRequest, RegistrationRecord, CancelResult, ExamCategory, ExamItem, ReportRecord, MedicalRecordRecord, PrescriptionRecord, PaymentRecord, TriageHistoryRecord } from '../types'
+import type { ApiResult, BusinessError, LoginRequest, TokenResponse, TokenRefreshResponse, UserInfo, MenuItem, TriageRequest, TriageResponse, TriageDepartment, TriageDoctor, ConsultRequest, ConsultResponse, AppointmentSlot, RegistrationRequest, RegistrationRecord, CancelResult, ExamCategory, ExamItem, ReportRecord, MedicalRecordRecord, PrescriptionRecord, PaymentRecord, TriageHistoryRecord } from '../types'
 import { getAccessToken, setTokens, clearTokens, getRefreshToken } from '../utils'
 
 const apiClient = axios.create({
@@ -370,8 +370,8 @@ export const registrationApi = {
     return apiGet<TriageDepartment[]>('/patient/registration/departments')
   },
 
-  getDoctors: (deptId: number): Promise<TriageDepartment[] | BusinessError> => {
-    return apiGet<TriageDepartment[]>(`/patient/registration/departments/${deptId}/doctors`)
+  getDoctors: (deptId: number): Promise<TriageDoctor[] | BusinessError> => {
+    return apiGet<TriageDoctor[]>(`/patient/registration/departments/${deptId}/doctors`)
   },
 
   getExamCategories: (): Promise<ExamCategory[] | BusinessError> => {

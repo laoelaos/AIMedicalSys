@@ -1,5 +1,7 @@
 package com.aimedical.modules.patient.service.impl;
 
+import com.aimedical.common.exception.BusinessException;
+import com.aimedical.common.exception.GlobalErrorCode;
 import com.aimedical.modules.patient.dto.TriageRecordRequest;
 import com.aimedical.modules.patient.dto.TriageRecordResponse;
 import com.aimedical.modules.patient.entity.TriageRecordEntity;
@@ -13,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -68,8 +71,15 @@ public class TriageRecordServiceImpl implements TriageRecordService {
     @Override
     @Transactional(readOnly = true)
     public List<TriageRecordResponse> listByTimeRange(Long patientId, String startTime, String endTime) {
-        LocalDateTime start = LocalDateTime.parse(startTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        LocalDateTime end = LocalDateTime.parse(endTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        LocalDateTime start;
+        LocalDateTime end;
+        try {
+            start = LocalDateTime.parse(startTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            end = LocalDateTime.parse(endTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } catch (DateTimeParseException e) {
+            throw new BusinessException(GlobalErrorCode.PARAM_INVALID,
+                    "时间格式错误，请使用 ISO 格式：yyyy-MM-ddTHH:mm:ss");
+        }
         return triageRecordRepository.findByPatientIdAndTimeRange(patientId, start, end)
                 .stream().map(this::toResponse).collect(Collectors.toList());
     }

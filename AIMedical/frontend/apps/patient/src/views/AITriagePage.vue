@@ -6,6 +6,9 @@
       <el-tag v-if="aiUnavailable" type="warning">AI 服务暂不可用，已切换为科室选择模式</el-tag>
     </div>
 
+    <!-- 免责声明 -->
+    <DisclaimerBanner />
+
     <!-- 输入区 -->
     <el-card shadow="hover" class="input-card">
       <div class="input-header">
@@ -153,6 +156,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { triageApi } from '@aimedical/shared'
 import type { TriageRequest, TriageResponse, TriageDepartment, BusinessError } from '@aimedical/shared'
+import DisclaimerBanner from '../components/DisclaimerBanner.vue'
 
 const router = useRouter()
 
@@ -234,6 +238,14 @@ async function processTriageResult(result: TriageResponse | BusinessError) {
   }
 
   const data = result as TriageResponse
+  if (data.is_complete && data.is_degraded) {
+    aiUnavailable.value = true
+    triageComplete.value = true
+    lastResult.value = data
+    currentQuestion.value = ''
+    failureCount.value = 0
+    return
+  }
   if (data.session_id) {
     sessionId.value = data.session_id
   }
