@@ -13,10 +13,16 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -256,6 +262,79 @@ class GlobalExceptionHandlerTest {
             appender.stop();
             logger.detachAppender(appender);
         }
+    }
+
+    @Test
+    void shouldHandleTypeMismatchWith400() {
+        MethodArgumentTypeMismatchException ex = new MethodArgumentTypeMismatchException(
+                "abc", Long.class, "id", null, null);
+        ResponseEntity<Result<Void>> response = handler.handleTypeMismatch(ex);
+        assertEquals(HttpStatusCode.valueOf(400), response.getStatusCode());
+        Result<Void> body = response.getBody();
+        assertNotNull(body);
+        assertEquals(GlobalErrorCode.PARAM_INVALID.getCode(), body.getCode());
+        assertNull(body.getData());
+    }
+
+    @Test
+    void shouldHandleMethodNotSupportedWith405() {
+        HttpRequestMethodNotSupportedException ex = new HttpRequestMethodNotSupportedException("POST");
+        ResponseEntity<Result<Void>> response = handler.handleMethodNotSupported(ex);
+        assertEquals(HttpStatusCode.valueOf(405), response.getStatusCode());
+        Result<Void> body = response.getBody();
+        assertNotNull(body);
+        assertEquals(GlobalErrorCode.PARAM_INVALID.getCode(), body.getCode());
+        assertTrue(body.getMessage().contains("POST"));
+        assertNull(body.getData());
+    }
+
+    @Test
+    void shouldHandleAccessDeniedWith403() {
+        AccessDeniedException ex = new AccessDeniedException("Access is denied");
+        ResponseEntity<Result<Void>> response = handler.handleAccessDenied(ex);
+        assertEquals(HttpStatusCode.valueOf(403), response.getStatusCode());
+        Result<Void> body = response.getBody();
+        assertNotNull(body);
+        assertEquals(GlobalErrorCode.FORBIDDEN.getCode(), body.getCode());
+        assertEquals(GlobalErrorCode.FORBIDDEN.getMessage(), body.getMessage());
+        assertNull(body.getData());
+    }
+
+    @Test
+    void shouldHandleMissingParamWith400() {
+        MissingServletRequestParameterException ex =
+                new MissingServletRequestParameterException("name", "String");
+        ResponseEntity<Result<Void>> response = handler.handleMissingParam(ex);
+        assertEquals(HttpStatusCode.valueOf(400), response.getStatusCode());
+        Result<Void> body = response.getBody();
+        assertNotNull(body);
+        assertEquals(GlobalErrorCode.PARAM_INVALID.getCode(), body.getCode());
+        assertTrue(body.getMessage().contains("name"));
+        assertNull(body.getData());
+    }
+
+    @Test
+    void shouldHandleOptimisticLockWith409() {
+        ObjectOptimisticLockingFailureException ex =
+                new ObjectOptimisticLockingFailureException("Optimistic lock failed", new RuntimeException("version mismatch"));
+        ResponseEntity<Result<Void>> response = handler.handleOptimisticLock(ex);
+        assertEquals(HttpStatusCode.valueOf(409), response.getStatusCode());
+        Result<Void> body = response.getBody();
+        assertNotNull(body);
+        assertEquals(GlobalErrorCode.CONFLICT.getCode(), body.getCode());
+        assertNull(body.getData());
+    }
+
+    @Test
+    void shouldHandleDataIntegrityViolationWith409() {
+        DataIntegrityViolationException ex =
+                new DataIntegrityViolationException("Duplicate key", new RuntimeException("Unique constraint violation"));
+        ResponseEntity<Result<Void>> response = handler.handleDataIntegrityViolation(ex);
+        assertEquals(HttpStatusCode.valueOf(409), response.getStatusCode());
+        Result<Void> body = response.getBody();
+        assertNotNull(body);
+        assertEquals(GlobalErrorCode.CONFLICT.getCode(), body.getCode());
+        assertNull(body.getData());
     }
 
     @Test
