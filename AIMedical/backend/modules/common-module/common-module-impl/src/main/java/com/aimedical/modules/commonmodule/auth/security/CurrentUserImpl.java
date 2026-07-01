@@ -19,7 +19,7 @@ public class CurrentUserImpl implements CurrentUser {
     @Override
     public Long getUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated()) {
+        if (auth == null) {
             return null;
         }
         Object principal = auth.getPrincipal();
