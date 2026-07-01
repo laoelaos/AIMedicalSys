@@ -158,6 +158,11 @@ public class PrescriptionServiceImpl implements PrescriptionService {
             return Result.fail(GlobalErrorCode.PARAM_INVALID.getCode(), "处方明细不能为空，请添加至少一项药品");
         }
         entity.setStatus(PrescriptionStatus.PENDING_REVIEW.getCode());
+        // 清除旧审计记录：驳回后重新提交时，上一轮的审核备注/审核人/审核时间已失效，
+        // 需重置为 null 以避免新审核人被旧记录误导
+        entity.setAuditRemark(null);
+        entity.setAuditedBy(null);
+        entity.setAuditedAt(null);
         PrescriptionEntity saved = prescriptionRepository.save(entity);
         return Result.success(converter.toResponse(saved));
     }

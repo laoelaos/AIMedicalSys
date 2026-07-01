@@ -156,6 +156,11 @@ function removeItem(index: number) {
 }
 
 async function handleSubmit(submitForReview: boolean) {
+  // 提交审核时诊断必填，草稿模式允许为空
+  if (submitForReview && !form.diagnosis.trim()) {
+    ElMessage.error('提交审核时诊断不能为空')
+    return
+  }
   // 提交前校验：每个明细行的药品名称（drug_name）必填，任一为空则阻止提交
   for (let i = 0; i < form.items.length; i++) {
     if (!form.items[i].drug_name.trim()) {

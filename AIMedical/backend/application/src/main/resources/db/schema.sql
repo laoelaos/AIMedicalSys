@@ -550,7 +550,7 @@ CREATE TABLE `consultation_queue` (
   `id`             BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `patient_id`     BIGINT       NOT NULL                COMMENT '患者档案ID',
   `patient_name`   VARCHAR(64)  NOT NULL                COMMENT '患者姓名（冗余展示）',
-  `doctor_id`      BIGINT       DEFAULT NULL            COMMENT '接诊医生用户ID',
+  `doctor_id`      BIGINT       NOT NULL                COMMENT '接诊医生用户ID',
   `department`     VARCHAR(64)  DEFAULT NULL            COMMENT '科室',
   `queue_no`       VARCHAR(32)  NOT NULL                COMMENT '排队号',
   `status`         VARCHAR(20)  NOT NULL DEFAULT 'WAITING' COMMENT '状态 WAITING/CALLED/IN_CONSULTATION/FINISHED/SKIPPED',
@@ -611,24 +611,23 @@ CREATE TABLE `medical_record` (
   `template_id`        BIGINT        DEFAULT NULL            COMMENT '使用的模板ID',
   `ai_generated`       TINYINT(1)    NOT NULL DEFAULT 0      COMMENT '是否AI生成',
   `remark`             VARCHAR(500)  DEFAULT NULL            COMMENT '备注',
+  -- MySQL 不支持 WHERE 条件部分索引，使用 STORED 生成列实现"仅 DRAFT 行参与唯一约束"
+  `draft_key`          VARCHAR(60)   GENERATED ALWAYS AS
+      (CASE WHEN `status` = 'DRAFT' THEN CONCAT(`patient_id`, '_', `doctor_id`) ELSE NULL END) STORED COMMENT '草稿唯一键（仅 DRAFT 非 NULL）',
+  `official_key`       VARCHAR(60)   GENERATED ALWAYS AS
+      (CASE WHEN `status` = 'OFFICIAL' THEN CONCAT(`patient_id`, '_', `version_no`) ELSE NULL END) STORED COMMENT '正式版本唯一键（仅 OFFICIAL 非 NULL）',
   `created_at`         DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`         DATETIME      DEFAULT NULL            COMMENT '更新时间',
   `deleted`            TINYINT(1)    NOT NULL DEFAULT 0      COMMENT '逻辑删除',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_patient_doctor_draft` (`draft_key`),
+  UNIQUE KEY `uk_patient_official_version` (`official_key`),
   KEY `idx_patient_status` (`patient_id`, `status`),
   KEY `idx_doctor_id` (`doctor_id`),
-  KEY `idx_prescription_id` (`prescription_id`)
+  KEY `idx_prescription_id` (`prescription_id`),
+  CONSTRAINT `fk_medical_record_patient` FOREIGN KEY (`patient_id`) REFERENCES `patient_profile` (`id`),
+  CONSTRAINT `fk_medical_record_doctor` FOREIGN KEY (`doctor_id`) REFERENCES `sys_user` (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='病历表';
-
--- 同一患者+医生仅允许一份 DRAFT 草稿，防止并发创建产生重复草稿
-CREATE UNIQUE INDEX IF NOT EXISTS `uk_patient_doctor_draft`
-    ON `medical_record` (`patient_id`, `doctor_id`)
-    WHERE `status` = 'DRAFT';
-
--- 同一患者的正式版本号唯一，防止并发发布产生重复版本号
-CREATE UNIQUE INDEX IF NOT EXISTS `uk_patient_official_version`
-    ON `medical_record` (`patient_id`, `version_no`)
-    WHERE `status` = 'OFFICIAL';
 
 -- ---------------------------------------------
 -- 25. prescription  处方
@@ -654,7 +653,10 @@ CREATE TABLE `prescription` (
   PRIMARY KEY (`id`),
   KEY `idx_patient_status` (`patient_id`, `status`),
   KEY `idx_doctor_id` (`doctor_id`),
-  KEY `idx_status` (`status`)
+  KEY `idx_status` (`status`),
+  KEY `idx_patient_doctor_created` (`patient_id`, `doctor_id`, `created_at`),
+  CONSTRAINT `fk_prescription_patient` FOREIGN KEY (`patient_id`) REFERENCES `patient_profile` (`id`),
+  CONSTRAINT `fk_prescription_doctor` FOREIGN KEY (`doctor_id`) REFERENCES `sys_user` (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='处方表';
 
 -- ---------------------------------------------

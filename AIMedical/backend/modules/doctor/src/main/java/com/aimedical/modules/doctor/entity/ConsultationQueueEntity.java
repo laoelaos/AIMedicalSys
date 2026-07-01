@@ -30,7 +30,7 @@ public class ConsultationQueueEntity extends BaseEntity {
     private String patientName;
 
     /** 接诊医生用户ID */
-    @Column(name = "doctor_id")
+    @Column(name = "doctor_id", nullable = false)
     private Long doctorId;
 
     /** 科室 */

@@ -13,7 +13,7 @@
         </div>
       </template>
 
-      <el-table :data="records" border style="width: 100%">
+      <el-table :data="paginatedRecords" border style="width: 100%">
         <el-table-column prop="version_no" label="版本号" width="100" />
         <el-table-column label="状态" width="120">
           <template #default="{ row }">
@@ -43,12 +43,22 @@
           <el-empty description="暂无病历记录" />
         </template>
       </el-table>
+
+      <el-pagination
+        v-if="records.length > 0"
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total="records.length"
+        :page-sizes="[10, 20, 50]"
+        layout="total, sizes, prev, pager, next"
+        class="pagination"
+      />
     </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { doctorApi, isBusinessError } from '@aimedical/shared'
@@ -59,6 +69,13 @@ const router = useRouter()
 const patientId = Number(route.params.patientId)
 const loading = ref(false)
 const records = ref<MedicalRecordResponse[]>([])
+const currentPage = ref(1)
+const pageSize = ref(10)
+
+const paginatedRecords = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return records.value.slice(start, start + pageSize.value)
+})
 
 const formatDateTime = (iso: string | null): string =>
   iso ? new Date(iso).toLocaleString('zh-CN') : '—'
@@ -110,5 +127,10 @@ onMounted(() => {
 .header-actions {
   display: flex;
   gap: 8px;
+}
+
+.pagination {
+  margin-top: 16px;
+  justify-content: flex-end;
 }
 </style>

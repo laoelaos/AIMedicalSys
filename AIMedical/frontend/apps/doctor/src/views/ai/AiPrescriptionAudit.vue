@@ -99,7 +99,8 @@ onMounted(() => {
   if (pid) prescriptionIdInput.value = String(pid)
 })
 
-function riskTagType(level: string): 'success' | 'warning' | 'danger' | 'info' {
+function riskTagType(level: string | null | undefined): 'success' | 'warning' | 'danger' | 'info' {
+  if (!level) return 'info'
   const l = level.toLowerCase()
   if (l.includes('high') || l.includes('高')) return 'danger'
   if (l.includes('medium') || l.includes('中')) return 'warning'
@@ -107,7 +108,7 @@ function riskTagType(level: string): 'success' | 'warning' | 'danger' | 'info' {
   return 'info'
 }
 
-function riskLabel(level: string): string {
+function riskLabel(level: string | null | undefined): string {
   if (!level) return '—'
   return level
 }

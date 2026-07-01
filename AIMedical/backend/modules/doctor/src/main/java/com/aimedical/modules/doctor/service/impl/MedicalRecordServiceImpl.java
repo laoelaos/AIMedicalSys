@@ -13,6 +13,7 @@ import com.aimedical.modules.doctor.repository.DoctorRepository;
 import com.aimedical.modules.doctor.repository.MedicalRecordRepository;
 import com.aimedical.modules.doctor.repository.MedicalRecordTemplateRepository;
 import com.aimedical.modules.doctor.service.MedicalRecordService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -128,8 +129,13 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
                 .orElse(1);
         entity.setVersionNo(nextVersion);
         entity.setStatus(MedicalRecordStatus.OFFICIAL.getCode());
-        MedicalRecordEntity saved = medicalRecordRepository.save(entity);
-        return Result.success(converter.toResponse(saved));
+        try {
+            MedicalRecordEntity saved = medicalRecordRepository.save(entity);
+            return Result.success(converter.toResponse(saved));
+        } catch (DataIntegrityViolationException e) {
+            // 并发发布冲突：两个请求同时计算到相同 version_no，触发 official_key 唯一约束
+            return Result.fail(GlobalErrorCode.CONFLICT.getCode(), "并发发布冲突，该病历版本已存在，请刷新后重试");
+        }
     }
 
     @Override

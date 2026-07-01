@@ -28,6 +28,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -258,6 +259,10 @@ class PrescriptionServiceImplTest {
         entity.setDoctorId(DOCTOR_USER_ID);
         entity.setStatus(PrescriptionStatus.REJECTED.getCode());
         entity.setItems(List.of(new PrescriptionItemEntity()));
+        // 模拟上一轮驳回留下的旧审计记录
+        entity.setAuditRemark("用法用量不当");
+        entity.setAuditedBy(999L);
+        entity.setAuditedAt(LocalDateTime.now());
         PrescriptionResponse response = buildResponse(PRESCRIPTION_ID, PrescriptionStatus.PENDING_REVIEW.getCode());
         when(prescriptionRepository.findById(PRESCRIPTION_ID)).thenReturn(Optional.of(entity));
         when(prescriptionRepository.save(entity)).thenReturn(entity);
@@ -267,6 +272,10 @@ class PrescriptionServiceImplTest {
 
         assertEquals("SUCCESS", result.getCode());
         assertEquals(PrescriptionStatus.PENDING_REVIEW.getCode(), entity.getStatus());
+        // T19: 驳回后重新提交必须清除旧审计记录
+        assertNull(entity.getAuditRemark());
+        assertNull(entity.getAuditedBy());
+        assertNull(entity.getAuditedAt());
     }
 
     // ---------- audit ----------
@@ -292,6 +301,48 @@ class PrescriptionServiceImplTest {
                 new PrescriptionAuditRequest(true, "通过"), DOCTOR_USER_ID);
 
         assertEquals(GlobalErrorCode.PRESCRIPTION_NOT_AUDITABLE.getCode(), result.getCode());
+    }
+
+    @Test
+    void audit_shouldReturnForbiddenWhenSelfAudit() {
+        PrescriptionEntity entity = new PrescriptionEntity();
+        entity.setId(PRESCRIPTION_ID);
+        entity.setDoctorId(DOCTOR_USER_ID);
+        entity.setStatus(PrescriptionStatus.PENDING_REVIEW.getCode());
+        when(prescriptionRepository.findById(PRESCRIPTION_ID)).thenReturn(Optional.of(entity));
+
+        Result<PrescriptionResponse> result = service.audit(PRESCRIPTION_ID,
+                new PrescriptionAuditRequest(true, "通过"), DOCTOR_USER_ID);
+
+        assertEquals(GlobalErrorCode.FORBIDDEN.getCode(), result.getCode());
+    }
+
+    @Test
+    void audit_shouldReturnParamInvalidWhenRejectWithoutReason() {
+        PrescriptionEntity entity = new PrescriptionEntity();
+        entity.setId(PRESCRIPTION_ID);
+        entity.setDoctorId(OTHER_DOCTOR_ID);
+        entity.setStatus(PrescriptionStatus.PENDING_REVIEW.getCode());
+        when(prescriptionRepository.findById(PRESCRIPTION_ID)).thenReturn(Optional.of(entity));
+
+        Result<PrescriptionResponse> result = service.audit(PRESCRIPTION_ID,
+                new PrescriptionAuditRequest(false, null), DOCTOR_USER_ID);
+
+        assertEquals(GlobalErrorCode.PARAM_INVALID.getCode(), result.getCode());
+    }
+
+    @Test
+    void audit_shouldReturnParamInvalidWhenRejectWithBlankReason() {
+        PrescriptionEntity entity = new PrescriptionEntity();
+        entity.setId(PRESCRIPTION_ID);
+        entity.setDoctorId(OTHER_DOCTOR_ID);
+        entity.setStatus(PrescriptionStatus.PENDING_REVIEW.getCode());
+        when(prescriptionRepository.findById(PRESCRIPTION_ID)).thenReturn(Optional.of(entity));
+
+        Result<PrescriptionResponse> result = service.audit(PRESCRIPTION_ID,
+                new PrescriptionAuditRequest(false, "   "), DOCTOR_USER_ID);
+
+        assertEquals(GlobalErrorCode.PARAM_INVALID.getCode(), result.getCode());
     }
 
     @Test

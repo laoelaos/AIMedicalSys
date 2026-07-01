@@ -177,6 +177,25 @@ class ConsultationQueueServiceImplTest {
     }
 
     @Test
+    void finishConsultation_shouldReturnNotFoundWhenNotExists() {
+        when(queueRepository.findById(1L)).thenReturn(Optional.empty());
+
+        Result<ConsultationQueueResponse> result = service.finishConsultation(1L, 200L);
+
+        assertEquals(GlobalErrorCode.CONSULTATION_NOT_FOUND.getCode(), result.getCode());
+    }
+
+    @Test
+    void finishConsultation_shouldReturnForbiddenWhenNotOwner() {
+        ConsultationQueueEntity entity = buildEntity(1L, ConsultationStatus.IN_CONSULTATION.getCode(), 999L);
+        when(queueRepository.findById(1L)).thenReturn(Optional.of(entity));
+
+        Result<ConsultationQueueResponse> result = service.finishConsultation(1L, 200L);
+
+        assertEquals(GlobalErrorCode.FORBIDDEN.getCode(), result.getCode());
+    }
+
+    @Test
     void finishConsultation_shouldSetFinishedStatus() {
         ConsultationQueueEntity entity = buildEntity(1L, ConsultationStatus.IN_CONSULTATION.getCode(), 200L);
         ConsultationQueueResponse response = buildResponse(1L);
@@ -199,6 +218,35 @@ class ConsultationQueueServiceImplTest {
         Result<ConsultationQueueResponse> result = service.skip(1L, 200L);
 
         assertEquals(GlobalErrorCode.CONSULTATION_NOT_CALLABLE.getCode(), result.getCode());
+    }
+
+    @Test
+    void skip_shouldReturnNotCallableWhenStatusIsFinished() {
+        ConsultationQueueEntity entity = buildEntity(1L, ConsultationStatus.FINISHED.getCode(), 200L);
+        when(queueRepository.findById(1L)).thenReturn(Optional.of(entity));
+
+        Result<ConsultationQueueResponse> result = service.skip(1L, 200L);
+
+        assertEquals(GlobalErrorCode.CONSULTATION_NOT_CALLABLE.getCode(), result.getCode());
+    }
+
+    @Test
+    void skip_shouldReturnNotFoundWhenNotExists() {
+        when(queueRepository.findById(1L)).thenReturn(Optional.empty());
+
+        Result<ConsultationQueueResponse> result = service.skip(1L, 200L);
+
+        assertEquals(GlobalErrorCode.CONSULTATION_NOT_FOUND.getCode(), result.getCode());
+    }
+
+    @Test
+    void skip_shouldReturnForbiddenWhenNotOwner() {
+        ConsultationQueueEntity entity = buildEntity(1L, ConsultationStatus.WAITING.getCode(), 999L);
+        when(queueRepository.findById(1L)).thenReturn(Optional.of(entity));
+
+        Result<ConsultationQueueResponse> result = service.skip(1L, 200L);
+
+        assertEquals(GlobalErrorCode.FORBIDDEN.getCode(), result.getCode());
     }
 
     @Test

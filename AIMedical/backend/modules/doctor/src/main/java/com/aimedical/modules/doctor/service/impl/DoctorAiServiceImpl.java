@@ -47,11 +47,6 @@ public class DoctorAiServiceImpl implements DoctorAiService {
 
     private static final Logger log = LoggerFactory.getLogger(DoctorAiServiceImpl.class);
 
-    private static final String DEGRADE_REASON_DEMO =
-            "AI 服务当前为降级演示模式（ai.doctor.mock-degrade=true），请使用人工流程完成诊疗";
-    private static final String DEGRADE_REASON_RUNTIME =
-            "AI 服务调用异常，已降级为人工流程";
-
     private final AiService aiService;
 
     @Value("${ai.doctor.mock-degrade:true}")
@@ -233,7 +228,7 @@ public class DoctorAiServiceImpl implements DoctorAiService {
     private AiResultResponse<AiDiagnosisResponse> degradedDiagnosis() {
         return AiResultResponse.degraded(
                 new AiDiagnosisResponse(List.of(), "AI 诊断服务不可用，请医生根据主诉、现病史及查体进行人工诊断"),
-                DEGRADE_REASON_DEMO);
+                "AI 诊断服务不可用，请医生根据主诉、现病史及查体进行人工诊断");
     }
 
     private AiResultResponse<AiExaminationResponse> degradedExamination() {
@@ -252,7 +247,7 @@ public class DoctorAiServiceImpl implements DoctorAiService {
     private AiResultResponse<AiPrescriptionAssistResponse> degradedPrescriptionAssist() {
         return AiResultResponse.degraded(
                 new AiPrescriptionAssistResponse(List.of(), "AI 辅助开方服务不可用，请医生根据诊疗规范与药品说明书手动开具处方"),
-                DEGRADE_REASON_DEMO);
+                "AI 辅助开方服务不可用，请医生根据诊疗规范与药品说明书手动开具处方");
     }
 
     private AiResultResponse<AiPrescriptionAuditResponse> degradedPrescriptionAudit() {
@@ -260,7 +255,7 @@ public class DoctorAiServiceImpl implements DoctorAiService {
                 new AiPrescriptionAuditResponse(null,
                         List.of("AI 处方审核服务不可用，请药师进行人工审核，重点关注过敏史、配伍禁忌与用法用量"),
                         false),
-                DEGRADE_REASON_DEMO);
+                "AI 处方审核服务不可用，请药师进行人工审核，重点关注过敏史、配伍禁忌与用法用量");
     }
 
     private AiResultResponse<AiMedicalRecordGenResponse> degradedMedicalRecordGen() {
