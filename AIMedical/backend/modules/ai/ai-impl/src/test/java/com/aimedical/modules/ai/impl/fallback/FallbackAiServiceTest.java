@@ -46,6 +46,8 @@ import java.util.concurrent.CompletableFuture;
 
 import org.slf4j.LoggerFactory;
 
+import com.aimedical.modules.ai.api.degradation.DegradationContext;
+
 class FallbackAiServiceTest {
 
     @Test
@@ -87,7 +89,7 @@ class FallbackAiServiceTest {
 
         assertFalse(result.isSuccess());
         assertTrue(result.isDegraded());
-        assertEquals("Degraded by strategy", result.getFallbackReason());
+        assertEquals("No available AiService delegate", result.getFallbackReason());
     }
 
     @Test
@@ -444,5 +446,76 @@ class FallbackAiServiceTest {
         AiResult<DiscussionConclusionResponse> result = fallback.discussionConclusion(new DiscussionConclusionRequest()).join();
 
         assertTrue(result.isDegraded());
+    }
+
+    @Test
+    void selectDelegateShouldPickFirstWhenNoStrategies() {
+        AiService delegate1 = mock(AiService.class);
+        AiService delegate2 = mock(AiService.class);
+        FallbackAiService fallback = new FallbackAiService(List.of(delegate1, delegate2), List.of());
+
+        TriageRequest request = new TriageRequest();
+        TriageResponse response = new TriageResponse();
+        when(delegate1.triage(request)).thenReturn(CompletableFuture.completedFuture(AiResult.success(response)));
+
+        AiResult<TriageResponse> result = fallback.triage(request).join();
+        assertTrue(result.isSuccess());
+        verify(delegate1).triage(request);
+        verify(delegate2, never()).triage(any());
+    }
+
+    @Test
+    void selectDelegateShouldSkipFirstWhenDegradedByStrategy() {
+        AiService delegate1 = mock(AiService.class);
+        AiService delegate2 = mock(AiService.class);
+        DegradationStrategy strategy = mock(DegradationStrategy.class);
+        when(strategy.shouldDegrade(any(DegradationContext.class))).thenReturn(true, false);
+
+        FallbackAiService fallback = new FallbackAiService(List.of(delegate1, delegate2), List.of(strategy));
+
+        TriageRequest request = new TriageRequest();
+        TriageResponse response = new TriageResponse();
+        when(delegate2.triage(request)).thenReturn(CompletableFuture.completedFuture(AiResult.success(response)));
+
+        AiResult<TriageResponse> result = fallback.triage(request).join();
+        assertTrue(result.isSuccess());
+        verify(delegate1, never()).triage(any());
+        verify(delegate2).triage(request);
+    }
+
+    @Test
+    void selectDelegateShouldReturnEmptyDelegatesWhenAllSkipped() {
+        AiService delegate1 = mock(AiService.class);
+        AiService delegate2 = mock(AiService.class);
+        DegradationStrategy strategy = mock(DegradationStrategy.class);
+        when(strategy.shouldDegrade(any(DegradationContext.class))).thenReturn(true);
+
+        FallbackAiService fallback = new FallbackAiService(List.of(delegate1, delegate2), List.of(strategy));
+
+        AiResult<TriageResponse> result = fallback.triage(new TriageRequest()).join();
+        assertFalse(result.isSuccess());
+        assertTrue(result.isDegraded());
+        assertEquals("No available AiService delegate", result.getFallbackReason());
+        verify(delegate1, never()).triage(any());
+        verify(delegate2, never()).triage(any());
+    }
+
+    @Test
+    void selectDelegateShouldUseContextWithServiceNameAndOperationName() {
+        AiService delegate1 = mock(AiService.class);
+        DegradationStrategy strategy = mock(DegradationStrategy.class);
+        when(strategy.shouldDegrade(any(DegradationContext.class))).thenAnswer(inv -> {
+            DegradationContext ctx = inv.getArgument(0);
+            return !"triage".equals(ctx.getServiceName()) || !"triage".equals(ctx.getOperationName());
+        });
+
+        FallbackAiService fallback = new FallbackAiService(List.of(delegate1), List.of(strategy));
+
+        TriageRequest request = new TriageRequest();
+        TriageResponse response = new TriageResponse();
+        when(delegate1.triage(request)).thenReturn(CompletableFuture.completedFuture(AiResult.success(response)));
+
+        AiResult<TriageResponse> result = fallback.triage(request).join();
+        assertTrue(result.isSuccess());
     }
 }

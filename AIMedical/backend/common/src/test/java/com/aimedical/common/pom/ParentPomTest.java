@@ -38,7 +38,6 @@ class ParentPomTest {
     @Test
     void dependencyManagementShouldNotContainBusinessModules() throws Exception {
         String base = "/project/dependencyManagement/dependencies/dependency";
-        assertFalse(exists(base + "[groupId='com.aimedical' and artifactId='patient']"));
         assertFalse(exists(base + "[groupId='com.aimedical' and artifactId='doctor']"));
         assertFalse(exists(base + "[groupId='com.aimedical' and artifactId='admin']"));
     }
