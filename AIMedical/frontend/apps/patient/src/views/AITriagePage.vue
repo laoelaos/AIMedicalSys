@@ -211,6 +211,7 @@ async function handleFollowUp() {
   additionalResponse.value = ''
 
   try {
+    if (!sessionId.value) return
     const req: TriageRequest = {
       chief_complaint: chiefComplaint.value.trim(),
       session_id: sessionId.value!,

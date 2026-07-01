@@ -24,7 +24,7 @@
             <template #header><span>选择医生</span></template>
             <div class="doctor-list">
               <div
-                v-for="d in mockDoctors"
+                v-for="d in doctors"
                 :key="d.doctor_id"
                 class="doctor-row"
                 :class="{ selected: outpatient.doctorId === d.doctor_id }"
@@ -208,19 +208,31 @@ const mockSlots: AppointmentSlot[] = [
   { slot_id: 6, time_slot: '07-02 10:30-11:00', available: true },
 ]
 
-const mockDoctors: { doctor_id: number; doctor_name: string; available_slot_count: number; score: number }[] = [
+const availableSlots = computed(() => mockSlots)
+
+const doctors = ref<{ doctor_id: number; doctor_name: string; available_slot_count: number; score: number }[]>([
   { doctor_id: 201, doctor_name: '王主任', available_slot_count: 5, score: 95 },
   { doctor_id: 202, doctor_name: '张副主任', available_slot_count: 3, score: 82 },
   { doctor_id: 203, doctor_name: '李主治医师', available_slot_count: 8, score: 70 },
-]
-
-const availableSlots = computed(() => mockSlots)
+])
 
 function onDeptChange(val: number | null) {
   const dept = depts.value.find(d => d.department_id === val)
   outpatient.deptName = dept?.department_name || ''
   outpatient.doctorId = null
   outpatient.slotId = null
+  if (val) loadDoctors(val)
+}
+
+async function loadDoctors(deptId: number) {
+  if (doctors.value.length > 0) return // already loaded
+  try {
+    const result = await registrationApi.getDoctors(deptId)
+    if (!(result as BusinessError).isBusinessError) {
+      const raw = result as { doctor_id: number; doctor_name: string; available_slot_count: number; score: number }[]
+      doctors.value = raw
+    }
+  } catch { /* keep default doctors */ }
 }
 
 const sessionRegistrations = ref<RegistrationRecord[]>(getMocks())
@@ -308,20 +320,6 @@ onMounted(async () => {
     }
   } catch { /* use existing mock data */ }
 })
-
-function statusType(status: string): '' | 'success' | 'info' | 'warning' | 'danger' {
-  const map: Record<string, '' | 'success' | 'info' | 'warning' | 'danger'> = {
-    PENDING: 'warning', CONFIRMED: 'success', CANCELLED: 'info', DISPENSED: '',
-  }
-  return map[status] || 'info'
-}
-
-function statusLabel(status: string): string {
-  const map: Record<string, string> = {
-    PENDING: '待确认', CONFIRMED: '已确认', CANCELLED: '已取消', DISPENSED: '已发药',
-  }
-  return map[status] || status
-}
 
 function startCancel(r: RegistrationRecord) {
   cancelResult.value = null

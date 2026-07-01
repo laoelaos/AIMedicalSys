@@ -6,12 +6,14 @@ import com.aimedical.modules.patient.dto.CancelResponse;
 import com.aimedical.modules.patient.dto.RegistrationRequest;
 import com.aimedical.modules.patient.dto.RegistrationResponse;
 import com.aimedical.modules.patient.entity.RegistrationEntity;
+import com.aimedical.modules.patient.entity.RegistrationStatus;
 import com.aimedical.modules.patient.repository.PatientRegistrationRepository;
 import com.aimedical.modules.patient.service.PatientRegistrationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -26,10 +28,7 @@ public class PatientRegistrationServiceImpl implements PatientRegistrationServic
 
     private static final Logger log = LoggerFactory.getLogger(PatientRegistrationServiceImpl.class);
     private static final Map<String, Double> REFUND_MAP = Map.of(
-            "OUTPATIENT", 15.0,
-            "EXAMINATION", 100.0,
-            "EMERGENCY", 30.0
-    );
+            "OUTPATIENT", 15.0, "EXAMINATION", 100.0, "EMERGENCY", 30.0);
 
     private final PatientRegistrationRepository registrationRepository;
 
@@ -38,26 +37,26 @@ public class PatientRegistrationServiceImpl implements PatientRegistrationServic
     }
 
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public RegistrationResponse create(RegistrationRequest req, Long userId) {
         validateRequest(req);
-
         if (req.getTimeSlot() != null
                 && registrationRepository.existsByUserIdAndTimeSlotAndStatusNotAndDeletedFalse(
-                        userId, req.getTimeSlot(), "CANCELLED")) {
+                        userId, req.getTimeSlot(), RegistrationStatus.CANCELLED.name())) {
             throw new BusinessException(GlobalErrorCode.DUPLICATE, "该时段已有有效挂号，请勿重复提交");
         }
-
         RegistrationEntity entity = new RegistrationEntity();
         entity.setUserId(userId);
         entity.setRegistrationType(req.getRegistrationType());
         entity.setDoctorName(req.getDoctorName());
         entity.setDoctorId(req.getDoctorId());
         entity.setDepartmentName(req.getDepartmentName());
+        entity.setDepartmentId(req.getDepartmentId());
         entity.setExamItemName(req.getExamItemName());
         entity.setExamItemId(req.getExamItemId());
+        entity.setTriageRecordId(req.getTriageRecordId());
         entity.setTimeSlot(req.getTimeSlot());
-        entity.setStatus("PENDING");
+        entity.setStatus(RegistrationStatus.PENDING.name());
         entity = registrationRepository.save(entity);
         log.info("Registration created: id={}, userId={}, type={}", entity.getId(), userId, req.getRegistrationType());
         return toResponse(entity);
@@ -75,9 +74,6 @@ public class PatientRegistrationServiceImpl implements PatientRegistrationServic
             if (req.getExamItemId() == null && (req.getExamItemName() == null || req.getExamItemName().isBlank())) {
                 throw new BusinessException(GlobalErrorCode.PARAM_INVALID, "检查预约必须指定检查项目");
             }
-            // TODO T013: 联动生成与该挂号记录关联的检查申请 ExamApplicationEntity，
-            //  可通过 Spring 事件 (ApplicationEventPublisher) 异步触发。
-            log.debug("EXAMINATION registration created; ExamApplicationEntity creation deferred (T013)");
         }
     }
 
@@ -85,9 +81,7 @@ public class PatientRegistrationServiceImpl implements PatientRegistrationServic
     @Transactional(readOnly = true)
     public List<RegistrationResponse> listByUser(Long userId) {
         return registrationRepository.findByUserIdAndDeletedFalseOrderByCreatedAtDesc(userId)
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+                .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     @Override
@@ -95,37 +89,27 @@ public class PatientRegistrationServiceImpl implements PatientRegistrationServic
     public CancelResponse cancel(Long regId, Long userId) {
         RegistrationEntity entity = registrationRepository.findById(regId)
                 .orElseThrow(() -> new BusinessException(GlobalErrorCode.NOT_FOUND, "挂号记录不存在"));
-
         if (!entity.getUserId().equals(userId)) {
             throw new BusinessException(GlobalErrorCode.FORBIDDEN, "无权操作此挂号记录");
         }
-
-        if ("CANCELLED".equals(entity.getStatus())) {
+        if (RegistrationStatus.CANCELLED.name().equals(entity.getStatus()))
             return buildErrorResponse("该挂号已取消");
-        }
-        if ("DISPENSED".equals(entity.getStatus())) {
+        if (RegistrationStatus.DISPENSED.name().equals(entity.getStatus()))
             return buildErrorResponse("已发药处方请携带至线下窗口办理退费");
-        }
-        if ("CONFIRMED".equals(entity.getStatus())) {
+        if (RegistrationStatus.CONFIRMED.name().equals(entity.getStatus()))
             return buildErrorResponse("已确认挂号不支持在线取消，请联系线下窗口");
-        }
-        if ("FINISHED".equals(entity.getStatus())) {
+        if (RegistrationStatus.FINISHED.name().equals(entity.getStatus()))
             return buildErrorResponse("该挂号已完成就诊，不可取消");
-        }
 
         if (entity.getTimeSlot() != null) {
-            CancelResponse timeWindowCheck = checkTimeWindow(entity.getTimeSlot());
-            if (timeWindowCheck != null) {
-                return timeWindowCheck;
-            }
+            CancelResponse tc = checkTimeWindow(entity.getTimeSlot());
+            if (tc != null) return tc;
         }
-
         CancelResponse resp = new CancelResponse();
         resp.setSuccess(true);
         resp.setMessage("挂号已成功取消");
         resp.setRefundAmount(REFUND_MAP.getOrDefault(entity.getRegistrationType(), 0.0));
-
-        entity.setStatus("CANCELLED");
+        entity.setStatus(RegistrationStatus.CANCELLED.name());
         try {
             registrationRepository.save(entity);
         } catch (OptimisticLockingFailureException e) {
@@ -147,29 +131,20 @@ public class PatientRegistrationServiceImpl implements PatientRegistrationServic
         try {
             String[] parts = timeSlot.split(" ");
             if (parts.length < 2) return null;
-            String datePart = parts[0];
-            String startTime = parts[1].split("-")[0];
-
+            String datePart = parts[0], startTime = parts[1].split("-")[0];
             int year = LocalDateTime.now().getYear();
             LocalDateTime slotDateTime = LocalDateTime.parse(
                     year + "-" + datePart + "T" + startTime + ":00",
-                    DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
-            );
-            if (slotDateTime.isBefore(LocalDateTime.now())) {
-                slotDateTime = slotDateTime.plusYears(1);
-            }
-
-            long hoursUntil = ChronoUnit.HOURS.between(LocalDateTime.now(), slotDateTime);
-            if (hoursUntil < 2) {
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+            if (slotDateTime.isBefore(LocalDateTime.now())) slotDateTime = slotDateTime.plusYears(1);
+            if (ChronoUnit.HOURS.between(LocalDateTime.now(), slotDateTime) < 2) {
                 CancelResponse resp = new CancelResponse();
                 resp.setSuccess(false);
                 resp.setOverWindow(true);
                 resp.setMessage("已超过自助取消时间窗，请联系线下窗口");
                 return resp;
             }
-        } catch (Exception e) {
-            log.warn("Failed to parse time_slot for window check: {}", timeSlot, e);
-        }
+        } catch (Exception e) { log.warn("Failed to parse time_slot: {}", timeSlot, e); }
         return null;
     }
 
@@ -182,8 +157,9 @@ public class PatientRegistrationServiceImpl implements PatientRegistrationServic
         r.setExamItemName(e.getExamItemName());
         r.setTimeSlot(e.getTimeSlot());
         r.setStatus(e.getStatus());
-        r.setCanCancel("PENDING".equals(e.getStatus()));
-        r.setCreatedAt(e.getCreatedAt() != null ? e.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "");
+        r.setCanCancel(RegistrationStatus.PENDING.name().equals(e.getStatus()));
+        r.setCreatedAt(e.getCreatedAt() != null
+                ? e.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "");
         return r;
     }
 }

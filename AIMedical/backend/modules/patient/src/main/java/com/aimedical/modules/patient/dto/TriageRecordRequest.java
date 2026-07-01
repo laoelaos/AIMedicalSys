@@ -1,10 +1,16 @@
 package com.aimedical.modules.patient.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 import java.util.List;
 
 public class TriageRecordRequest {
 
+    @NotNull
     private Long patientId;
+
+    @NotBlank
     private String chiefComplaint;
     private String sessionId;
     private List<String> recommendedDepartments;

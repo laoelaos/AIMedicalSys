@@ -333,7 +333,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { type ReportRecord, type MedicalRecordRecord, type PrescriptionRecord, type PaymentRecord, type TriageHistoryRecord, type BusinessError, triageRecordsApi } from '@aimedical/shared'
+import { type ReportRecord, type MedicalRecordRecord, type PrescriptionRecord, type PaymentRecord, type TriageHistoryRecord, type BusinessError, recordsApi, triageRecordsApi } from '@aimedical/shared'
 
 const router = useRouter()
 const activeTab = ref('reports')
@@ -440,24 +440,69 @@ const mockPayments: PaymentRecord[] = [
   { id: 6, project_name: '中药代煎费', visit_date: '2026-04-20', amount: 30, status: '已退费', payment_date: '2026-04-21', category: '药费' },
 ]
 
-// --- Load functions with mock delay ---
-function simulateLoad<T>(target: LoadState<T>, mockData: T[]) {
+// --- Load functions: call real API, fallback to mock ---
+
+async function apiOrMock<T>(target: LoadState<T>, apiFn: () => Promise<T[] | BusinessError>, mockData: T[]) {
   target.loading = true
   target.error = null
   target.detail = null
-  setTimeout(() => {
+  try {
+    const result = await apiFn()
+    if (!(result as BusinessError).isBusinessError) {
+      target.list = result as T[]
+    } else {
+      target.list = [...mockData]
+    }
+  } catch {
     target.list = [...mockData]
-    target.loading = false
-  }, 400)
+  }
+  target.loading = false
 }
 
-function loadReports() { simulateLoad(reports, mockReports) }
-function loadMedical() { simulateLoad(medical, mockMedicalRecords) }
-function loadPrescriptions() { simulateLoad(prescriptions, mockPrescriptions) }
-function loadPayments() {
+function loadReports() {
+  apiOrMock(reports, () => recordsApi.getReports() as Promise<ReportRecord[] | BusinessError>, mockReports)
+}
+function loadMedical() {
+  apiOrMock(medical, () => recordsApi.getMedicalRecords() as Promise<MedicalRecordRecord[] | BusinessError>, mockMedicalRecords)
+}
+function loadPrescriptions() {
+  apiOrMock(prescriptions, () => recordsApi.getPrescriptions() as Promise<PrescriptionRecord[] | BusinessError>, mockPrescriptions)
+}
+async function loadPayments() {
+  apiOrMock({ list: payments.list, loading: payments.loading, error: payments.error } as unknown as LoadState<PaymentRecord>,
+    () => recordsApi.getPayments() as Promise<PaymentRecord[] | BusinessError>, mockPayments)
+  // re-implement with filter support
   payments.loading = true
   payments.error = null
-  setTimeout(() => {
+  const activeRecordsApi = () => recordsApi.getPayments(
+    paymentFilters.dateRange?.[0] && paymentFilters.dateRange?.[1]
+      ? {
+          start_date: paymentFilters.dateRange[0].toISOString().substring(0, 10),
+          end_date: paymentFilters.dateRange[1].toISOString().substring(0, 10),
+          category: paymentFilters.category || undefined,
+        }
+      : undefined
+  )
+  try {
+    const result = await activeRecordsApi()
+    if ((result as BusinessError).isBusinessError) {
+      let filtered = [...mockPayments]
+      const { dateRange, category } = paymentFilters
+      if (category) filtered = filtered.filter(p => p.category === category)
+      if (dateRange?.length === 2) {
+        const [start, end] = dateRange
+        filtered = filtered.filter(p => {
+          const d = p.visit_date || p.payment_date
+          if (!d) return false
+          const pd = new Date(d)
+          return pd >= start && pd <= end
+        })
+      }
+      payments.list = filtered
+    } else {
+      payments.list = result as PaymentRecord[]
+    }
+  } catch {
     let filtered = [...mockPayments]
     const { dateRange, category } = paymentFilters
     if (category) filtered = filtered.filter(p => p.category === category)
@@ -471,8 +516,8 @@ function loadPayments() {
       })
     }
     payments.list = filtered
-    payments.loading = false
-  }, 400)
+  }
+  payments.loading = false
 }
 
 async function loadTriage() {

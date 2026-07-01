@@ -11,9 +11,11 @@ import com.aimedical.modules.commonmodule.api.AuthService;
 import com.aimedical.modules.commonmodule.api.dto.CurrentUserResponse;
 import com.aimedical.modules.patient.dto.TriageRecordRequest;
 import com.aimedical.modules.patient.service.TriageRecordService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/patient/triage")
+@PreAuthorize("hasRole('PATIENT')")
 public class TriageController {
 
     private static final Logger log = LoggerFactory.getLogger(TriageController.class);
@@ -30,12 +33,14 @@ public class TriageController {
     private final AiService aiService;
     private final AuthService authService;
     private final TriageRecordService triageRecordService;
+    private final ObjectMapper objectMapper;
 
     public TriageController(@Qualifier("mockAiService") AiService aiService, AuthService authService,
-                            TriageRecordService triageRecordService) {
+                            TriageRecordService triageRecordService, ObjectMapper objectMapper) {
         this.aiService = aiService;
         this.authService = authService;
         this.triageRecordService = triageRecordService;
+        this.objectMapper = objectMapper;
     }
 
     @PostMapping
@@ -131,26 +136,43 @@ public class TriageController {
 
     private void asyncSaveRecord(Long patientId, TriageRequest request, TriageResponse response,
                                   boolean degraded) {
+        TriageRecordRequest recordReq = new TriageRecordRequest();
+        recordReq.setPatientId(patientId);
+        recordReq.setChiefComplaint(request.getChiefComplaint());
+        recordReq.setSessionId(response.getSessionId());
+        recordReq.setDegraded(degraded);
+        recordReq.setRuleVersion("v1.0.0");
+        recordReq.setRuleSetId("rule-set-default");
         try {
-            TriageRecordRequest recordReq = new TriageRecordRequest();
-            recordReq.setPatientId(patientId);
-            recordReq.setChiefComplaint(request.getChiefComplaint());
-            recordReq.setSessionId(response.getSessionId());
-            recordReq.setDegraded(degraded);
-            recordReq.setRuleVersion("v1.0.0");
-            recordReq.setRuleSetId("rule-set-default");
             if (response.getDepartments() != null) {
-                recordReq.setRecommendedDepartments(response.getDepartments().stream()
-                        .map(RecommendedDepartment::getDepartmentName).collect(Collectors.toList()));
+                List<Map<String, Object>> deptList = response.getDepartments().stream()
+                        .map(d -> {
+                            Map<String, Object> m = new LinkedHashMap<>();
+                            m.put("id", d.getDepartmentId());
+                            m.put("name", d.getDepartmentName());
+                            m.put("score", d.getScore() != null ? d.getScore() : 0);
+                            return m;
+                        })
+                        .collect(Collectors.toList());
+                recordReq.setRecommendedDepartments(List.of(objectMapper.writeValueAsString(deptList)));
             }
             if (response.getDoctors() != null) {
-                recordReq.setRecommendedDoctors(response.getDoctors().stream()
-                        .map(RecommendedDoctor::getDoctorName).collect(Collectors.toList()));
+                List<Map<String, Object>> docList = response.getDoctors().stream()
+                        .map(d -> {
+                            Map<String, Object> m = new LinkedHashMap<>();
+                            m.put("id", d.getDoctorId());
+                            m.put("name", d.getDoctorName());
+                            m.put("slots", d.getAvailableSlotCount() != null ? d.getAvailableSlotCount() : 0);
+                            m.put("score", d.getScore() != null ? d.getScore() : 0);
+                            return m;
+                        })
+                        .collect(Collectors.toList());
+                recordReq.setRecommendedDoctors(List.of(objectMapper.writeValueAsString(docList)));
             }
-            recordReq.setMatchedRules(List.of("分诊规则-通用"));
-            triageRecordService.saveAsync(recordReq);
-        } catch (Exception e) {
-            log.error("Failed to enqueue triage record save", e);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            log.error("Failed to serialize triage departments/doctors to JSON", e);
         }
+        recordReq.setMatchedRules(List.of("分诊规则-通用"));
+        triageRecordService.saveAsync(recordReq);
     }
 }

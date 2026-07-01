@@ -11,7 +11,7 @@ MERGE INTO sys_post (id, code, name, description, enabled, sort, role_id, delete
 (2, 'DOCTOR_GENERAL', '普通医生',   '普通医生岗位',       true, 2, 2, false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
 (3, 'PATIENT_GENERAL', '普通患者',  '普通患者岗位',       true, 3, 3, false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
-MERGE INTO sys_function (id, code, name, description, enabled, deleted, created_at, updated_at, sort, visible, type, icon, path) KEY(id) VALUES
+MERGE INTO sys_function (id, code, name, description, enabled, deleted, created_at, updated_at, sort_order, visible, type, icon, path) KEY(id) VALUES
 (1, 'menu:dashboard',    '仪表盘',   '查看仪表盘',     true, false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 1, true, 'MENU',     'dashboard',    '/dashboard'),
 (2, 'menu:registration', '挂号管理', '挂号管理菜单',   true, false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 2, true, 'MENU',     'registration', '/registration'),
 (3, 'menu:patient',      '患者管理', '患者管理菜单',   true, false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 3, true, 'MENU',     'patient',      '/patient'),

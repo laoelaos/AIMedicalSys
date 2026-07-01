@@ -73,7 +73,8 @@ const doctorName = (route.query.doctor_name as string) || ''
 const departmentName = (route.query.department_name as string) || ''
 
 if (doctorId === 0 && route.query.doctor_id !== undefined) {
-  throw new Error('无效的医生ID参数')
+  ElMessage.error('无效的医生ID参数，无法进入挂号页面')
+  router.push('/home')
 }
 
 const loading = ref(true)

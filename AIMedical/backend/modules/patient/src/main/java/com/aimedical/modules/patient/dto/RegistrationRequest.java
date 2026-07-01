@@ -19,6 +19,7 @@ public class RegistrationRequest {
     private Long examItemId;
     private String examItemName;
     private String examCategory;
+    private Long triageRecordId;
 
     public String getRegistrationType() { return registrationType; }
     public void setRegistrationType(String v) { this.registrationType = v; }
@@ -40,4 +41,6 @@ public class RegistrationRequest {
     public void setExamItemName(String v) { this.examItemName = v; }
     public String getExamCategory() { return examCategory; }
     public void setExamCategory(String v) { this.examCategory = v; }
+    public Long getTriageRecordId() { return triageRecordId; }
+    public void setTriageRecordId(Long v) { this.triageRecordId = v; }
 }

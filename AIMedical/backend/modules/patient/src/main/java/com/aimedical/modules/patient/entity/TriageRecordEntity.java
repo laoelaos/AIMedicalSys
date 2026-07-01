@@ -28,8 +28,8 @@ public class TriageRecordEntity extends BaseEntity {
     @Column(name = "recommended_doctors", length = 4000)
     private String recommendedDoctors;
 
-    @Column(name = "is_degraded", nullable = false)
-    private Boolean isDegraded;
+    @Column(name = "is_degraded")
+    private boolean isDegraded;
 
     @Column(name = "rule_version", length = 50)
     private String ruleVersion;

@@ -35,8 +35,8 @@ class TriageRecordServiceImplTest {
         req.setDegraded(false);
         req.setRuleVersion("v1.0.0");
         req.setRuleSetId("rule-set-1");
-        req.setRecommendedDepartments(List.of("神经内科", "普通内科"));
-        req.setRecommendedDoctors(List.of("王主任"));
+        req.setRecommendedDepartments(List.of("[{\"id\":1,\"name\":\"神经内科\",\"score\":92},{\"id\":2,\"name\":\"普通内科\",\"score\":75}]"));
+        req.setRecommendedDoctors(List.of("[{\"id\":101,\"name\":\"王主任\",\"slots\":5,\"score\":95}]"));
         req.setMatchedRules(List.of("头痛规则-偏头痛"));
 
         service.saveAsync(req);
@@ -75,7 +75,7 @@ class TriageRecordServiceImplTest {
         e.setPatientId(3L);
         e.setChiefComplaint("腹痛1天");
         e.setSessionId("sess-degraded");
-        e.setIsDegraded(true);
+        e.setDegraded(true);
         e.setCreatedAt(LocalDateTime.now());
         Page<TriageRecordEntity> page = new PageImpl<>(List.of(e));
         when(repository.findByPatientIdAndIsDegradedTrueAndDeletedFalseOrderByCreatedAtDesc(eq(3L), any(Pageable.class)))
@@ -91,11 +91,11 @@ class TriageRecordServiceImplTest {
         e.setPatientId(3L);
         e.setChiefComplaint("头痛三天");
         e.setSessionId("sess-123");
-        e.setIsDegraded(false);
+        e.setDegraded(false);
         e.setRuleVersion("v1.0.0");
         e.setRuleSetId("rule-set-1");
-        e.setRecommendedDepartments("神经内科,普通内科");
-        e.setRecommendedDoctors("王主任");
+        e.setRecommendedDepartments("[{\"id\":1,\"name\":\"神经内科\",\"score\":92}]");
+        e.setRecommendedDoctors("[{\"id\":101,\"name\":\"王主任\",\"slots\":5,\"score\":95}]");
         e.setMatchedRules("头痛规则-偏头痛");
         e.setCreatedAt(LocalDateTime.now());
         return e;

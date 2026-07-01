@@ -8,7 +8,8 @@ spring:
     init:
       encoding: UTF-8
       mode: always
-      continue-on-error: true
+      schema-locations:
+      data-locations: classpath:data.sql
 
   h2:
     console:

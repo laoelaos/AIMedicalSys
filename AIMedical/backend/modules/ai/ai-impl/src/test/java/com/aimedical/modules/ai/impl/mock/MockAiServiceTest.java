@@ -71,6 +71,18 @@ class MockAiServiceTest {
     }
 
     @Test
+    void triageShouldReturnDegradedWhenTriggered() {
+        TriageRequest req = new TriageRequest();
+        req.setChiefComplaint("degraded:测试降级路径");
+        var future = service.triage(req);
+        var result = future.join();
+        assertTrue(result.isDegraded());
+        var data = result.getData();
+        assertTrue(data.getIsComplete());
+        assertTrue(data.getIsDegraded());
+    }
+
+    @Test
     void diagnosisShouldReturnMockData() {
         var future = service.diagnosis(new DiagnosisRequest());
         assertNotNull(future);

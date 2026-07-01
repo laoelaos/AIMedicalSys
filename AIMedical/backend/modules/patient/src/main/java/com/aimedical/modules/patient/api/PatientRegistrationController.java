@@ -8,12 +8,14 @@ import com.aimedical.modules.patient.dto.RegistrationRequest;
 import com.aimedical.modules.patient.dto.RegistrationResponse;
 import com.aimedical.modules.patient.service.PatientRegistrationService;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/patient/registration")
+@PreAuthorize("hasRole('PATIENT')")
 public class PatientRegistrationController {
 
     private final PatientRegistrationService registrationService;

@@ -39,15 +39,15 @@ public class TriageRecordServiceImpl implements TriageRecordService {
         entity.setPatientId(request.getPatientId());
         entity.setChiefComplaint(request.getChiefComplaint());
         entity.setSessionId(request.getSessionId());
-        entity.setIsDegraded(request.getIsDegraded());
+        entity.setDegraded(request.getIsDegraded());
         entity.setRuleVersion(request.getRuleVersion());
         entity.setRuleSetId(request.getRuleSetId());
 
-        if (request.getRecommendedDepartments() != null) {
-            entity.setRecommendedDepartments(String.join(",", request.getRecommendedDepartments()));
+        if (request.getRecommendedDepartments() != null && !request.getRecommendedDepartments().isEmpty()) {
+            entity.setRecommendedDepartments(request.getRecommendedDepartments().get(0));
         }
-        if (request.getRecommendedDoctors() != null) {
-            entity.setRecommendedDoctors(String.join(",", request.getRecommendedDoctors()));
+        if (request.getRecommendedDoctors() != null && !request.getRecommendedDoctors().isEmpty()) {
+            entity.setRecommendedDoctors(request.getRecommendedDoctors().get(0));
         }
         if (request.getMatchedRules() != null) {
             entity.setMatchedRules(String.join(",", request.getMatchedRules()));
@@ -61,6 +61,7 @@ public class TriageRecordServiceImpl implements TriageRecordService {
     @Override
     @Transactional(readOnly = true)
     public Page<TriageRecordResponse> listByPatient(Long patientId, Pageable pageable) {
+        if (patientId == null) return Page.empty(pageable);
         return triageRecordRepository.findByPatientIdAndDeletedFalseOrderByCreatedAtDesc(patientId, pageable)
                 .map(this::toResponse);
     }
@@ -68,6 +69,7 @@ public class TriageRecordServiceImpl implements TriageRecordService {
     @Override
     @Transactional(readOnly = true)
     public Page<TriageRecordResponse> listByTimeRange(Long patientId, LocalDateTime startTime, LocalDateTime endTime, Pageable pageable) {
+        if (patientId == null) return Page.empty(pageable);
         return triageRecordRepository.findByPatientIdAndTimeRange(patientId, startTime, endTime, pageable)
                 .map(this::toResponse);
     }
@@ -75,6 +77,7 @@ public class TriageRecordServiceImpl implements TriageRecordService {
     @Override
     @Transactional(readOnly = true)
     public Page<TriageRecordResponse> listDegraded(Long patientId, Pageable pageable) {
+        if (patientId == null) return Page.empty(pageable);
         return triageRecordRepository.findByPatientIdAndIsDegradedTrueAndDeletedFalseOrderByCreatedAtDesc(patientId, pageable)
                 .map(this::toResponse);
     }
@@ -87,7 +90,7 @@ public class TriageRecordServiceImpl implements TriageRecordService {
         r.setSessionId(e.getSessionId());
         r.setRecommendedDepartments(e.getRecommendedDepartments());
         r.setRecommendedDoctors(e.getRecommendedDoctors());
-        r.setDegraded(e.getIsDegraded());
+        r.setDegraded(e.isDegraded());
         r.setRuleVersion(e.getRuleVersion());
         r.setRuleSetId(e.getRuleSetId());
         r.setMatchedRules(e.getMatchedRules());

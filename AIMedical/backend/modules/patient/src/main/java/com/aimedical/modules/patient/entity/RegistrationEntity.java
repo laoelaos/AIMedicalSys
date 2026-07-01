@@ -4,6 +4,7 @@ import com.aimedical.common.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,20 +14,23 @@ import lombok.Setter;
 @Setter
 public class RegistrationEntity extends BaseEntity {
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "patient_id", nullable = false)
     private Long userId;
 
     @Column(name = "registration_type", nullable = false, length = 20)
     private String registrationType;
 
-    @Column(name = "doctor_name", length = 100)
-    private String doctorName;
-
     @Column(name = "doctor_id")
     private Long doctorId;
 
-    @Column(name = "department_name", length = 100)
+    @Transient
+    private String doctorName;
+
+    @Column(name = "department", length = 64)
     private String departmentName;
+
+    @Transient
+    private Long departmentId;
 
     @Column(name = "exam_item_name", length = 200)
     private String examItemName;
@@ -37,7 +41,7 @@ public class RegistrationEntity extends BaseEntity {
     @Column(name = "triage_record_id")
     private Long triageRecordId;
 
-    @Column(name = "time_slot", length = 50)
+    @Column(name = "scheduled_time_slot", length = 20)
     private String timeSlot;
 
     @Column(nullable = false, length = 20)

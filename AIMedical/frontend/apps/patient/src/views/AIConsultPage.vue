@@ -18,7 +18,7 @@
 
       <div
         v-for="(msg, idx) in messages"
-        :key="idx"
+        :key="msg.id"
         class="chat-message"
         :class="msg.role"
       >
@@ -96,12 +96,14 @@ import { consultApi, type ConsultRequest, type ConsultResponse, type BusinessErr
 import DisclaimerBanner from '../components/DisclaimerBanner.vue'
 
 interface ChatMessage {
+  id: number
   role: 'user' | 'ai'
   text: string
   relatedQuestions?: string[]
-  disclaimer?: boolean
   error?: boolean
 }
+
+let msgSeq = 0
 
 const router = useRouter()
 const chatAreaRef = ref<HTMLElement>()
@@ -116,7 +118,7 @@ async function handleSend() {
   if (!text || loading.value) return
   inputText.value = ''
 
-  messages.value.push({ role: 'user', text })
+  messages.value.push({ id: ++msgSeq, role: 'user', text })
   scrollToBottom()
 
   loading.value = true
@@ -131,12 +133,13 @@ async function handleSend() {
       const err = result as BusinessError
       if (err.code === 'QA_AI_UNAVAILABLE') {
         messages.value.push({
+          id: ++msgSeq,
           role: 'ai',
           text: '暂不可用，请稍后重试',
           error: true,
         })
       } else {
-        messages.value.push({ role: 'ai', text: err.message || '服务异常', error: true })
+        messages.value.push({ id: ++msgSeq, role: 'ai', text: err.message || '服务异常', error: true })
       }
     } else {
       const data = result as ConsultResponse
@@ -144,14 +147,15 @@ async function handleSend() {
         sessionId.value = data.session_id
       }
       messages.value.push({
+        id: ++msgSeq,
         role: 'ai',
         text: data.answer,
         relatedQuestions: data.related_questions,
-        disclaimer: data.disclaimer_required,
       })
     }
   } catch {
     messages.value.push({
+      id: ++msgSeq,
       role: 'ai',
       text: '网络异常，请稍后重试',
       error: true,

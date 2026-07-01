@@ -47,7 +47,16 @@ public class MockAiService implements AiService {
         TriageResponse response = new TriageResponse();
         response.setSessionId(request.getSessionId() != null
                 ? request.getSessionId()
-                : UUID.randomUUID().toString().substring(0, 8));
+                : UUID.randomUUID().toString());
+
+        if (request.getChiefComplaint() != null
+                && request.getChiefComplaint().startsWith("degraded:")) {
+            response.setComplete(true);
+            response.setDegraded(true);
+            response.setReason("AI 服务繁忙，已降级为常见分诊规则推荐");
+            return CompletableFuture.completedFuture(
+                    new AiResult<>(false, response, null, true, response.getReason()));
+        }
 
         if (request.getAdditionalResponses() == null || request.getAdditionalResponses().isEmpty()) {
             response.setComplete(false);

@@ -20,7 +20,7 @@ import java.util.Set;
 @Table(name = "sys_post")
 @Getter
 @Setter
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = "users")
 public class Post extends BaseEntity {
 
     @Column(nullable = false, unique = true)

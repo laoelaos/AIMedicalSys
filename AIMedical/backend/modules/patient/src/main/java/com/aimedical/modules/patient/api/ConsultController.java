@@ -4,12 +4,18 @@ import com.aimedical.common.result.Result;
 import com.aimedical.modules.commonmodule.api.AuthService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
+/**
+ * 病情咨询控制器 — 当前为 Mock 实现，关键词匹配 + 通用话术。
+ * 待正式对接 AiService 后，需替换 ask() 实现并移除 isMock 标记。
+ */
 @RestController
 @RequestMapping("/api/patient/consult")
+@PreAuthorize("hasRole('PATIENT')")
 public class ConsultController {
 
     private final AuthService authService;
