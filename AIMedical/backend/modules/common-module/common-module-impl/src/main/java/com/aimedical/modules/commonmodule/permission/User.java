@@ -26,7 +26,7 @@ import java.util.Set;
 @Table(name = "sys_user")
 @Getter
 @Setter
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = {"roles", "posts"})
 public class User extends BaseEntity {
 
     @Column(nullable = false, unique = true)

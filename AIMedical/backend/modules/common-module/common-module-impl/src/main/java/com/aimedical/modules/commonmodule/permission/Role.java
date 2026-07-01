@@ -18,7 +18,7 @@ import java.util.Set;
 @Table(name = "sys_role")
 @Getter
 @Setter
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = {"users", "posts"})
 public class Role extends BaseEntity {
 
     @Column(nullable = false, unique = true)
