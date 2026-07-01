@@ -1,3 +1,26 @@
+## OOD
+
+### 首轮
+启动再审议框架，执行OOD流程，不使用initial_artifact模式，完成如下任务：
+
+已有项目：@AIMedical，其他文档（需求、路线、技术栈、其他ood）在: @Docs 
+现已完成Phase0、Phase1ABD，你需要完成**Phase5 包G**的OOD设计。
+
+在流程启动阶段，不要尝试读取文档和代码，直接开始
+### 修复历史
+@Harness\redeliberations\202606200218_phase1-ood\iteration_history.md 修复可能的乱码，添加可能缺失的迭代轮次记录，之后从a组件输出读取修改结果为每个记录添加修改结果
+### ia
+启动再审议框架，执行OOD流程，使用initial_artifact模式，导入 @Docs\a_v30_copy_from_v29.md 完成如下任务：
+
+我要实现一个项目，需求文档：@Docs\01_requirement.md，技术栈文档：@Docs\02_tech_stack.md，路线图文档：@Docs\03_roadmap.md
+你需要完成**阶段一**的OOD设计。
+历史迭代记录：
+@Harness\redeliberations\202606192154_phase1-ood\iteration_history.md
+@Harness\redeliberations\202606200218_phase1-ood\iteration_history.md
+@Harness\redeliberations\202606201158_phase1-ood\iteration_history.md
+
+在流程启动阶段，不要尝试读取文档和代码，直接开始
+
 ## 代码实现
 
 ### 1

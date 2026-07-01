@@ -144,13 +144,16 @@ class MovedModulePomTest {
         assertTrue(exists(rootPom, "/project/modules/module[.='modules/admin']"));
         assertTrue(exists(rootPom, "/project/modules/module[.='modules/registration']"));
         assertTrue(exists(rootPom, "/project/modules/module[.='modules/medical-order']"));
+        assertTrue(exists(rootPom, "/project/modules/module[.='modules/consultation']"));
+        assertTrue(exists(rootPom, "/project/modules/module[.='modules/prescription']"));
+        assertTrue(exists(rootPom, "/project/modules/module[.='modules/medical-record']"));
         assertTrue(exists(rootPom, "/project/modules/module[.='application']"));
         assertTrue(exists(rootPom, "/project/modules/module[.='integration']"));
     }
 
     @Test
-    void rootPomShouldHaveExactlyTenModules() throws Exception {
-        assertEquals(10, rootPom.getDocumentElement()
+    void rootPomShouldHaveExactlyThirteenModules() throws Exception {
+        assertEquals(13, rootPom.getDocumentElement()
             .getElementsByTagName("module").getLength());
     }
 }

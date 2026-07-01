@@ -57,3 +57,22 @@ jwt:
   secret: ${JWT_SECRET:aimedical-sys-jwt-secret-key-for-development-only-min-256bits}
   access-token-expiration: 900
   refresh-token-expiration: 604800
+
+# AI 超时配置
+ai:
+  timeout:
+    triage: 8
+    prescription-audit: 6
+    medical-record-generate: 12
+    prescription-assist: 8
+  mock:
+    response-strategy: STATIC
+
+# 外部门面超时
+consultation:
+  doctor-facade:
+    timeout: 2
+
+medical-record:
+  visit-facade:
+    timeout: 2

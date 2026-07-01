@@ -48,13 +48,18 @@ class AiImplPomCleanDependencyTest {
     }
 
     @Test
+    void shouldContainSpringBootStarterWeb() throws Exception {
+        assertTrue(exists("/project/dependencies/dependency[groupId='org.springframework.boot' and artifactId='spring-boot-starter-web']"));
+    }
+
+    @Test
     void shouldContainTestStarterWithTestScope() throws Exception {
         assertTrue(exists("/project/dependencies/dependency[artifactId='spring-boot-starter-test' and scope='test']"));
     }
 
     @Test
-    void totalDependenciesCountShouldBeThree() throws Exception {
+    void totalDependenciesCountShouldBeFour() throws Exception {
         Double count = (Double) xpath.evaluate("count(/project/dependencies/dependency)", doc, XPathConstants.NUMBER);
-        assertEquals(3, count.intValue());
+        assertEquals(4, count.intValue());
     }
 }

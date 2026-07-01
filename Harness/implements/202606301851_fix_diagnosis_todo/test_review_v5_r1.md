@@ -1,0 +1,24 @@
+# 测试审查报告（v5 r1）
+
+## 审查结果
+REJECTED
+
+## 发现
+
+- **[严重]** `prescription/.../rule/DosageLimitRuleTest.java` — `shouldNotMatchLevel1WhenWeightNull` 和 `shouldNotMatchLevel1WhenAgeNull` 两个测试用例断言逻辑错误，无法验证其声称的行为契约。`shouldNotMatchLevel1WhenWeightNull`：exactMatch（singleMax=30）和 ageOnly（singleMax=200）同时存在，weight=null 时 exactMatch 不命中（正确），ageOnly 命中 Level 3（age=10 在 [2,12] 内），singleMax=200，dose=100 < 200，结果为 PASS。但 PASS 只能说明"剂量未超限"，不能证明"Level 1 未命中"——如果 Level 1 意外命中了且 singleMax 恰好 > dose，同样会 PASS。同理 `shouldNotMatchLevel1WhenAgeNull`：exactMatch（singleMax=30）和 weightOnly（singleMax=200），age=null 时 exactMatch 不命中，weightOnly 命中 Level 4，singleMax=200 > dose=100，结果 PASS。同样无法区分"Level 1 未命中"和"Level 1 命中但 singleMax 足够大"。测试名称声称验证"Level 1 不可命中"，但实际只验证了最终结果为 PASS，未验证匹配的是哪个标准。正确做法：让低优先级标准的 singleMax 足够小（如 50），dose 设为 80，这样如果 Level 1 意外命中（singleMax=30），dose > singleMax 会产生 WARN/BLOCK；如果 Level 1 未命中而 Level 3/4 命中（singleMax=50），dose > singleMax 也会 WARN；只有 Level 5 命中（singleMax=200）时才 PASS。或者更直接地：让低优先级标准的 singleMax < dose，使得如果 Level 1 未命中但低优先级命中时产生 WARN（而非 PASS），从而证明 Level 1 确实未参与匹配。
+
+- **[严重]** `prescription/.../rule/SpecialPopulationDosageRuleTest.java` — `shouldReturnPassForAgeExactlyAtChildAgeMax` 和 `shouldReturnPassForAgeExactlyAtElderlyAgeMin` 测试断言不完整，无法区分"进入检查后因无标准而 PASS"和"未进入检查而 PASS"。设计契约规定 `age <= childAgeMax` 为儿童、`age >= elderlyAgeMin` 为老年人应进入检查流程，但这两个测试中 PrescriptionItem 未设置 drugId/route，repository mock 也未配置，导致 `findByDrugCodeAndRouteOfAdministrationAndAgeRangeStartNotNullAndAgeRangeEndNotNull(null, null)` 返回空列表（Mockito lenient 默认返回空 List），循环 continue 后返回 PASS。这实际上测试的是"无标准时 PASS"而非"年龄边界值进入检查"。正确做法：mock repository 返回一个年龄范围包含该边界年龄且 singleMax 足够大的标准，使 dose 在限制内，验证结果为 PASS 且 repository 被调用，证明确实进入了检查流程。
+
+- **[一般]** `prescription/.../rule/DosageLimitRuleTest.java` — `shouldMatchLevel5NoAgeOrWeight` 测试用例的断言无法区分 Level 5 匹配和 Level 3 匹配。测试数据包含 defaultStandard（ageRange/weightRange 均为 null，singleMax=100）和 specificStandard（ageRangeStart=2, ageRangeEnd=12，singleMax=50），patientInfo 为 null（age=null, weight=null）。按契约，age=null 时 Level 1/2/3 不可命中，weight=null 时 Level 1/2/4 不可命中，应命中 Level 5（defaultStandard, singleMax=100）。dose=150 > 100 → WARN。但如果 Level 3 意外命中（specificStandard, singleMax=50），dose=150 > 2×50=100 → BLOCK。当前断言 WARN 确实能区分 Level 5 和 Level 3，但无法区分 Level 5 和 Level 4（如果 weightOnly 标准意外命中）。不过由于 weight=null，Level 4 也不应命中，所以 WARN 断言在此场景下实际是充分的。此问题降级为轻微。
+
+- **[一般]** `prescription/.../rule/SpecialPopulationDosageRuleTest.java` — `shouldUseConfigurableChildAgeMax` 和 `shouldUseConfigurableElderlyAgeMin` 测试仅验证了"修改阈值后中间年龄返回 PASS"，未验证"原阈值下该年龄会进入检查"。例如 `shouldUseConfigurableChildAgeMax` 将 childAgeMax 改为 18，age=16 返回 PASS——但这只证明了 16 不在儿童范围，没有证明 16 在原 childAgeMax=14 下会进入检查。应补充验证：在默认阈值下 age=16 应返回 PASS（普通成人），修改 childAgeMax=18 后 age=16 应进入检查（儿童），通过 mock repository 返回超限标准来验证 BLOCK，从而证明阈值确实生效。
+
+- **[轻微]** `medical-record/.../task/VisitIdReconciledTaskTest.java` — `shouldNotScanRecordsWithFallbackFalse` 测试将 nonFallbackRecord 添加到测试代码局部变量中但未加入 repository，因此该记录从未被 reconcileVisitIds() 处理。虽然测试意图是验证"fallback=false 的记录不被扫描"，但实际只验证了"空列表时无 save"，与 `shouldHandleEmptyFallbackList` 测试完全等价。正确做法：应将 nonFallbackRecord 加入 fallbackRecords 列表，但 StubMedicalRecordRepository.findByVisitIdFallbackTrue() 应仅返回 visitIdFallback=true 的记录，从而验证 fallback=false 的记录确实被排除。当前 Stub 实现直接返回整个 fallbackRecords 列表，不按 visitIdFallback 过滤，导致无法测试此场景。这反映了 Stub 与真实 Repository 行为不一致的问题。
+
+- **[轻微]** `prescription/.../rule/DosageLimitRuleTest.java` — `shouldFallbackToFirstStandardWhenNoMatch` 测试中，patientAge=10, patientWeight=30.0，ageOnly 标准 ageRange=[2,6]，weightOnly 标准 weightRange=[10,20]。age=10 不在 [2,6] 内，weight=30 不在 [10,20] 内，findBestMatch 返回 null，fallback 到 ageOnly（singleMax=50），dose=100 > 50 → WARN。但测试名称为"fallback to first standard"，断言仅验证 WARN，未验证具体使用了哪个标准的 singleMax。如果 fallback 逻辑改为使用最后一个标准而非第一个，测试仍会 PASS（weightOnly singleMax=60, 100 > 60 → WARN）。建议通过选择使两个标准的 singleMax 产生不同结果来验证 fallback 目标。
+
+## 修改要求（仅 REJECTED 时）
+
+1. **DosageLimitRuleTest.java** `shouldNotMatchLevel1WhenWeightNull`（约 line 700）和 `shouldNotMatchLevel1WhenAgeNull`（约 line 734）：测试声称验证"Level 1 不可命中"但断言 PASS 无法区分 Level 1 未命中与 Level 1 命中但 singleMax 足够大的情况。修正方向：让低优先级匹配标准的 singleMax < dose，使得如果低优先级命中会产生 WARN/BLOCK，而如果 Level 1 意外命中（singleMax 更小）也会 WARN/BLOCK。通过让 dose 介于两个标准的 singleMax 之间，使得不同 Level 命中产生不同 severity，从而精确验证匹配层级。或者更简洁地：让 exactMatch 的 singleMax 远小于 dose（如 10），低优先级标准的 singleMax 远大于 dose（如 500），如果 Level 1 命中则 BLOCK，如果低优先级命中则 PASS——当前 weight/age=null 时结果应为 PASS（低优先级命中），若意外 BLOCK 则说明 Level 1 被错误命中。
+
+2. **SpecialPopulationDosageRuleTest.java** `shouldReturnPassForAgeExactlyAtChildAgeMax`（约 line 74）和 `shouldReturnPassForAgeExactlyAtElderlyAgeMin`（约 line 88）：测试无法区分"进入检查后因无标准 PASS"和"未进入检查 PASS"。修正方向：mock repository 返回一个年龄范围包含边界值且 singleMax 足够大的标准（如 ageRangeStart=14, ageRangeEnd=14, singleMax=200），dose 设为 100（在限制内），验证结果 PASS 且 repository 的专用查询被调用（verify），证明确实进入了检查流程。
