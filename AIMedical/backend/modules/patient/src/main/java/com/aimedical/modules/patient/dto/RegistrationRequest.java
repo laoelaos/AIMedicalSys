@@ -2,10 +2,12 @@ package com.aimedical.modules.patient.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 public class RegistrationRequest {
 
     @NotBlank
+    @Pattern(regexp = "OUTPATIENT|EXAMINATION", message = "挂号类型必须为 OUTPATIENT 或 EXAMINATION")
     private String registrationType;
 
     private Long doctorId;

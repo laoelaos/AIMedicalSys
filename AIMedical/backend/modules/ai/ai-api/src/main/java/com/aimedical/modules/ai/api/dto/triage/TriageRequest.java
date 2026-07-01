@@ -9,7 +9,7 @@ public class TriageRequest {
 
     private String chiefComplaint;
     private String sessionId;
-    private List<String> additionalResponses;
+    private List<FollowUpItem> additionalResponses;
 
     public TriageRequest() {
     }

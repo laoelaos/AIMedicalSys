@@ -10,6 +10,7 @@ import com.aimedical.modules.patient.repository.PatientRegistrationRepository;
 import com.aimedical.modules.patient.service.PatientRegistrationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,12 +18,18 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 public class PatientRegistrationServiceImpl implements PatientRegistrationService {
 
     private static final Logger log = LoggerFactory.getLogger(PatientRegistrationServiceImpl.class);
+    private static final Map<String, Double> REFUND_MAP = Map.of(
+            "OUTPATIENT", 15.0,
+            "EXAMINATION", 100.0,
+            "EMERGENCY", 30.0
+    );
 
     private final PatientRegistrationRepository registrationRepository;
 
@@ -33,6 +40,8 @@ public class PatientRegistrationServiceImpl implements PatientRegistrationServic
     @Override
     @Transactional
     public RegistrationResponse create(RegistrationRequest req, Long userId) {
+        validateRequest(req);
+
         if (req.getTimeSlot() != null
                 && registrationRepository.existsByUserIdAndTimeSlotAndStatusNotAndDeletedFalse(
                         userId, req.getTimeSlot(), "CANCELLED")) {
@@ -52,6 +61,24 @@ public class PatientRegistrationServiceImpl implements PatientRegistrationServic
         entity = registrationRepository.save(entity);
         log.info("Registration created: id={}, userId={}, type={}", entity.getId(), userId, req.getRegistrationType());
         return toResponse(entity);
+    }
+
+    private void validateRequest(RegistrationRequest req) {
+        if (req.getRegistrationType() == null || req.getRegistrationType().isBlank()) {
+            throw new BusinessException(GlobalErrorCode.PARAM_INVALID, "挂号类型不能为空");
+        }
+        if ("OUTPATIENT".equals(req.getRegistrationType())) {
+            if (req.getDoctorId() == null && (req.getDoctorName() == null || req.getDoctorName().isBlank())) {
+                throw new BusinessException(GlobalErrorCode.PARAM_INVALID, "门诊预约必须指定医生");
+            }
+        } else if ("EXAMINATION".equals(req.getRegistrationType())) {
+            if (req.getExamItemId() == null && (req.getExamItemName() == null || req.getExamItemName().isBlank())) {
+                throw new BusinessException(GlobalErrorCode.PARAM_INVALID, "检查预约必须指定检查项目");
+            }
+            // TODO T013: 联动生成与该挂号记录关联的检查申请 ExamApplicationEntity，
+            //  可通过 Spring 事件 (ApplicationEventPublisher) 异步触发。
+            log.debug("EXAMINATION registration created; ExamApplicationEntity creation deferred (T013)");
+        }
     }
 
     @Override
@@ -74,24 +101,16 @@ public class PatientRegistrationServiceImpl implements PatientRegistrationServic
         }
 
         if ("CANCELLED".equals(entity.getStatus())) {
-            CancelResponse resp = new CancelResponse();
-            resp.setSuccess(false);
-            resp.setMessage("该挂号已取消");
-            return resp;
+            return buildErrorResponse("该挂号已取消");
         }
-
         if ("DISPENSED".equals(entity.getStatus())) {
-            CancelResponse resp = new CancelResponse();
-            resp.setSuccess(false);
-            resp.setMessage("已发药处方请携带至线下窗口办理退费");
-            return resp;
+            return buildErrorResponse("已发药处方请携带至线下窗口办理退费");
         }
-
         if ("CONFIRMED".equals(entity.getStatus())) {
-            CancelResponse resp = new CancelResponse();
-            resp.setSuccess(false);
-            resp.setMessage("已确认挂号不支持在线取消，请联系线下窗口");
-            return resp;
+            return buildErrorResponse("已确认挂号不支持在线取消，请联系线下窗口");
+        }
+        if ("FINISHED".equals(entity.getStatus())) {
+            return buildErrorResponse("该挂号已完成就诊，不可取消");
         }
 
         if (entity.getTimeSlot() != null) {
@@ -104,16 +123,23 @@ public class PatientRegistrationServiceImpl implements PatientRegistrationServic
         CancelResponse resp = new CancelResponse();
         resp.setSuccess(true);
         resp.setMessage("挂号已成功取消");
-
-        if ("OUTPATIENT".equals(entity.getRegistrationType())) {
-            resp.setRefundAmount(15.0);
-        } else {
-            resp.setRefundAmount(100.0);
-        }
+        resp.setRefundAmount(REFUND_MAP.getOrDefault(entity.getRegistrationType(), 0.0));
 
         entity.setStatus("CANCELLED");
-        registrationRepository.save(entity);
+        try {
+            registrationRepository.save(entity);
+        } catch (OptimisticLockingFailureException e) {
+            throw new BusinessException(GlobalErrorCode.DUPLICATE,
+                    "操作冲突，该挂号已被其他操作修改，请刷新后重试");
+        }
         log.info("Registration cancelled: id={}, userId={}", regId, userId);
+        return resp;
+    }
+
+    private CancelResponse buildErrorResponse(String message) {
+        CancelResponse resp = new CancelResponse();
+        resp.setSuccess(false);
+        resp.setMessage(message);
         return resp;
     }
 
@@ -129,6 +155,9 @@ public class PatientRegistrationServiceImpl implements PatientRegistrationServic
                     year + "-" + datePart + "T" + startTime + ":00",
                     DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
             );
+            if (slotDateTime.isBefore(LocalDateTime.now())) {
+                slotDateTime = slotDateTime.plusYears(1);
+            }
 
             long hoursUntil = ChronoUnit.HOURS.between(LocalDateTime.now(), slotDateTime);
             if (hoursUntil < 2) {

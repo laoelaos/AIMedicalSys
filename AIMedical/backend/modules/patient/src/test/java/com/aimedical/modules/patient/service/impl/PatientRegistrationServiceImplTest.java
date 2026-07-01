@@ -65,6 +65,7 @@ class PatientRegistrationServiceImplTest {
 
         RegistrationRequest req = new RegistrationRequest();
         req.setRegistrationType("OUTPATIENT");
+        req.setDoctorName("王主任");
         req.setTimeSlot("07-01 08:00-08:30");
 
         assertThrows(BusinessException.class, () -> service.create(req, 3L));
@@ -199,5 +200,36 @@ class PatientRegistrationServiceImplTest {
     void cancelShouldThrowForMissingEntity() {
         when(repository.findById(99L)).thenReturn(Optional.empty());
         assertThrows(BusinessException.class, () -> service.cancel(99L, 3L));
+    }
+
+    @Test
+    void createOutpatientWithoutDoctorShouldFail() {
+        RegistrationRequest req = new RegistrationRequest();
+        req.setRegistrationType("OUTPATIENT");
+        req.setTimeSlot("07-10 08:00-08:30");
+        assertThrows(BusinessException.class, () -> service.create(req, 3L));
+    }
+
+    @Test
+    void createExaminationWithoutItemShouldFail() {
+        RegistrationRequest req = new RegistrationRequest();
+        req.setRegistrationType("EXAMINATION");
+        req.setTimeSlot("07-10 08:00-08:30");
+        assertThrows(BusinessException.class, () -> service.create(req, 3L));
+    }
+
+    @Test
+    void cancelShouldRejectFinished() {
+        RegistrationEntity e = new RegistrationEntity();
+        e.setId(1L);
+        e.setUserId(3L);
+        e.setRegistrationType("OUTPATIENT");
+        e.setTimeSlot("07-10 08:00-08:30");
+        e.setStatus("FINISHED");
+        when(repository.findById(1L)).thenReturn(Optional.of(e));
+
+        CancelResponse resp = service.cancel(1L, 3L);
+        assertFalse(resp.isSuccess());
+        assertEquals("该挂号已完成就诊，不可取消", resp.getMessage());
     }
 }

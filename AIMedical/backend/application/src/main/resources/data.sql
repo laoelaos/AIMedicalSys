@@ -11,7 +11,7 @@ MERGE INTO sys_post (id, code, name, description, enabled, sort, role_id, delete
 (2, 'DOCTOR_GENERAL', '普通医生',   '普通医生岗位',       true, 2, 2, false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
 (3, 'PATIENT_GENERAL', '普通患者',  '普通患者岗位',       true, 3, 3, false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
-MERGE INTO sys_function (id, code, name, description, enabled, deleted, created_at, updated_at, sort_order, visible, type, icon, path) KEY(id) VALUES
+MERGE INTO sys_function (id, code, name, description, enabled, deleted, created_at, updated_at, sort, visible, type, icon, path) KEY(id) VALUES
 (1, 'menu:dashboard',    '仪表盘',   '查看仪表盘',     true, false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 1, true, 'MENU',     'dashboard',    '/dashboard'),
 (2, 'menu:registration', '挂号管理', '挂号管理菜单',   true, false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 2, true, 'MENU',     'registration', '/registration'),
 (3, 'menu:patient',      '患者管理', '患者管理菜单',   true, false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 3, true, 'MENU',     'patient',      '/patient'),
@@ -47,10 +47,10 @@ MERGE INTO patient_allergy (id, patient_id, allergen, reaction_type, severity, o
 MERGE INTO patient_chronic_disease (id, patient_id, disease_name, diagnosed_at, current_status, deleted, created_at, updated_at) KEY(id) VALUES
 (1, 1, '高血压', '2022-01-15', 'STABLE', false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
-MERGE INTO registration (id, user_id, registration_type, doctor_name, department_name, time_slot, status, deleted, created_at, updated_at) KEY(id) VALUES
-(1, 3, 'OUTPATIENT', '王主任', '神经内科', '07-01 08:00-08:30', 'PENDING', false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
-(2, 3, 'EXAMINATION', NULL, NULL, '07-02 10:30-11:00', 'CONFIRMED', false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
-(3, 3, 'OUTPATIENT', '李主治医师', '普通内科', '07-01 15:00-15:30', 'DISPENSED', false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+MERGE INTO registration (id, patient_id, registration_type, department, scheduled_date, scheduled_time_slot, status, deleted, created_at, updated_at) KEY(id) VALUES
+(1, 1, 'OUTPATIENT', '神经内科', '2026-07-01', '08:00-08:30', 'PENDING', false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
+(2, 1, 'EXAMINATION', NULL, '2026-07-02', '10:30-11:00', 'CONFIRMED', false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
+(3, 1, 'OUTPATIENT', '普通内科', '2026-07-01', '15:00-15:30', 'COMPLETED', false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
 MERGE INTO triage_record (id, patient_id, chief_complaint, session_id, recommended_departments, recommended_doctors, is_degraded, rule_version, rule_set_id, matched_rules, deleted, created_at, updated_at) KEY(id) VALUES
 (1, 3, '头痛3天，伴有恶心，前额搏动性疼痛', 'mock-session-001', '神经内科,普通内科,中医科', '王主任,张副主任,李主治医师', false, 'v1.0.0', 'rule-set-neuro', '头痛规则-偏头痛,头痛规则-紧张性', false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),

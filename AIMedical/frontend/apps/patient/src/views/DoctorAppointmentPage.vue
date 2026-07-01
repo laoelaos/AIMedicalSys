@@ -67,9 +67,14 @@ import { appointmentApi, type AppointmentSlot, type BusinessError } from '@aimed
 const router = useRouter()
 const route = useRoute()
 
-const doctorId = Number(route.query.doctor_id)
+const rawDoctorId = Number(route.query.doctor_id)
+const doctorId = Number.isNaN(rawDoctorId) || rawDoctorId <= 0 ? 0 : rawDoctorId
 const doctorName = (route.query.doctor_name as string) || ''
 const departmentName = (route.query.department_name as string) || ''
+
+if (doctorId === 0 && route.query.doctor_id !== undefined) {
+  throw new Error('无效的医生ID参数')
+}
 
 const loading = ref(true)
 const booking = ref(false)

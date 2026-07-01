@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.stream.Collectors;
@@ -52,34 +51,7 @@ public class GlobalExceptionHandler {
      * @return 对应的HTTP状态码
      */
     private HttpStatus resolveHttpStatus(ErrorCode errorCode) {
-        String code = errorCode.getCode();
-        if (GlobalErrorCode.UNAUTHORIZED.getCode().equals(code)) {
-            return HttpStatus.UNAUTHORIZED;
-        }
-        if (GlobalErrorCode.FORBIDDEN.getCode().equals(code)) {
-            return HttpStatus.FORBIDDEN;
-        }
-        if (GlobalErrorCode.NOT_FOUND.getCode().equals(code)) {
-            return HttpStatus.NOT_FOUND;
-        }
-        if (GlobalErrorCode.PARAM_INVALID.getCode().equals(code)) {
-            return HttpStatus.BAD_REQUEST;
-        }
-        if (GlobalErrorCode.SYSTEM_ERROR.getCode().equals(code)) {
-            return HttpStatus.INTERNAL_SERVER_ERROR;
-        }
-        if (GlobalErrorCode.ACCOUNT_LOCKED.getCode().equals(code)) {
-            return HttpStatus.LOCKED;
-        }
-        if (GlobalErrorCode.RATE_LIMITED.getCode().equals(code)
-                || GlobalErrorCode.RATE_LIMITED_GLOBAL.getCode().equals(code)) {
-            return HttpStatus.TOO_MANY_REQUESTS;
-        }
-        if (GlobalErrorCode.TOKEN_REFRESH_FAILED.getCode().equals(code)) {
-            return HttpStatus.UNAUTHORIZED;
-        }
-        // 其他业务错误码默认返回400
-        return HttpStatus.BAD_REQUEST;
+        return errorCode.getHttpStatus();
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

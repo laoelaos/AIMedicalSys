@@ -5,9 +5,12 @@ import com.aimedical.modules.commonmodule.api.AuthService;
 import com.aimedical.modules.commonmodule.api.dto.CurrentUserResponse;
 import com.aimedical.modules.patient.dto.TriageRecordResponse;
 import com.aimedical.modules.patient.service.TriageRecordService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/patient/triage-records")
@@ -22,21 +25,24 @@ public class TriageRecordController {
     }
 
     @GetMapping
-    public Result<List<TriageRecordResponse>> list(
+    public Result<Page<TriageRecordResponse>> list(
             @RequestParam(required = false) Long patientId,
-            @RequestParam(required = false) String startTime,
-            @RequestParam(required = false) String endTime,
-            @RequestParam(required = false) Boolean degraded) {
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
+            @RequestParam(required = false) Boolean degraded,
+            Pageable pageable) {
 
         CurrentUserResponse user = authService.getCurrentUser();
         Long targetPatientId = patientId != null ? patientId : user.getUserId();
 
         if (Boolean.TRUE.equals(degraded)) {
-            return Result.success(triageRecordService.listDegraded(targetPatientId));
+            return Result.success(triageRecordService.listDegraded(targetPatientId, pageable));
         }
         if (startTime != null && endTime != null) {
-            return Result.success(triageRecordService.listByTimeRange(targetPatientId, startTime, endTime));
+            return Result.success(triageRecordService.listByTimeRange(targetPatientId, startTime, endTime, pageable));
         }
-        return Result.success(triageRecordService.listByPatient(targetPatientId));
+        return Result.success(triageRecordService.listByPatient(targetPatientId, pageable));
     }
 }

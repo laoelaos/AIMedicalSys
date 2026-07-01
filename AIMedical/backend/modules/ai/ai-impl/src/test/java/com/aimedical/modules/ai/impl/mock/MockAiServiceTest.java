@@ -17,7 +17,7 @@ import com.aimedical.modules.ai.api.dto.prescription.PrescriptionAssistRequest;
 import com.aimedical.modules.ai.api.dto.prescription.PrescriptionCheckRequest;
 import com.aimedical.modules.ai.api.dto.schedule.ScheduleRequest;
 import com.aimedical.modules.ai.api.dto.triage.TriageRequest;
-import com.aimedical.modules.ai.api.dto.triage.TriageResponse;
+import com.aimedical.modules.ai.api.dto.triage.FollowUpItem;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -40,7 +40,7 @@ class MockAiServiceTest {
         var future = service.triage(req);
         var data = future.join().getData();
         assertNotNull(data.getSessionId());
-        assertFalse(data.isComplete());
+        assertFalse(data.getIsComplete());
         assertNotNull(data.getQuestion());
     }
 
@@ -48,7 +48,11 @@ class MockAiServiceTest {
     void triageShouldReturnFullResultWithResponses() {
         TriageRequest req = new TriageRequest();
         req.setChiefComplaint("头痛三天");
-        req.setAdditionalResponses(List.of("持续了三天", "有恶心症状"));
+        FollowUpItem fi1 = new FollowUpItem();
+        fi1.setAnswer("持续了三天");
+        FollowUpItem fi2 = new FollowUpItem();
+        fi2.setAnswer("有恶心症状");
+        req.setAdditionalResponses(List.of(fi1, fi2));
         var future = service.triage(req);
         assertNotNull(future);
         assertTrue(future.isDone());
@@ -58,7 +62,7 @@ class MockAiServiceTest {
         assertNotNull(result.getData());
         var data = result.getData();
         assertNotNull(data.getSessionId());
-        assertTrue(data.isComplete());
+        assertTrue(data.getIsComplete());
         assertNotNull(data.getDepartments());
         assertEquals("神经内科", data.getDepartments().get(0).getDepartmentName());
         assertEquals(Integer.valueOf(92), data.getDepartments().get(0).getScore());

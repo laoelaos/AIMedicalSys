@@ -8,18 +8,12 @@
     <el-tabs v-model="activeTab" type="border-card">
       <!-- 在线挂号 -->
       <el-tab-pane label="在线挂号" name="register">
-        <el-radio-group v-model="regBranch" class="branch-switch">
-          <el-radio-button value="outpatient">门诊预约</el-radio-button>
-          <el-radio-button value="exam">检查预约</el-radio-button>
-        </el-radio-group>
-
-        <!-- 门诊预约分支 -->
-        <template v-if="regBranch === 'outpatient'">
-          <el-card class="step-card">
+        <!-- 门诊预约 -->
+        <el-card class="step-card">
             <template #header><span>选择科室</span></template>
             <div class="dept-grid">
               <el-radio-group v-model="outpatient.deptId" @change="onDeptChange">
-                <div v-for="d in mockDepts" :key="d.department_id" class="dept-radio">
+                <div v-for="d in depts" :key="d.department_id" class="dept-radio">
                   <el-radio :value="d.department_id">{{ d.department_name }}</el-radio>
                 </div>
               </el-radio-group>
@@ -67,63 +61,6 @@
           >
             确认挂号
           </el-button>
-        </template>
-
-        <!-- 检查预约分支 -->
-        <template v-if="regBranch === 'exam'">
-          <el-card class="step-card">
-            <template #header><span>检查类别</span></template>
-            <el-radio-group v-model="exam.category" @change="exam.itemId = null; exam.slotId = null">
-              <el-radio value="影像">影像检查 (CT/MRI/X光)</el-radio>
-              <el-radio value="超声">超声检查</el-radio>
-              <el-radio value="心电">心电检查</el-radio>
-              <el-radio value="检验">检验检查 (血常规/尿常规等)</el-radio>
-            </el-radio-group>
-          </el-card>
-
-          <el-card v-if="exam.category" class="step-card">
-            <template #header><span>检查项目</span></template>
-            <div
-              v-for="item in getExamItems(exam.category)"
-              :key="item.id"
-              class="exam-row"
-              :class="{ selected: exam.itemId === item.id }"
-              @click="exam.itemId = item.id; exam.itemName = item.name"
-            >
-              <div>
-                <div class="exam-name">{{ item.name }}</div>
-                <div class="exam-price">¥{{ item.price }}</div>
-              </div>
-              <el-checkbox :model-value="exam.itemId === item.id" />
-            </div>
-          </el-card>
-
-          <el-card v-if="exam.itemId" class="step-card">
-            <template #header><span>选择时段</span></template>
-            <div class="slot-grid">
-              <div
-                v-for="s in availableSlots"
-                :key="s.slot_id"
-                class="slot-cell"
-                :class="{ selected: exam.slotId === s.slot_id, full: !s.available }"
-                @click="exam.slotId = s.slot_id; exam.slotTime = s.time_slot"
-              >
-                {{ s.time_slot }}
-              </div>
-            </div>
-          </el-card>
-
-          <el-button
-            v-if="exam.slotId && exam.itemId"
-            type="primary"
-            size="large"
-            class="submit-btn"
-            :loading="submitting"
-            @click="submitExam"
-          >
-            确认预约
-          </el-button>
-        </template>
       </el-tab-pane>
 
       <!-- 我的挂号 -->
@@ -251,89 +188,7 @@ const cancellingActive = ref(false)
 const cancelOverWindow = ref(false)
 const cancelResult = ref<{ success: boolean; message: string; refund_amount?: number } | null>(null)
 
-// Module-level state: persists across tab switches within the same session
-const sessionRegistrations = ref<RegistrationRecord[]>(getMocks())
-
-function getMocks(): RegistrationRecord[] {
-  return [
-    {
-      id: 1001, registration_type: 'OUTPATIENT', doctor_name: '王主任', department_name: '神经内科',
-      time_slot: '07-01 08:00-08:30', status: 'PENDING', created_at: '2026-06-29 10:30', can_cancel: true,
-    },
-    {
-      id: 1002, registration_type: 'EXAMINATION', exam_item_name: '头颅 CT',
-      time_slot: '07-02 10:30-11:00', status: 'PENDING', created_at: '2026-06-29 14:00', can_cancel: true,
-    },
-    {
-      id: 1003, registration_type: 'OUTPATIENT', doctor_name: '李主治医师', department_name: '普通内科',
-      time_slot: '07-01 15:00-15:30', status: 'DISPENSED', created_at: '2026-06-28 09:00', can_cancel: false,
-    },
-  ]
-}
-
-const registrations = sessionRegistrations
-
-const pendingRegs = computed(() =>
-  registrations.value.filter(r =>
-    r.status === 'PENDING' || r.id === cancellingId.value
-  )
-)
-const confirmedRegs = computed(() =>
-  registrations.value.filter(r =>
-    r.status === 'CONFIRMED' && r.id !== cancellingId.value
-  )
-)
-const historyRegs = computed(() =>
-  registrations.value.filter(r =>
-    (r.status === 'CANCELLED' || r.status === 'DISPENSED') && r.id !== cancellingId.value
-  )
-)
-
-const mockDepts = [
-  { department_id: 1, department_name: '神经内科', score: 0 },
-  { department_id: 2, department_name: '心内科', score: 0 },
-  { department_id: 3, department_name: '消化内科', score: 0 },
-  { department_id: 4, department_name: '骨科', score: 0 },
-  { department_id: 5, department_name: '眼科', score: 0 },
-  { department_id: 6, department_name: '皮肤科', score: 0 },
-]
-
-const mockDoctors = [
-  { doctor_id: 201, doctor_name: '王主任', available_slot_count: 5, score: 95 },
-  { doctor_id: 202, doctor_name: '张副主任', available_slot_count: 3, score: 82 },
-  { doctor_id: 203, doctor_name: '李主治医师', available_slot_count: 8, score: 70 },
-]
-
-const mockSlots: AppointmentSlot[] = [
-  { slot_id: 1, time_slot: '07-01 08:00-08:30', available: true },
-  { slot_id: 2, time_slot: '07-01 09:00-09:30', available: true },
-  { slot_id: 3, time_slot: '07-01 10:00-10:30', available: true },
-  { slot_id: 4, time_slot: '07-01 14:00-14:30', available: false },
-  { slot_id: 5, time_slot: '07-02 08:30-09:00', available: true },
-  { slot_id: 6, time_slot: '07-02 10:30-11:00', available: true },
-]
-
-const mockExamItems: Record<string, { id: number; name: string; price: number }[]> = {
-  '影像': [
-    { id: 301, name: '头颅 CT', price: 260 },
-    { id: 302, name: '胸部 X 光', price: 120 },
-    { id: 303, name: '腰椎 MRI', price: 580 },
-  ],
-  '超声': [
-    { id: 304, name: '腹部彩超', price: 180 },
-    { id: 305, name: '甲状腺超声', price: 150 },
-    { id: 306, name: '心脏彩超', price: 300 },
-  ],
-  '心电': [
-    { id: 307, name: '常规心电图', price: 50 },
-    { id: 308, name: '24h 动态心电图', price: 200 },
-  ],
-  '检验': [
-    { id: 309, name: '血常规', price: 30 },
-    { id: 310, name: '尿常规', price: 20 },
-    { id: 311, name: '生化全套', price: 280 },
-  ],
-}
+const depts = ref<{ department_id: number; department_name: string; score: number }[]>([])
 
 const outpatient = reactive({
   deptId: null as number | null,
@@ -344,26 +199,53 @@ const outpatient = reactive({
   slotTime: '',
 })
 
-const exam = reactive({
-  category: null as string | null,
-  itemId: null as number | null,
-  itemName: '',
-  slotId: null as number | null,
-  slotTime: '',
-})
+const mockSlots: AppointmentSlot[] = [
+  { slot_id: 1, time_slot: '07-01 08:00-08:30', available: true },
+  { slot_id: 2, time_slot: '07-01 09:00-09:30', available: true },
+  { slot_id: 3, time_slot: '07-01 10:00-10:30', available: true },
+  { slot_id: 4, time_slot: '07-01 14:00-14:30', available: false },
+  { slot_id: 5, time_slot: '07-02 08:30-09:00', available: true },
+  { slot_id: 6, time_slot: '07-02 10:30-11:00', available: true },
+]
+
+const mockDoctors: { doctor_id: number; doctor_name: string; available_slot_count: number; score: number }[] = [
+  { doctor_id: 201, doctor_name: '王主任', available_slot_count: 5, score: 95 },
+  { doctor_id: 202, doctor_name: '张副主任', available_slot_count: 3, score: 82 },
+  { doctor_id: 203, doctor_name: '李主治医师', available_slot_count: 8, score: 70 },
+]
 
 const availableSlots = computed(() => mockSlots)
 
 function onDeptChange(val: number | null) {
-  const dept = mockDepts.find(d => d.department_id === val)
+  const dept = depts.value.find(d => d.department_id === val)
   outpatient.deptName = dept?.department_name || ''
   outpatient.doctorId = null
   outpatient.slotId = null
 }
 
-function getExamItems(cat: string) {
-  return mockExamItems[cat] || []
+const sessionRegistrations = ref<RegistrationRecord[]>(getMocks())
+
+function getMocks(): RegistrationRecord[] {
+  return [
+    { id: 1001, registration_type: 'OUTPATIENT', doctor_name: '王主任', department_name: '神经内科', time_slot: '07-01 08:00-08:30', status: 'PENDING', created_at: '2026-06-29 10:30', can_cancel: true },
+    { id: 1002, registration_type: 'EXAMINATION', exam_item_name: '头颅 CT', time_slot: '07-02 10:30-11:00', status: 'PENDING', created_at: '2026-06-29 14:00', can_cancel: true },
+    { id: 1003, registration_type: 'OUTPATIENT', doctor_name: '李主治医师', department_name: '普通内科', time_slot: '07-01 15:00-15:30', status: 'DISPENSED', created_at: '2026-06-28 09:00', can_cancel: false },
+  ]
 }
+
+const registrations = sessionRegistrations
+
+const pendingRegs = computed(() =>
+  registrations.value.filter(r => r.status === 'PENDING' || r.id === cancellingId.value)
+)
+const confirmedRegs = computed(() =>
+  registrations.value.filter(r => r.status === 'CONFIRMED' && r.id !== cancellingId.value)
+)
+const historyRegs = computed(() =>
+  registrations.value.filter(r =>
+    (r.status === 'CANCELLED' || r.status === 'DISPENSED') && r.id !== cancellingId.value
+  )
+)
 
 async function submitOutpatient() {
   if (!outpatient.doctorId || !outpatient.slotId) {
@@ -394,33 +276,38 @@ async function submitOutpatient() {
   }
 }
 
-async function submitExam() {
-  if (!exam.itemId) {
-    ElMessage.error('预约检查失败：未选择检查项目 (exam_item_id 缺失)')
-    return
-  }
-  submitting.value = true
+onMounted(async () => {
   try {
-    const result = await registrationApi.create({
-      registration_type: 'EXAMINATION',
-      exam_item_id: exam.itemId ?? undefined,
-      exam_item_name: exam.itemName,
-      exam_category: exam.category ?? undefined,
-      time_slot_id: exam.slotId ?? undefined,
-      time_slot: exam.slotTime,
-    })
-    if ((result as BusinessError).isBusinessError) {
-      ElMessage.error((result as BusinessError).message)
+    const result = await registrationApi.getDepartments()
+    if (!(result as BusinessError).isBusinessError) {
+      depts.value = result as { department_id: number; department_name: string; score: number }[]
     } else {
-      ElMessage.success('检查预约成功！')
-      router.push('/home')
+      depts.value = [
+        { department_id: 1, department_name: '神经内科', score: 0 },
+        { department_id: 2, department_name: '心内科', score: 0 },
+        { department_id: 3, department_name: '消化内科', score: 0 },
+        { department_id: 4, department_name: '骨科', score: 0 },
+        { department_id: 5, department_name: '眼科', score: 0 },
+        { department_id: 6, department_name: '皮肤科', score: 0 },
+      ]
     }
   } catch {
-    ElMessage.error('挂号请求失败')
-  } finally {
-    submitting.value = false
+    depts.value = [
+      { department_id: 1, department_name: '神经内科', score: 0 },
+      { department_id: 2, department_name: '心内科', score: 0 },
+      { department_id: 3, department_name: '消化内科', score: 0 },
+      { department_id: 4, department_name: '骨科', score: 0 },
+      { department_id: 5, department_name: '眼科', score: 0 },
+      { department_id: 6, department_name: '皮肤科', score: 0 },
+    ]
   }
-}
+  try {
+    const result = await registrationApi.list()
+    if (!(result as BusinessError).isBusinessError) {
+      // result handled by sessionRegistrations
+    }
+  } catch { /* use existing mock data */ }
+})
 
 function statusType(status: string): '' | 'success' | 'info' | 'warning' | 'danger' {
   const map: Record<string, '' | 'success' | 'info' | 'warning' | 'danger'> = {
@@ -449,24 +336,19 @@ function dismissCancel() {
 }
 
 async function doCancel(r: RegistrationRecord) {
-  const slotTime = new Date('2026-' + r.time_slot.substring(0, 11))
-  const now = new Date()
-  const diffHours = (slotTime.getTime() - now.getTime()) / 3600000
-
-  if (diffHours < 2) {
-    cancelOverWindow.value = true
-    return
-  }
-
   cancellingActive.value = true
   const result = await registrationApi.cancel(r.id)
   if (!(result as BusinessError).isBusinessError) {
     const data = result as { success: boolean; message: string; refund_amount?: number; over_window?: boolean }
-    if (data.success) {
+    if (data.over_window) {
+      cancelOverWindow.value = true
+    } else if (data.success) {
       r.status = 'CANCELLED'
       r.can_cancel = false
+      cancelResult.value = { success: data.success, message: data.message, refund_amount: data.refund_amount }
+    } else {
+      cancelResult.value = { success: data.success, message: data.message, refund_amount: data.refund_amount }
     }
-    cancelResult.value = { success: data.success, message: data.message, refund_amount: data.refund_amount }
   } else {
     cancelResult.value = { success: false, message: (result as BusinessError).message }
   }

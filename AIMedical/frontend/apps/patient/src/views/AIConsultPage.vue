@@ -3,9 +3,6 @@
     <div class="page-header">
       <el-button type="default" @click="router.push('/home')">← 返回首页</el-button>
       <h2>AI 病情咨询</h2>
-      <el-button type="warning" text size="small" @click="toggleFault">
-        模拟故障
-      </el-button>
     </div>
 
     <!-- 免责声明 -->
@@ -98,13 +95,6 @@ import { ElMessage } from 'element-plus'
 import { consultApi, type ConsultRequest, type ConsultResponse, type BusinessError } from '@aimedical/shared'
 import DisclaimerBanner from '../components/DisclaimerBanner.vue'
 
-const router = useRouter()
-const chatAreaRef = ref<HTMLElement>()
-const inputText = ref('')
-const loading = ref(false)
-const sessionId = ref<string | null>(null)
-const faultMode = ref(false)
-
 interface ChatMessage {
   role: 'user' | 'ai'
   text: string
@@ -112,6 +102,12 @@ interface ChatMessage {
   disclaimer?: boolean
   error?: boolean
 }
+
+const router = useRouter()
+const chatAreaRef = ref<HTMLElement>()
+const inputText = ref('')
+const loading = ref(false)
+const sessionId = ref<string | null>(null)
 
 const messages = ref<ChatMessage[]>([])
 
@@ -178,20 +174,6 @@ function retryMessage(idx: number) {
   if (prevUser) {
     inputText.value = prevUser.text
     handleSend()
-  }
-}
-
-async function toggleFault() {
-  try {
-    const result = await consultApi.mockToggleFault()
-    if (!(result as BusinessError).isBusinessError) {
-      const data = result as { fault: boolean }
-      faultMode.value = data.fault
-      ElMessage.info(faultMode.value ? '模拟故障已开启' : '模拟故障已关闭')
-    }
-  } catch {
-    faultMode.value = true
-    ElMessage.info('模拟故障已开启（本地模式）')
   }
 }
 

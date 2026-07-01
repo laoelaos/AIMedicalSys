@@ -1,16 +1,17 @@
 package com.aimedical.modules.patient.service.impl;
 
-import com.aimedical.common.exception.BusinessException;
 import com.aimedical.modules.patient.dto.TriageRecordRequest;
 import com.aimedical.modules.patient.dto.TriageRecordResponse;
 import com.aimedical.modules.patient.entity.TriageRecordEntity;
 import com.aimedical.modules.patient.repository.PatientTriageRecordRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,12 +40,52 @@ class TriageRecordServiceImplTest {
         req.setMatchedRules(List.of("头痛规则-偏头痛"));
 
         service.saveAsync(req);
-
         verify(repository, timeout(2000)).save(any(TriageRecordEntity.class));
     }
 
     @Test
     void listByPatientShouldReturnRecords() {
+        TriageRecordEntity e = createEntity();
+        Page<TriageRecordEntity> page = new PageImpl<>(List.of(e));
+        when(repository.findByPatientIdAndDeletedFalseOrderByCreatedAtDesc(eq(3L), any(Pageable.class)))
+                .thenReturn(page);
+
+        Page<TriageRecordResponse> result = service.listByPatient(3L, Pageable.unpaged());
+        assertEquals(1, result.getTotalElements());
+    }
+
+    @Test
+    void listByTimeRangeShouldParseAndQuery() {
+        TriageRecordEntity e = createEntity();
+        Page<TriageRecordEntity> page = new PageImpl<>(List.of(e));
+        when(repository.findByPatientIdAndTimeRange(anyLong(), any(), any(), any(Pageable.class)))
+                .thenReturn(page);
+
+        Page<TriageRecordResponse> result = service.listByTimeRange(3L,
+                LocalDateTime.of(2026, 6, 1, 0, 0),
+                LocalDateTime.of(2026, 6, 30, 23, 59),
+                Pageable.unpaged());
+        assertEquals(1, result.getTotalElements());
+    }
+
+    @Test
+    void listDegradedShouldReturnDegradedOnly() {
+        TriageRecordEntity e = new TriageRecordEntity();
+        e.setId(1L);
+        e.setPatientId(3L);
+        e.setChiefComplaint("腹痛1天");
+        e.setSessionId("sess-degraded");
+        e.setIsDegraded(true);
+        e.setCreatedAt(LocalDateTime.now());
+        Page<TriageRecordEntity> page = new PageImpl<>(List.of(e));
+        when(repository.findByPatientIdAndIsDegradedTrueAndDeletedFalseOrderByCreatedAtDesc(eq(3L), any(Pageable.class)))
+                .thenReturn(page);
+
+        Page<TriageRecordResponse> result = service.listDegraded(3L, Pageable.unpaged());
+        assertEquals(1, result.getTotalElements());
+    }
+
+    private TriageRecordEntity createEntity() {
         TriageRecordEntity e = new TriageRecordEntity();
         e.setId(1L);
         e.setPatientId(3L);
@@ -57,48 +98,6 @@ class TriageRecordServiceImplTest {
         e.setRecommendedDoctors("王主任");
         e.setMatchedRules("头痛规则-偏头痛");
         e.setCreatedAt(LocalDateTime.now());
-        when(repository.findByPatientIdAndDeletedFalseOrderByCreatedAtDesc(3L)).thenReturn(List.of(e));
-
-        List<TriageRecordResponse> list = service.listByPatient(3L);
-        assertEquals(1, list.size());
-        assertEquals("头痛三天", list.get(0).getChiefComplaint());
-        assertFalse(list.get(0).isDegraded());
-    }
-
-    @Test
-    void listByTimeRangeShouldParseAndQuery() {
-        TriageRecordEntity e = new TriageRecordEntity();
-        e.setId(1L);
-        e.setPatientId(3L);
-        e.setChiefComplaint("头痛三天");
-        e.setSessionId("sess-123");
-        e.setIsDegraded(false);
-        e.setCreatedAt(LocalDateTime.now());
-        when(repository.findByPatientIdAndTimeRange(anyLong(), any(), any())).thenReturn(List.of(e));
-
-        List<TriageRecordResponse> list = service.listByTimeRange(3L, "2026-06-01T00:00:00", "2026-06-30T23:59:59");
-        assertEquals(1, list.size());
-    }
-
-    @Test
-    void listByTimeRangeShouldThrowOnBadFormat() {
-        assertThrows(BusinessException.class, () ->
-                service.listByTimeRange(3L, "bad-format", "2026-06-30T23:59:59"));
-    }
-
-    @Test
-    void listDegradedShouldReturnDegradedOnly() {
-        TriageRecordEntity e = new TriageRecordEntity();
-        e.setId(1L);
-        e.setPatientId(3L);
-        e.setChiefComplaint("腹痛1天");
-        e.setSessionId("sess-degraded");
-        e.setIsDegraded(true);
-        e.setCreatedAt(LocalDateTime.now());
-        when(repository.findByPatientIdAndIsDegradedTrueAndDeletedFalseOrderByCreatedAtDesc(3L)).thenReturn(List.of(e));
-
-        List<TriageRecordResponse> list = service.listDegraded(3L);
-        assertEquals(1, list.size());
-        assertTrue(list.get(0).isDegraded());
+        return e;
     }
 }

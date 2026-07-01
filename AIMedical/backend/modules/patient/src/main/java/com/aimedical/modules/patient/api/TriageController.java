@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @RestController
@@ -40,61 +41,53 @@ public class TriageController {
     @PostMapping
     public Result<TriageResponse> triage(@RequestBody TriageRequest request) {
         CurrentUserResponse user = authService.getCurrentUser();
+        if (user == null || user.getUserId() == null) {
+            return Result.fail("UNAUTHORIZED", "用户未认证");
+        }
 
         if (request.getChiefComplaint() == null || request.getChiefComplaint().isBlank()) {
             return Result.fail("PARAM_INVALID", "主诉不能为空");
         }
 
+        AiResult<TriageResponse> aiResult;
         try {
             CompletableFuture<AiResult<TriageResponse>> future = aiService.triage(request);
-            AiResult<TriageResponse> aiResult = future.get();
+            aiResult = future.get(30, TimeUnit.SECONDS);
+        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException |
+                 java.lang.InterruptedException e) {
+            log.error("AI triage invocation failed", e);
+            return Result.fail("AI_SERVICE_ERROR", "AI 服务调用异常，请稍后重试");
+        }
 
-            if (aiResult.isSuccess()) {
-                TriageResponse aiResp = aiResult.getData();
-                if (aiResp.getSessionId() == null) {
-                    aiResp.setSessionId(request.getSessionId() != null
-                            ? request.getSessionId()
-                            : "sess-" + UUID.randomUUID().toString().substring(0, 8));
+        if (aiResult.isSuccess()) {
+            TriageResponse aiResp = aiResult.getData();
+
+            if (aiResp.getIsComplete()) {
+                if (aiResp.getDepartments() == null || aiResp.getDepartments().isEmpty()) {
+                    aiResp.setDepartments(buildFallbackDepartments(request.getChiefComplaint()));
                 }
-
-                if (aiResp.isComplete()) {
-                    aiResp.setDegraded(false);
-                    if (aiResp.getDepartments() == null || aiResp.getDepartments().isEmpty()) {
-                        aiResp.setDepartments(buildFallbackDepartments(request.getChiefComplaint()));
-                    }
-                    if (aiResp.getDoctors() == null || aiResp.getDoctors().isEmpty()) {
-                        aiResp.setDoctors(buildFallbackDoctors());
-                    }
-                    if (aiResp.getReason() == null) {
-                        aiResp.setReason("AI 综合分析完成，建议根据推荐科室进一步就诊");
-                    }
+                if (aiResp.getDoctors() == null || aiResp.getDoctors().isEmpty()) {
+                    aiResp.setDoctors(buildFallbackDoctors());
                 }
-
-                asyncSaveRecord(user.getUserId(), request, aiResp, false);
-                return Result.success(aiResp);
-            } else {
-                TriageResponse degraded = buildDegradedResponse(request);
-                asyncSaveRecord(user.getUserId(), request, degraded, true);
-                return Result.success(degraded);
+                if (aiResp.getReason() == null) {
+                    aiResp.setReason("AI 综合分析完成，建议根据推荐科室进一步就诊");
+                }
             }
-        } catch (Exception e) {
-            log.error("Triage failed", e);
+
+            asyncSaveRecord(user.getUserId(), request, aiResp, false);
+            return Result.success(aiResp);
+        } else if (aiResult.isDegraded()) {
             TriageResponse degraded = buildDegradedResponse(request);
             asyncSaveRecord(user.getUserId(), request, degraded, true);
             return Result.success(degraded);
+        } else {
+            log.error("AI triage returned non-success result");
+            return Result.fail("AI_SERVICE_ERROR", "AI 导诊未返回有效结果");
         }
     }
 
     private TriageResponse buildDegradedResponse(TriageRequest request) {
         TriageResponse resp = new TriageResponse();
-        resp.setSessionId(request.getSessionId() != null
-                ? request.getSessionId()
-                : "sess-" + UUID.randomUUID().toString().substring(0, 8));
-        resp.setComplete(true);
-        resp.setDegraded(true);
-        resp.setDepartments(buildFallbackDepartments(request.getChiefComplaint()));
-        resp.setDoctors(buildFallbackDoctors());
-        resp.setReason("AI 服务繁忙，已根据常见分诊规则给出推荐");
         return resp;
     }
 

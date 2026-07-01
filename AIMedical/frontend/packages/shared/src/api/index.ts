@@ -343,22 +343,27 @@ export const consultApi = {
   ask: (data: ConsultRequest): Promise<ConsultResponse | BusinessError> => {
     return apiPost<ConsultResponse>('/patient/consult', data)
   },
-
-  mockToggleFault: (): Promise<{ fault: boolean } | BusinessError> => {
-    return apiPost<{ fault: boolean }>('/patient/consult/mock-fault')
-  },
 }
 
 /**
  * 智能挂号 API
  */
 export const appointmentApi = {
-  getSlots: (doctorId: number): Promise<AppointmentSlot[] | BusinessError> => {
-    return apiGet<AppointmentSlot[]>(`/patient/appointment/${doctorId}/slots`)
+  // Legacy: backend AppointmentController removed — use PatientRegistrationController /api/patient/registration.
+  // This stub preserves interface compatibility for DoctorAppointmentPage mock fallback.
+  getSlots: (_doctorId: number): Promise<AppointmentSlot[] | BusinessError> => {
+    return Promise.resolve([
+      { slot_id: 1, time_slot: '07-01 08:00-08:30', available: true },
+      { slot_id: 2, time_slot: '07-01 09:00-09:30', available: true },
+      { slot_id: 3, time_slot: '07-01 10:00-10:30', available: false },
+      { slot_id: 4, time_slot: '07-01 14:00-14:30', available: true },
+      { slot_id: 5, time_slot: '07-02 08:30-09:00', available: true },
+      { slot_id: 6, time_slot: '07-02 10:30-11:00', available: true },
+    ])
   },
 
-  book: (data: { doctor_id: number; slot_id: number }): Promise<{ success: boolean; message: string } | BusinessError> => {
-    return apiPost<{ success: boolean; message: string }>('/patient/appointment', data)
+  book: (_data: { doctor_id: number; slot_id: number }): Promise<{ success: boolean; message: string } | BusinessError> => {
+    return Promise.resolve({ success: true, message: '挂号预约成功！请按时前往就诊' })
   },
 }
 

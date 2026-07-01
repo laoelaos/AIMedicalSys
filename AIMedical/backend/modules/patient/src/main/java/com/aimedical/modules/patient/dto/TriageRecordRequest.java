@@ -9,7 +9,7 @@ public class TriageRecordRequest {
     private String sessionId;
     private List<String> recommendedDepartments;
     private List<String> recommendedDoctors;
-    private boolean isDegraded;
+    private boolean degraded;
     private String ruleVersion;
     private String ruleSetId;
     private List<String> matchedRules;
@@ -24,8 +24,8 @@ public class TriageRecordRequest {
     public void setRecommendedDepartments(List<String> v) { this.recommendedDepartments = v; }
     public List<String> getRecommendedDoctors() { return recommendedDoctors; }
     public void setRecommendedDoctors(List<String> v) { this.recommendedDoctors = v; }
-    public boolean isDegraded() { return isDegraded; }
-    public void setDegraded(boolean v) { this.isDegraded = v; }
+    public boolean getIsDegraded() { return degraded; }
+    public void setDegraded(boolean v) { this.degraded = v; }
     public String getRuleVersion() { return ruleVersion; }
     public void setRuleVersion(String v) { this.ruleVersion = v; }
     public String getRuleSetId() { return ruleSetId; }
