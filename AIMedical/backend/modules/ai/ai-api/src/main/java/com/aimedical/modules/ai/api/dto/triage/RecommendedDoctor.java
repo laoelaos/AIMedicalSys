@@ -2,43 +2,28 @@ package com.aimedical.modules.ai.api.dto.triage;
 
 public class RecommendedDoctor {
 
-    private Integer doctorId;
+    private String doctorId;
     private String doctorName;
-    private Integer availableSlotCount;
-    private Integer score;
+    private Integer availableSlotCount = 0;
+    private float score;
 
     public RecommendedDoctor() {
     }
 
-    public Integer getDoctorId() {
-        return doctorId;
-    }
+    public String getDoctorId() { return doctorId; }
+    public void setDoctorId(String v) { this.doctorId = v; }
 
-    public void setDoctorId(Integer doctorId) {
-        this.doctorId = doctorId;
-    }
+    public String getDoctorName() { return doctorName; }
+    public void setDoctorName(String v) { this.doctorName = v; }
 
-    public String getDoctorName() {
-        return doctorName;
-    }
+    public Integer getAvailableSlotCount() { return availableSlotCount; }
+    public void setAvailableSlotCount(Integer v) { this.availableSlotCount = v; }
 
-    public void setDoctorName(String doctorName) {
-        this.doctorName = doctorName;
-    }
+    public float getScore() { return score; }
+    public void setScore(float v) { this.score = v; }
 
-    public Integer getAvailableSlotCount() {
-        return availableSlotCount;
-    }
-
-    public void setAvailableSlotCount(Integer availableSlotCount) {
-        this.availableSlotCount = availableSlotCount;
-    }
-
-    public Integer getScore() {
-        return score;
-    }
-
-    public void setScore(Integer score) {
-        this.score = score;
-    }
+    // Upstream compatibility
+    private String departmentId;
+    public String getDepartmentId() { return departmentId; }
+    public void setDepartmentId(String v) { this.departmentId = v; }
 }

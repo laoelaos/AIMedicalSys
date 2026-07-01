@@ -42,6 +42,18 @@ import java.util.UUID;
 @ConditionalOnProperty(name = "ai.mock.enabled", havingValue = "true", matchIfMissing = true)
 public class MockAiService implements AiService {
 
+    public enum ResponseStrategy {
+        NORMAL, DECORATED, FALLBACK, STATIC, AI_UNAVAILABLE, TIMEOUT
+    }
+
+    private ResponseStrategy strategy = ResponseStrategy.NORMAL;
+
+    public MockAiService() {}
+    public MockAiService(String strategyName) { this.strategy = ResponseStrategy.valueOf(strategyName); }
+
+    public ResponseStrategy getStrategy() { return strategy; }
+    public void setStrategy(ResponseStrategy v) { this.strategy = v; }
+
     @Override
     public CompletableFuture<AiResult<TriageResponse>> triage(TriageRequest request) {
         TriageResponse response = new TriageResponse();
@@ -64,16 +76,16 @@ public class MockAiService implements AiService {
         } else {
             response.setComplete(true);
             RecommendedDepartment dept = new RecommendedDepartment();
-            dept.setDepartmentId(1);
+            dept.setDepartmentId("1");
             dept.setDepartmentName("神经内科");
-            dept.setScore(92);
+            dept.setScore(92f);
             response.setDepartments(List.of(dept));
 
             RecommendedDoctor doc = new RecommendedDoctor();
-            doc.setDoctorId(101);
+            doc.setDoctorId("101");
             doc.setDoctorName("王主任");
             doc.setAvailableSlotCount(5);
-            doc.setScore(95);
+            doc.setScore(95f);
             response.setDoctors(List.of(doc));
             response.setReason("根据主诉综合分析，建议优先就诊神经内科以排除相关疾病");
         }

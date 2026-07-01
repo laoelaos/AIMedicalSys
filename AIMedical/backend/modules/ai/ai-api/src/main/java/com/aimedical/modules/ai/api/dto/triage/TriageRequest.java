@@ -9,7 +9,14 @@ public class TriageRequest {
 
     private String chiefComplaint;
     private String sessionId;
-    private List<FollowUpItem> additionalResponses;
+    private List<AdditionalResponseItem> additionalResponses;
+
+    // Upstream consultation module compatibility
+    private String patientId;
+    private String ruleVersion;
+    private String ruleSetId;
+    private String additionalResponsesText;
+    private String correctedChiefComplaint;
 
     public TriageRequest() {
     }

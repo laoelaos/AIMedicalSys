@@ -9,6 +9,18 @@ public class RecommendedDepartment {
     public RecommendedDepartment() {
     }
 
+    public RecommendedDepartment(Integer departmentId, String departmentName, Integer score) {
+        this.departmentId = String.valueOf(departmentId);
+        this.departmentName = departmentName;
+        this.score = score != null ? score.floatValue() : 0f;
+    }
+
+    public RecommendedDepartment(String departmentId, String departmentName, Integer score) {
+        this.departmentId = departmentId;
+        this.departmentName = departmentName;
+        this.score = score != null ? score.floatValue() : 0f;
+    }
+
     public RecommendedDepartment(String departmentId, String departmentName, float score) {
         this.departmentId = departmentId;
         this.departmentName = departmentName;

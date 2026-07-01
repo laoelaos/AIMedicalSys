@@ -99,14 +99,14 @@ public class TriageController {
     private List<RecommendedDepartment> buildFallbackDepartments(String chiefComplaint) {
         List<RecommendedDepartment> depts = new ArrayList<>();
         RecommendedDepartment d1 = new RecommendedDepartment();
-        d1.setDepartmentId(1);
+        d1.setDepartmentId("1");
         d1.setDepartmentName("普通内科");
-        d1.setScore(75);
+        d1.setScore(75f);
         depts.add(d1);
         RecommendedDepartment d2 = new RecommendedDepartment();
-        d2.setDepartmentId(2);
+        d2.setDepartmentId("2");
         d2.setDepartmentName("全科门诊");
-        d2.setScore(60);
+        d2.setScore(60f);
         depts.add(d2);
         return depts;
     }
@@ -114,22 +114,22 @@ public class TriageController {
     private List<RecommendedDoctor> buildFallbackDoctors() {
         List<RecommendedDoctor> docs = new ArrayList<>();
         RecommendedDoctor d1 = new RecommendedDoctor();
-        d1.setDoctorId(101);
+        d1.setDoctorId("101");
         d1.setDoctorName("王主任");
         d1.setAvailableSlotCount(5);
-        d1.setScore(95);
+        d1.setScore(95f);
         docs.add(d1);
         RecommendedDoctor d2 = new RecommendedDoctor();
-        d2.setDoctorId(102);
+        d2.setDoctorId("102");
         d2.setDoctorName("张副主任");
         d2.setAvailableSlotCount(3);
-        d2.setScore(82);
+        d2.setScore(82f);
         docs.add(d2);
         RecommendedDoctor d3 = new RecommendedDoctor();
-        d3.setDoctorId(103);
+        d3.setDoctorId("103");
         d3.setDoctorName("李主治医师");
         d3.setAvailableSlotCount(8);
-        d3.setScore(70);
+        d3.setScore(70f);
         docs.add(d3);
         return docs;
     }
@@ -150,7 +150,7 @@ public class TriageController {
                             Map<String, Object> m = new LinkedHashMap<>();
                             m.put("id", d.getDepartmentId());
                             m.put("name", d.getDepartmentName());
-                            m.put("score", d.getScore() != null ? d.getScore() : 0);
+                            m.put("score", d.getScore());
                             return m;
                         })
                         .collect(Collectors.toList());
@@ -163,7 +163,7 @@ public class TriageController {
                             m.put("id", d.getDoctorId());
                             m.put("name", d.getDoctorName());
                             m.put("slots", d.getAvailableSlotCount() != null ? d.getAvailableSlotCount() : 0);
-                            m.put("score", d.getScore() != null ? d.getScore() : 0);
+                            m.put("score", d.getScore());
                             return m;
                         })
                         .collect(Collectors.toList());
