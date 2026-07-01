@@ -8,10 +8,10 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ---------------------------------------------
 -- 角色
 -- ---------------------------------------------
-INSERT INTO `sys_role` (`id`, `code`, `name`, `description`, `enabled`, `created_at`, `updated_at`, `deleted`) VALUES
-(1, 'ADMIN',   '系统管理员', '拥有系统全部权限', 1, NOW(), NOW(), 0),
-(2, 'DOCTOR',  '医生',       '医生角色',         1, NOW(), NOW(), 0),
-(3, 'PATIENT', '患者',       '患者角色',         1, NOW(), NOW(), 0);
+INSERT INTO `sys_role` (`id`, `code`, `name`, `description`, `enabled`, `sort`, `created_at`, `updated_at`, `deleted`) VALUES
+(1, 'ADMIN',   '系统管理员', '拥有系统全部权限', 1, 0, NOW(), NOW(), 0),
+(2, 'DOCTOR',  '医生',       '医生角色',         1, 1, NOW(), NOW(), 0),
+(3, 'PATIENT', '患者',       '患者角色',         1, 2, NOW(), NOW(), 0);
 
 -- ---------------------------------------------
 -- 岗位
@@ -27,19 +27,19 @@ INSERT INTO `sys_post` (`id`, `code`, `name`, `description`, `role_id`, `enabled
 -- ---------------------------------------------
 -- 菜单 / 功能
 -- ---------------------------------------------
-INSERT INTO `sys_function` (`id`, `parent_id`, `code`, `name`, `type`, `path`, `component`, `icon`, `sort`, `visible`, `perms`, `enabled`, `created_at`, `updated_at`, `deleted`) VALUES
-(1,  NULL, 'system',              '系统管理', 'MENU', '/system',               'Layout',                     'setting',     1, 1, NULL,                       1, NOW(), NOW(), 0),
-(2,  1,    'system:user',         '用户管理', 'MENU', '/system/user',          'system/user/index',          'user',        1, 1, 'system:user:list',         1, NOW(), NOW(), 0),
-(3,  1,    'system:role',         '角色管理', 'MENU', '/system/role',          'system/role/index',          'peoples',     2, 1, 'system:role:list',         1, NOW(), NOW(), 0),
-(4,  1,    'system:post',         '岗位管理', 'MENU', '/system/post',          'system/post/index',          'user-tag',    3, 1, 'system:post:list',         1, NOW(), NOW(), 0),
-(5,  1,    'system:menu',         '菜单管理', 'MENU', '/system/menu',          'system/menu/index',          'menu',        4, 1, 'system:menu:list',         1, NOW(), NOW(), 0),
-(6,  1,    'system:dict',         '字典管理', 'MENU', '/system/dict',          'system/dict/index',          'edit',        5, 1, 'system:dict:list',         1, NOW(), NOW(), 0),
-(7,  NULL, 'monitor',             '系统监控', 'MENU', '/monitor',              'Layout',                     'monitor',     2, 1, NULL,                       1, NOW(), NOW(), 0),
-(8,  7,    'monitor:log',         '操作日志', 'MENU', '/monitor/operationLog', 'monitor/operationLog/index', 'form',        1, 1, 'monitor:operationLog:list', 1, NOW(), NOW(), 0),
-(9,  7,    'monitor:loginLog',    '登录日志', 'MENU', '/monitor/loginLog',     'monitor/loginLog/index',     'logininfor',  2, 1, 'monitor:loginLog:list',    1, NOW(), NOW(), 0),
-(10, NULL, 'patient',             '患者中心', 'MENU', '/patient',              'Layout',                     'user-friend', 3, 1, NULL,                       1, NOW(), NOW(), 0),
-(11, 10,   'patient:profile',     '个人中心', 'MENU', '/patient/profile',      'patient/profile/index',      'id-card',     1, 1, 'patient:profile:view',     1, NOW(), NOW(), 0),
-(12, 10,   'patient:health',      '健康档案', 'MENU', '/patient/health',       'patient/health/index',       'heart',       2, 1, 'patient:health:view',      1, NOW(), NOW(), 0);
+INSERT INTO `sys_function` (`id`, `parent_id`, `code`, `name`, `type`, `path`, `component`, `icon`, `sort_order`, `visible`, `enabled`, `created_at`, `updated_at`, `deleted`) VALUES
+(1,  NULL, 'system',              '系统管理', 'MENU', '/system',               'Layout',                     'setting',     1, 1, 1, NOW(), NOW(), 0),
+(2,  1,    'system:user',         '用户管理', 'MENU', '/system/user',          'system/user/index',          'user',        1, 1, 1, NOW(), NOW(), 0),
+(3,  1,    'system:role',         '角色管理', 'MENU', '/system/role',          'system/role/index',          'peoples',     2, 1, 1, NOW(), NOW(), 0),
+(4,  1,    'system:post',         '岗位管理', 'MENU', '/system/post',          'system/post/index',          'user-tag',    3, 1, 1, NOW(), NOW(), 0),
+(5,  1,    'system:menu',         '菜单管理', 'MENU', '/system/menu',          'system/menu/index',          'menu',        4, 1, 1, NOW(), NOW(), 0),
+(6,  1,    'system:dict',         '字典管理', 'MENU', '/system/dict',          'system/dict/index',          'edit',        5, 1, 1, NOW(), NOW(), 0),
+(7,  NULL, 'monitor',             '系统监控', 'MENU', '/monitor',              'Layout',                     'monitor',     2, 1, 1, NOW(), NOW(), 0),
+(8,  7,    'monitor:log',         '操作日志', 'MENU', '/monitor/operationLog', 'monitor/operationLog/index', 'form',        1, 1, 1, NOW(), NOW(), 0),
+(9,  7,    'monitor:loginLog',    '登录日志', 'MENU', '/monitor/loginLog',     'monitor/loginLog/index',     'logininfor',  2, 1, 1, NOW(), NOW(), 0),
+(10, NULL, 'patient',             '患者中心', 'MENU', '/patient',              'Layout',                     'user-friend', 3, 1, 1, NOW(), NOW(), 0),
+(11, 10,   'patient:profile',     '个人中心', 'MENU', '/patient/profile',      'patient/profile/index',      'id-card',     1, 1, 1, NOW(), NOW(), 0),
+(12, 10,   'patient:health',      '健康档案', 'MENU', '/patient/health',       'patient/health/index',       'heart',       2, 1, 1, NOW(), NOW(), 0);
 
 -- ---------------------------------------------
 -- 字典类型

@@ -20,9 +20,10 @@ import java.util.Set;
 @Table(name = "sys_post")
 @Getter
 @Setter
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class Post extends BaseEntity {
 
+    @EqualsAndHashCode.Include
     @Column(nullable = false, unique = true)
     private String code;
 
@@ -37,15 +38,18 @@ public class Post extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
+    @EqualsAndHashCode.Exclude
     private Role role;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "post_function",
             joinColumns = @JoinColumn(name = "post_id"),
             inverseJoinColumns = @JoinColumn(name = "function_id"))
+    @EqualsAndHashCode.Exclude
     private Set<PermissionFunction> functions;
 
     @ManyToMany(mappedBy = "posts", fetch = FetchType.LAZY)
+    @EqualsAndHashCode.Exclude
     private Set<User> users;
 
     @Column(length = 500)

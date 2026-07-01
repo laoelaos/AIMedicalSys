@@ -18,9 +18,10 @@ import java.util.Set;
 @Table(name = "sys_role")
 @Getter
 @Setter
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class Role extends BaseEntity {
 
+    @EqualsAndHashCode.Include
     @Column(nullable = false, unique = true)
     private String code;
 
@@ -44,9 +45,11 @@ public class Role extends BaseEntity {
     private String remark;
 
     @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
+    @EqualsAndHashCode.Exclude
     private Set<Post> posts;
 
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
+    @EqualsAndHashCode.Exclude
     private Set<User> users;
 
     @PrePersist

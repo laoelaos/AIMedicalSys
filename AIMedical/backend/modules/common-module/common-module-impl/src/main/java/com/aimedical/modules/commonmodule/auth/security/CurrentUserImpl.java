@@ -19,14 +19,34 @@ public class CurrentUserImpl implements CurrentUser {
     @Override
     public Long getUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof Long userId)) {
+        if (auth == null || !auth.isAuthenticated()) {
             return null;
         }
-        return userId;
+        Object principal = auth.getPrincipal();
+        if (principal instanceof Long uid) {
+            return uid;
+        }
+        if (principal instanceof Integer uid) {
+            return uid.longValue();
+        }
+        if (principal instanceof String username) {
+            return userRepository.findByUsername(username)
+                    .map(User::getId)
+                    .orElse(null);
+        }
+        return null;
     }
 
     @Override
     public String getUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return null;
+        }
+        Object principal = auth.getPrincipal();
+        if (principal instanceof String username) {
+            return username;
+        }
         Long userId = getUserId();
         if (userId == null) return null;
         return userRepository.findById(userId)
