@@ -34,6 +34,7 @@ class CurrentUserImplTest {
         authentication = mock(Authentication.class);
         securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
     }
 
     @AfterEach
@@ -96,6 +97,7 @@ class CurrentUserImplTest {
     @Test
     void getUserId_whenPrincipalIsNotLong_shouldReturnNull() {
         when(authentication.getPrincipal()).thenReturn("not a long");
+        when(userRepository.findByUsername("not a long")).thenReturn(Optional.empty());
 
         Long result = currentUser.getUserId();
 

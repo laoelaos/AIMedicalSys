@@ -1,45 +1,36 @@
-## Summary
+## 改动说明
 
-- What changed?
-- Why is this change needed?
+- 改了哪些内容：
+- 为什么改：
 
-## Scope
+## 范围
 
-- [ ] Backend
-- [ ] Frontend
-- [ ] Docs
-- [ ] Build / CI
+- [ ] 后端
+- [ ] 前端
+- [ ] 文档
+- [ ] 构建 / CI
 
-## Verification
+## 验证
 
-- [ ] I verified the changed files locally
-- [ ] I listed the actual commands or manual checks below
-
-```text
-Example:
-- mvn test
-- mvn verify -pl integration
-- npm ci
-- npm run build:all
-- curl http://localhost:8080/api/ping
-```
-
-## OOD / Roadmap Impact
-
-- [ ] No design document impact
-- [ ] Related to `Docs/04_ood_phase0.md`
-- [ ] Related to `Docs/03_roadmap.md`
-
-If related, list the affected sections or decisions:
+- [ ] 本地验证通过
+- [ ] 验证命令或手动检查：
 
 ```text
-Example: Docs/04_ood_phase0.md §10.1 CI skeleton
+（可填 mvn verify / npm run build:all / curl /api/ping 等）
 ```
 
-## Checklist
+## 设计文档影响
 
-- [ ] The branch contains one focused topic only
-- [ ] The commit messages follow `CONTRIBUTING.md`
-- [ ] No unrelated files were modified
-- [ ] The change stays within the current Phase boundary
-- [ ] Any required docs were added or updated
+- [ ] 无影响
+- [ ] 涉及 `Docs/04_ood_phase0.md`
+- [ ] 涉及 `Docs/03_roadmap.md`
+
+如涉及，请说明：
+
+## 自检清单
+
+- [ ] 分支只包含一个主题
+- [ ] Commit 符合 `CONTRIBUTING.md` 规范
+- [ ] 未改动无关文件
+- [ ] 未超出当前 Phase 范围
+- [ ] 必要的文档已同步更新

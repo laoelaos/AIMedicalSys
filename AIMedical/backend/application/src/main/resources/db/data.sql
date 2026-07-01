@@ -9,9 +9,9 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- 角色
 -- ---------------------------------------------
 INSERT INTO `sys_role` (`id`, `code`, `name`, `description`, `enabled`, `sort`, `created_at`, `updated_at`, `deleted`) VALUES
-(1, 'ADMIN',   '系统管理员', '拥有系统全部权限', 1, 1, NOW(), NOW(), 0),
-(2, 'DOCTOR',  '医生',       '医生角色',         1, 2, NOW(), NOW(), 0),
-(3, 'PATIENT', '患者',       '患者角色',         1, 3, NOW(), NOW(), 0);
+(1, 'ADMIN',   '系统管理员', '拥有系统全部权限', 1, 0, NOW(), NOW(), 0),
+(2, 'DOCTOR',  '医生',       '医生角色',         1, 1, NOW(), NOW(), 0),
+(3, 'PATIENT', '患者',       '患者角色',         1, 2, NOW(), NOW(), 0);
 
 -- ---------------------------------------------
 -- 岗位
@@ -28,18 +28,18 @@ INSERT INTO `sys_post` (`id`, `code`, `name`, `description`, `role_id`, `enabled
 -- 菜单 / 功能
 -- ---------------------------------------------
 INSERT INTO `sys_function` (`id`, `parent_id`, `code`, `name`, `type`, `path`, `component`, `icon`, `sort_order`, `visible`, `enabled`, `created_at`, `updated_at`, `deleted`) VALUES
-(1,  NULL, 'system',              '系统管理', 'MENU', '/system',               'Layout',                     'setting',     1, TRUE, TRUE, NOW(), NOW(), 0),
-(2,  1,    'system:user',         '用户管理', 'MENU', '/system/user',          'system/user/index',          'user',        1, TRUE, TRUE, NOW(), NOW(), 0),
-(3,  1,    'system:role',         '角色管理', 'MENU', '/system/role',          'system/role/index',          'peoples',     2, TRUE, TRUE, NOW(), NOW(), 0),
-(4,  1,    'system:post',         '岗位管理', 'MENU', '/system/post',          'system/post/index',          'user-tag',    3, TRUE, TRUE, NOW(), NOW(), 0),
-(5,  1,    'system:menu',         '菜单管理', 'MENU', '/system/menu',          'system/menu/index',          'menu',        4, TRUE, TRUE, NOW(), NOW(), 0),
-(6,  1,    'system:dict',         '字典管理', 'MENU', '/system/dict',          'system/dict/index',          'edit',        5, TRUE, TRUE, NOW(), NOW(), 0),
-(7,  NULL, 'monitor',             '系统监控', 'MENU', '/monitor',              'Layout',                     'monitor',     2, TRUE, TRUE, NOW(), NOW(), 0),
-(8,  7,    'monitor:log',         '操作日志', 'MENU', '/monitor/operationLog', 'monitor/operationLog/index', 'form',        1, TRUE, TRUE, NOW(), NOW(), 0),
-(9,  7,    'monitor:loginLog',    '登录日志', 'MENU', '/monitor/loginLog',     'monitor/loginLog/index',     'logininfor',  2, TRUE, TRUE, NOW(), NOW(), 0),
-(10, NULL, 'patient',             '患者中心', 'MENU', '/patient',              'Layout',                     'user-friend', 3, TRUE, TRUE, NOW(), NOW(), 0),
-(11, 10,   'patient:profile',     '个人中心', 'MENU', '/patient/profile',      'patient/profile/index',      'id-card',     1, TRUE, TRUE, NOW(), NOW(), 0),
-(12, 10,   'patient:health',      '健康档案', 'MENU', '/patient/health',       'patient/health/index',       'heart',       2, TRUE, TRUE, NOW(), NOW(), 0);
+(1,  NULL, 'system',              '系统管理', 'MENU', '/system',               'Layout',                     'setting',     1, 1, 1, NOW(), NOW(), 0),
+(2,  1,    'system:user',         '用户管理', 'MENU', '/system/user',          'system/user/index',          'user',        1, 1, 1, NOW(), NOW(), 0),
+(3,  1,    'system:role',         '角色管理', 'MENU', '/system/role',          'system/role/index',          'peoples',     2, 1, 1, NOW(), NOW(), 0),
+(4,  1,    'system:post',         '岗位管理', 'MENU', '/system/post',          'system/post/index',          'user-tag',    3, 1, 1, NOW(), NOW(), 0),
+(5,  1,    'system:menu',         '菜单管理', 'MENU', '/system/menu',          'system/menu/index',          'menu',        4, 1, 1, NOW(), NOW(), 0),
+(6,  1,    'system:dict',         '字典管理', 'MENU', '/system/dict',          'system/dict/index',          'edit',        5, 1, 1, NOW(), NOW(), 0),
+(7,  NULL, 'monitor',             '系统监控', 'MENU', '/monitor',              'Layout',                     'monitor',     2, 1, 1, NOW(), NOW(), 0),
+(8,  7,    'monitor:log',         '操作日志', 'MENU', '/monitor/operationLog', 'monitor/operationLog/index', 'form',        1, 1, 1, NOW(), NOW(), 0),
+(9,  7,    'monitor:loginLog',    '登录日志', 'MENU', '/monitor/loginLog',     'monitor/loginLog/index',     'logininfor',  2, 1, 1, NOW(), NOW(), 0),
+(10, NULL, 'patient',             '患者中心', 'MENU', '/patient',              'Layout',                     'user-friend', 3, 1, 1, NOW(), NOW(), 0),
+(11, 10,   'patient:profile',     '个人中心', 'MENU', '/patient/profile',      'patient/profile/index',      'id-card',     1, 1, 1, NOW(), NOW(), 0),
+(12, 10,   'patient:health',      '健康档案', 'MENU', '/patient/health',       'patient/health/index',       'heart',       2, 1, 1, NOW(), NOW(), 0);
 
 -- ---------------------------------------------
 -- 字典类型
@@ -144,21 +144,5 @@ INSERT INTO `patient_surgery_history` (`patient_id`, `surgery_name`, `surgery_at
 
 INSERT INTO `patient_medication_history` (`patient_id`, `drug_name`, `reason`, `started_at`, `created_at`, `updated_at`, `deleted`) VALUES
 (1, '硝苯地平缓释片', '高血压', '2022-02-01', NOW(), NOW(), 0);
-
--- ---------------------------------------------
--- 病历模板（按科室）
--- ---------------------------------------------
-INSERT INTO `medical_record_template` (`id`, `department`, `name`, `chief_complaint_tpl`, `present_illness_tpl`, `past_history_tpl`, `diagnosis_tpl`, `treatment_plan_tpl`, `enabled`, `remark`, `created_at`, `updated_at`, `deleted`) VALUES
-(1, '内科', '内科通用病历模板', '主诉：[症状] [持续时间]', '现病史：患者[时间]前无明显诱因出现[症状]，伴[伴随症状]，无明显诱因，未诊治。', '既往史：高血压病史[年]，否认糖尿病、冠心病史，否认手术史。', '诊断：1. [初步诊断]\n2. 待排查', '治疗方案：1. 完善相关检查\n2. 对症治疗\n3. 注意休息，随诊', 1, '内科门诊通用模板', NOW(), NOW(), 0),
-(2, '内科', '高血压随访病历模板', '主诉：高血压复诊', '现病史：患者确诊高血压[年]，长期口服[药物]，血压控制在[范围]。', '既往史：同前。', '诊断：原发性高血压', '治疗方案：1. 继续原方案服药\n2. 监测血压\n3. 低盐饮食', 1, '高血压随访专用模板', NOW(), NOW(), 0),
-(3, '外科', '外科通用病历模板', '主诉：[部位] [症状] [持续时间]', '现病史：患者[时间]前[受伤机制/起病情况]，[症状演变]。', '既往史：否认慢性病史，否认药物过敏史。', '诊断：[初步诊断]', '治疗方案：1. 完善影像学检查\n2. 必要时手术', 1, '外科门诊通用模板', NOW(), NOW(), 0);
-
--- ---------------------------------------------
--- 接诊/叫号队列（doctor_id=2 内科张医生，patient_id=1 李明）
--- ---------------------------------------------
-INSERT INTO `consultation_queue` (`id`, `patient_id`, `patient_name`, `doctor_id`, `department`, `queue_no`, `status`, `registered_at`, `called_at`, `finished_at`, `remark`, `created_at`, `updated_at`, `deleted`) VALUES
-(1, 1, '李明', 2, '内科', 'A001', 'WAITING', NOW(), NULL, NULL, '初诊', NOW(), NOW(), 0),
-(2, 1, '李明', 2, '内科', 'A002', 'WAITING', NOW(), NULL, NULL, '复诊', NOW(), NOW(), 0),
-(3, 1, '李明', 2, '内科', 'A003', 'CALLED',  NOW(), NOW(), NULL, NULL, NOW(), NOW(), 0);
 
 SET FOREIGN_KEY_CHECKS = 1;
