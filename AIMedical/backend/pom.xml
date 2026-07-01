@@ -261,4 +261,21 @@
             </plugin>
         </plugins>
     </build>
+
+    <!-- ===== 本地开发 Profile ===== -->
+    <!-- 当 CI 环境变量不存在时（本地开发），自动激活，跳过 JaCoCo 覆盖率检查 -->
+    <!-- CI 环境（GitHub Actions 设置 CI=true）不会激活此 Profile，子模块的 jacoco.skip.check=false 生效 -->
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <activation>
+                <property>
+                    <name>!env.CI</name>
+                </property>
+            </activation>
+            <properties>
+                <jacoco.skip.check>true</jacoco.skip.check>
+            </properties>
+        </profile>
+    </profiles>
 </project>
