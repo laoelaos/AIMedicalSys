@@ -1,56 +1,52 @@
 package com.aimedical.modules.ai.api.dto.medicalrecord;
 
-/**
- * AI 病历生成请求 DTO。
- *
- * <p>携带主诉、现病史、既往史、诊断等结构化输入，供 AI 生成完整病历文本。
- *
- * @author AIMedical Team
- * @version 1.0.0
- */
 public class MedicalRecordGenRequest {
-
-    private Long patientId;
-    private Long templateId;
-    private String chiefComplaint;
-    private String presentIllness;
-    private String pastHistory;
-    private String diagnosis;
+    private String dialogueText;
+    private String patientId;
+    private String encounterId;
+    private boolean stream;
+    private String departmentId;
 
     public MedicalRecordGenRequest() {
     }
 
-    public MedicalRecordGenRequest(Long patientId, Long templateId, String chiefComplaint,
-                                   String presentIllness, String pastHistory, String diagnosis) {
-        this.patientId = patientId;
-        this.templateId = templateId;
-        this.chiefComplaint = chiefComplaint;
-        this.presentIllness = presentIllness;
-        this.pastHistory = pastHistory;
-        this.diagnosis = diagnosis;
+    public String getDialogueText() {
+        return dialogueText;
     }
 
-    public Long getPatientId() {
+    public void setDialogueText(String dialogueText) {
+        this.dialogueText = dialogueText;
+    }
+
+    public String getPatientId() {
         return patientId;
     }
 
-    public Long getTemplateId() {
-        return templateId;
+    public void setPatientId(String patientId) {
+        this.patientId = patientId;
     }
 
-    public String getChiefComplaint() {
-        return chiefComplaint;
+    public String getEncounterId() {
+        return encounterId;
     }
 
-    public String getPresentIllness() {
-        return presentIllness;
+    public void setEncounterId(String encounterId) {
+        this.encounterId = encounterId;
     }
 
-    public String getPastHistory() {
-        return pastHistory;
+    public boolean isStream() {
+        return stream;
     }
 
-    public String getDiagnosis() {
-        return diagnosis;
+    public void setStream(boolean stream) {
+        this.stream = stream;
+    }
+
+    public String getDepartmentId() {
+        return departmentId;
+    }
+
+    public void setDepartmentId(String departmentId) {
+        this.departmentId = departmentId;
     }
 }

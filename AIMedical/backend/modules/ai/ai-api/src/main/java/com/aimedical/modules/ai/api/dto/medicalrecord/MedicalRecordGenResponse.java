@@ -1,20 +1,17 @@
 package com.aimedical.modules.ai.api.dto.medicalrecord;
 
-/**
- * AI 病历生成响应 DTO。
- *
- * <p>承载 AI 生成的病历各段文本内容。
- *
- * @author AIMedical Team
- * @version 1.0.0
- */
-public class MedicalRecordGenResponse {
+import java.util.List;
 
+public class MedicalRecordGenResponse {
     private String chiefComplaint;
+    private String symptomDescription;
     private String presentIllness;
     private String pastHistory;
-    private String diagnosis;
+    private String physicalExam;
+    private String preliminaryDiagnosis;
     private String treatmentPlan;
+    private List<String> missingFields;
+    private Object partialContent;
 
     public MedicalRecordGenResponse() {
     }
@@ -25,6 +22,14 @@ public class MedicalRecordGenResponse {
 
     public void setChiefComplaint(String chiefComplaint) {
         this.chiefComplaint = chiefComplaint;
+    }
+
+    public String getSymptomDescription() {
+        return symptomDescription;
+    }
+
+    public void setSymptomDescription(String symptomDescription) {
+        this.symptomDescription = symptomDescription;
     }
 
     public String getPresentIllness() {
@@ -43,12 +48,20 @@ public class MedicalRecordGenResponse {
         this.pastHistory = pastHistory;
     }
 
-    public String getDiagnosis() {
-        return diagnosis;
+    public String getPhysicalExam() {
+        return physicalExam;
     }
 
-    public void setDiagnosis(String diagnosis) {
-        this.diagnosis = diagnosis;
+    public void setPhysicalExam(String physicalExam) {
+        this.physicalExam = physicalExam;
+    }
+
+    public String getPreliminaryDiagnosis() {
+        return preliminaryDiagnosis;
+    }
+
+    public void setPreliminaryDiagnosis(String preliminaryDiagnosis) {
+        this.preliminaryDiagnosis = preliminaryDiagnosis;
     }
 
     public String getTreatmentPlan() {
@@ -57,5 +70,21 @@ public class MedicalRecordGenResponse {
 
     public void setTreatmentPlan(String treatmentPlan) {
         this.treatmentPlan = treatmentPlan;
+    }
+
+    public List<String> getMissingFields() {
+        return missingFields;
+    }
+
+    public void setMissingFields(List<String> missingFields) {
+        this.missingFields = missingFields;
+    }
+
+    public Object getPartialContent() {
+        return partialContent;
+    }
+
+    public void setPartialContent(Object partialContent) {
+        this.partialContent = partialContent;
     }
 }

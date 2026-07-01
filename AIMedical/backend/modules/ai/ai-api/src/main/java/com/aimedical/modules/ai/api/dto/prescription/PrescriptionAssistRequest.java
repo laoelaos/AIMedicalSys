@@ -1,37 +1,64 @@
 package com.aimedical.modules.ai.api.dto.prescription;
 
-/**
- * AI 辅助开方请求 DTO。
- *
- * <p>携带诊断与主诉，供 AI 辅助生成处方建议。
- *
- * @author AIMedical Team
- * @version 1.0.0
- */
+import java.util.List;
+
 public class PrescriptionAssistRequest {
 
-    private Long patientId;
     private String diagnosis;
-    private String chiefComplaint;
+    private List<ExamResultItem> examResults;
+    private PatientInfo patientInfo;
+    private String existingPrescription;
+    private String prescriptionId;
+    private String encounterId;
 
     public PrescriptionAssistRequest() {
-    }
-
-    public PrescriptionAssistRequest(Long patientId, String diagnosis, String chiefComplaint) {
-        this.patientId = patientId;
-        this.diagnosis = diagnosis;
-        this.chiefComplaint = chiefComplaint;
-    }
-
-    public Long getPatientId() {
-        return patientId;
     }
 
     public String getDiagnosis() {
         return diagnosis;
     }
 
-    public String getChiefComplaint() {
-        return chiefComplaint;
+    public void setDiagnosis(String diagnosis) {
+        this.diagnosis = diagnosis;
+    }
+
+    public List<ExamResultItem> getExamResults() {
+        return examResults;
+    }
+
+    public void setExamResults(List<ExamResultItem> examResults) {
+        this.examResults = examResults;
+    }
+
+    public PatientInfo getPatientInfo() {
+        return patientInfo;
+    }
+
+    public void setPatientInfo(PatientInfo patientInfo) {
+        this.patientInfo = patientInfo;
+    }
+
+    public String getExistingPrescription() {
+        return existingPrescription;
+    }
+
+    public void setExistingPrescription(String existingPrescription) {
+        this.existingPrescription = existingPrescription;
+    }
+
+    public String getPrescriptionId() {
+        return prescriptionId;
+    }
+
+    public void setPrescriptionId(String prescriptionId) {
+        this.prescriptionId = prescriptionId;
+    }
+
+    public String getEncounterId() {
+        return encounterId;
+    }
+
+    public void setEncounterId(String encounterId) {
+        this.encounterId = encounterId;
     }
 }

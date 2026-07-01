@@ -2,19 +2,13 @@ package com.aimedical.modules.ai.api.dto.prescription;
 
 import java.util.List;
 
-/**
- * AI 处方审核响应 DTO。
- *
- * <p>承载 AI 处方审核结果，包括风险等级、警告信息与是否通过。
- *
- * @author AIMedical Team
- * @version 1.0.0
- */
 public class PrescriptionCheckResponse {
 
     private String riskLevel;
-    private List<String> warnings;
-    private boolean passed;
+    private List<AlertItem> alerts;
+    private List<DrugInteractionItem> interactions;
+    private List<SuggestionItem> suggestions;
+    private boolean fromFallback;
 
     public PrescriptionCheckResponse() {
     }
@@ -27,19 +21,35 @@ public class PrescriptionCheckResponse {
         this.riskLevel = riskLevel;
     }
 
-    public List<String> getWarnings() {
-        return warnings;
+    public List<AlertItem> getAlerts() {
+        return alerts;
     }
 
-    public void setWarnings(List<String> warnings) {
-        this.warnings = warnings;
+    public void setAlerts(List<AlertItem> alerts) {
+        this.alerts = alerts;
     }
 
-    public boolean isPassed() {
-        return passed;
+    public List<DrugInteractionItem> getInteractions() {
+        return interactions;
     }
 
-    public void setPassed(boolean passed) {
-        this.passed = passed;
+    public void setInteractions(List<DrugInteractionItem> interactions) {
+        this.interactions = interactions;
+    }
+
+    public List<SuggestionItem> getSuggestions() {
+        return suggestions;
+    }
+
+    public void setSuggestions(List<SuggestionItem> suggestions) {
+        this.suggestions = suggestions;
+    }
+
+    public boolean isFromFallback() {
+        return fromFallback;
+    }
+
+    public void setFromFallback(boolean fromFallback) {
+        this.fromFallback = fromFallback;
     }
 }

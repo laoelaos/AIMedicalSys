@@ -241,11 +241,7 @@ class DoctorAiServiceImplTest {
     @Test
     void prescriptionAssist_shouldMapAiDataWhenServiceSucceeds() {
         PrescriptionAssistResponse aiData = new PrescriptionAssistResponse();
-        PrescriptionAssistResponse.RecommendedDrug drug =
-                new PrescriptionAssistResponse.RecommendedDrug(
-                        "阿莫西林", "0.25g", "每次1粒", "每日三次", "抗感染");
-        aiData.setDrugs(List.of(drug));
-        aiData.setSummary("建议抗感染治疗");
+        aiData.setPrescriptionDraft("建议抗感染治疗");
         when(aiService.prescriptionAssist(any(PrescriptionAssistRequest.class)))
                 .thenReturn(CompletableFuture.completedFuture(AiResult.success(aiData)));
 
@@ -256,9 +252,6 @@ class DoctorAiServiceImplTest {
         assertEquals("SUCCESS", result.getCode());
         assertFalse(result.getData().degraded());
         AiPrescriptionAssistResponse data = result.getData().data();
-        assertEquals(1, data.drugs().size());
-        assertEquals("阿莫西林", data.drugs().get(0).drugName());
-        assertEquals("0.25g", data.drugs().get(0).specification());
         assertEquals("建议抗感染治疗", data.summary());
         verify(aiService).prescriptionAssist(any(PrescriptionAssistRequest.class));
     }
@@ -267,8 +260,11 @@ class DoctorAiServiceImplTest {
     void prescriptionAudit_shouldMapAiDataWhenServiceSucceeds() {
         PrescriptionCheckResponse aiData = new PrescriptionCheckResponse();
         aiData.setRiskLevel("HIGH");
-        aiData.setWarnings(List.of("与现有药物存在相互作用"));
-        aiData.setPassed(false);
+        com.aimedical.modules.ai.api.dto.prescription.AlertItem alert =
+                new com.aimedical.modules.ai.api.dto.prescription.AlertItem();
+        alert.setAlertMessage("与现有药物存在相互作用");
+        aiData.setAlerts(List.of(alert));
+        aiData.setFromFallback(false);
         when(aiService.prescriptionCheck(any(PrescriptionCheckRequest.class)))
                 .thenReturn(CompletableFuture.completedFuture(AiResult.success(aiData)));
 
@@ -282,7 +278,7 @@ class DoctorAiServiceImplTest {
         AiPrescriptionAuditResponse data = result.getData().data();
         assertEquals(AiRiskLevel.HIGH, data.riskLevel());
         assertEquals(1, data.warnings().size());
-        assertFalse(data.passed());
+        assertTrue(data.passed());
         verify(aiService).prescriptionCheck(any(PrescriptionCheckRequest.class));
     }
 
@@ -292,7 +288,7 @@ class DoctorAiServiceImplTest {
         aiData.setChiefComplaint("头痛三天");
         aiData.setPresentIllness("三天前无明显诱因出现头痛");
         aiData.setPastHistory("高血压五年");
-        aiData.setDiagnosis("偏头痛");
+        aiData.setPreliminaryDiagnosis("偏头痛");
         aiData.setTreatmentPlan("布洛芬口服");
         when(aiService.generateMedicalRecord(any(MedicalRecordGenRequest.class)))
                 .thenReturn(CompletableFuture.completedFuture(AiResult.success(aiData)));

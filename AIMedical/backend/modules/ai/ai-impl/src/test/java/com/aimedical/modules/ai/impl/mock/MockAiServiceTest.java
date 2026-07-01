@@ -1,6 +1,7 @@
 package com.aimedical.modules.ai.impl.mock;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import com.aimedical.modules.ai.api.AiResult;
@@ -22,14 +23,25 @@ import com.aimedical.modules.ai.api.dto.triage.TriageResponse;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 class MockAiServiceTest {
 
-    private final MockAiService service = new MockAiService();
+    private final MockAiService service = new MockAiService("STATIC");
 
     @Test
     void shouldBeAnnotatedWithService() {
         assertNotNull(MockAiService.class.getAnnotation(Service.class));
+    }
+
+    @Test
+    void shouldBeAnnotatedWithConditionalOnProperty() {
+        ConditionalOnProperty annotation = MockAiService.class.getAnnotation(ConditionalOnProperty.class);
+        assertNotNull(annotation);
+        assertArrayEquals(new String[]{"ai.mock.enabled"}, annotation.name());
+        assertEquals("true", annotation.havingValue());
+        assertFalse(annotation.matchIfMissing());
     }
 
     @Test
@@ -177,5 +189,32 @@ class MockAiServiceTest {
         assertTrue(result.isSuccess());
         assertFalse(result.isDegraded());
         assertNotNull(result.getData());
+    }
+
+    @Test
+    void aiUnavailableStrategyShouldReturnFailure() {
+        service.setStrategy(MockAiService.ResponseStrategy.AI_UNAVAILABLE);
+        var future = service.triage(new TriageRequest());
+        assertTrue(future.isDone());
+        var result = future.join();
+        assertFalse(result.isSuccess());
+        assertEquals("AI_UNAVAILABLE", result.getErrorCode());
+    }
+
+    @Test
+    void timeoutStrategyShouldTimeout() {
+        service.setStrategy(MockAiService.ResponseStrategy.TIMEOUT);
+        var future = service.triage(new TriageRequest());
+        assertTrue(future.isDone());
+        assertThrows(java.util.concurrent.ExecutionException.class, () -> future.get());
+    }
+
+    @Test
+    void staticStrategyShouldReturnSuccess() {
+        service.setStrategy(MockAiService.ResponseStrategy.STATIC);
+        var future = service.triage(new TriageRequest());
+        assertTrue(future.isDone());
+        var result = future.join();
+        assertTrue(result.isSuccess());
     }
 }

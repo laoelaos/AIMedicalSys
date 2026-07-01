@@ -89,6 +89,10 @@ files/
 temp/
 cache/
 .cache/
+# Java 源码包下的 cache/ 目录是业务包名, 不应被忽略
+!**/src/main/java/**/cache/
+!**/src/main/resources/**/cache/
+!**/src/test/java/**/cache/
 
 # Local startup scripts
 启动后端.bat

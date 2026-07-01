@@ -1,8 +1,7 @@
 package com.aimedical.modules.ai.api;
 
-import lombok.Data;
+import java.util.Objects;
 
-@Data
 public class AiResult<T> {
 
     private boolean success;
@@ -23,7 +22,7 @@ public class AiResult<T> {
     }
 
     public static <T> AiResult<T> success(T data) {
-        return new AiResult<>(true, data, null, false, null);
+        return new AiResult<>(true, Objects.requireNonNull(data), null, false, null);
     }
 
     public static <T> AiResult<T> failure(String errorCode) {
@@ -32,5 +31,45 @@ public class AiResult<T> {
 
     public static <T> AiResult<T> degraded(String fallbackReason) {
         return new AiResult<>(false, null, null, true, fallbackReason);
+    }
+
+    public boolean isSuccess() {
+        return success;
+    }
+
+    public void setSuccess(boolean success) {
+        this.success = success;
+    }
+
+    public T getData() {
+        return data;
+    }
+
+    public void setData(T data) {
+        this.data = data;
+    }
+
+    public String getErrorCode() {
+        return errorCode;
+    }
+
+    public void setErrorCode(String errorCode) {
+        this.errorCode = errorCode;
+    }
+
+    public boolean isDegraded() {
+        return degraded;
+    }
+
+    public void setDegraded(boolean degraded) {
+        this.degraded = degraded;
+    }
+
+    public String getFallbackReason() {
+        return fallbackReason;
+    }
+
+    public void setFallbackReason(String fallbackReason) {
+        this.fallbackReason = fallbackReason;
     }
 }

@@ -21,3 +21,22 @@ jwt:
   secret: dGVzdC1zZWNyZXQta2V5LWZvci1pbnRlZ3JhdGlvbi10ZXN0cy1taW4tMzI=
   access-token-expiration: 86400
   refresh-token-expiration: 604800
+
+# AI 超时配置
+ai:
+  timeout:
+    triage: 8
+    prescription-audit: 6
+    medical-record-generate: 12
+    prescription-assist: 8
+  mock:
+    response-strategy: STATIC
+
+# 外部门面超时
+consultation:
+  doctor-facade:
+    timeout: 2
+
+medical-record:
+  visit-facade:
+    timeout: 2

@@ -37,10 +37,8 @@ class AiResultTest {
     }
 
     @Test
-    void shouldCreateSuccessResultWithNullData() {
-        AiResult<String> result = AiResult.success(null);
-        assertTrue(result.isSuccess());
-        assertNull(result.getData());
+    void shouldThrowNpeWhenSuccessWithNullData() {
+        assertThrows(NullPointerException.class, () -> AiResult.success(null));
     }
 
     @Test

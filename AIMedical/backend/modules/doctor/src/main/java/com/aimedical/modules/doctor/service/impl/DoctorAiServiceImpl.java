@@ -118,9 +118,11 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             return Result.success(degradedPrescriptionAssist());
         }
         try {
-            AiResult<PrescriptionAssistResponse> result = aiService.prescriptionAssist(
-                    new com.aimedical.modules.ai.api.dto.prescription.PrescriptionAssistRequest(
-                            request.patientId(), request.diagnosis(), request.chiefComplaint())).join();
+            com.aimedical.modules.ai.api.dto.prescription.PrescriptionAssistRequest aiReq =
+                    new com.aimedical.modules.ai.api.dto.prescription.PrescriptionAssistRequest();
+            aiReq.setDiagnosis(request.diagnosis());
+            aiReq.setPrescriptionId(request.patientId() != null ? String.valueOf(request.patientId()) : null);
+            AiResult<PrescriptionAssistResponse> result = aiService.prescriptionAssist(aiReq).join();
             if (result.isDegraded() || !result.isSuccess()) {
                 return Result.success(degradedPrescriptionAssist());
             }
@@ -128,15 +130,8 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             if (aiData == null) {
                 return Result.success(degradedPrescriptionAssist());
             }
-            List<AiPrescriptionAssistResponse.RecommendedDrug> drugs = aiData.getDrugs() == null
-                    ? List.of()
-                    : aiData.getDrugs().stream()
-                            .map(d -> new AiPrescriptionAssistResponse.RecommendedDrug(
-                                    d.getDrugName(), d.getSpecification(), d.getDosage(),
-                                    d.getFrequency(), d.getReason()))
-                            .toList();
-            AiPrescriptionAssistResponse data = new AiPrescriptionAssistResponse(drugs,
-                    aiData.getSummary() != null ? aiData.getSummary() : "");
+            AiPrescriptionAssistResponse data = new AiPrescriptionAssistResponse(List.of(),
+                    aiData.getPrescriptionDraft() != null ? aiData.getPrescriptionDraft() : "");
             return Result.success(AiResultResponse.ok(data));
         } catch (Exception e) {
             log.warn("AI prescriptionAssist 调用异常，降级处理", e);
@@ -150,9 +145,10 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             return Result.success(degradedPrescriptionAudit());
         }
         try {
-            AiResult<PrescriptionCheckResponse> result = aiService.prescriptionCheck(
-                    new com.aimedical.modules.ai.api.dto.prescription.PrescriptionCheckRequest(
-                            request.prescriptionId(), request.diagnosis(), request.drugNames())).join();
+            com.aimedical.modules.ai.api.dto.prescription.PrescriptionCheckRequest aiReq =
+                    new com.aimedical.modules.ai.api.dto.prescription.PrescriptionCheckRequest();
+            aiReq.setPrescriptionId(request.prescriptionId() != null ? String.valueOf(request.prescriptionId()) : null);
+            AiResult<PrescriptionCheckResponse> result = aiService.prescriptionCheck(aiReq).join();
             if (result.isDegraded() || !result.isSuccess()) {
                 return Result.success(degradedPrescriptionAudit());
             }
@@ -160,10 +156,15 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             if (aiData == null) {
                 return Result.success(degradedPrescriptionAudit());
             }
+            List<String> warnings = aiData.getAlerts() == null
+                    ? List.of()
+                    : aiData.getAlerts().stream()
+                            .map(a -> a.getAlertMessage() != null ? a.getAlertMessage() : "")
+                            .toList();
             AiPrescriptionAuditResponse data = new AiPrescriptionAuditResponse(
                     parseRiskLevel(aiData.getRiskLevel()),
-                    aiData.getWarnings() != null ? aiData.getWarnings() : List.of(),
-                    aiData.isPassed());
+                    warnings,
+                    !aiData.isFromFallback());
             return Result.success(AiResultResponse.ok(data));
         } catch (Exception e) {
             log.warn("AI prescriptionCheck 调用异常，降级处理", e);
@@ -177,10 +178,16 @@ public class DoctorAiServiceImpl implements DoctorAiService {
             return Result.success(degradedMedicalRecordGen());
         }
         try {
-            AiResult<MedicalRecordGenResponse> result = aiService.generateMedicalRecord(
-                    new com.aimedical.modules.ai.api.dto.medicalrecord.MedicalRecordGenRequest(
-                            request.patientId(), request.templateId(), request.chiefComplaint(),
-                            request.presentIllness(), request.pastHistory(), request.diagnosis())).join();
+            com.aimedical.modules.ai.api.dto.medicalrecord.MedicalRecordGenRequest aiReq =
+                    new com.aimedical.modules.ai.api.dto.medicalrecord.MedicalRecordGenRequest();
+            aiReq.setPatientId(request.patientId() != null ? String.valueOf(request.patientId()) : null);
+            StringBuilder dialogue = new StringBuilder();
+            if (request.chiefComplaint() != null) dialogue.append("主诉: ").append(request.chiefComplaint()).append("\n");
+            if (request.presentIllness() != null) dialogue.append("现病史: ").append(request.presentIllness()).append("\n");
+            if (request.pastHistory() != null) dialogue.append("既往史: ").append(request.pastHistory()).append("\n");
+            if (request.diagnosis() != null) dialogue.append("诊断: ").append(request.diagnosis());
+            aiReq.setDialogueText(dialogue.toString());
+            AiResult<MedicalRecordGenResponse> result = aiService.generateMedicalRecord(aiReq).join();
             if (result.isDegraded() || !result.isSuccess()) {
                 return Result.success(degradedMedicalRecordGen());
             }
@@ -192,7 +199,7 @@ public class DoctorAiServiceImpl implements DoctorAiService {
                     nullToEmpty(aiData.getChiefComplaint()),
                     nullToEmpty(aiData.getPresentIllness()),
                     nullToEmpty(aiData.getPastHistory()),
-                    nullToEmpty(aiData.getDiagnosis()),
+                    nullToEmpty(aiData.getPreliminaryDiagnosis()),
                     nullToEmpty(aiData.getTreatmentPlan()));
             return Result.success(AiResultResponse.ok(data));
         } catch (Exception e) {

@@ -12,7 +12,7 @@ class MedicalRecordGenDtoTest {
         assertNull(response.getChiefComplaint());
         assertNull(response.getPresentIllness());
         assertNull(response.getPastHistory());
-        assertNull(response.getDiagnosis());
+        assertNull(response.getPreliminaryDiagnosis());
         assertNull(response.getTreatmentPlan());
     }
 
@@ -40,8 +40,8 @@ class MedicalRecordGenDtoTest {
     @Test
     void shouldSetAndGetDiagnosis() {
         MedicalRecordGenResponse response = new MedicalRecordGenResponse();
-        response.setDiagnosis("偏头痛");
-        assertEquals("偏头痛", response.getDiagnosis());
+        response.setPreliminaryDiagnosis("偏头痛");
+        assertEquals("偏头痛", response.getPreliminaryDiagnosis());
     }
 
     @Test
@@ -57,13 +57,13 @@ class MedicalRecordGenDtoTest {
         response.setChiefComplaint("头痛三天");
         response.setPresentIllness("三天前无明显诱因出现头痛");
         response.setPastHistory("高血压五年");
-        response.setDiagnosis("偏头痛");
+        response.setPreliminaryDiagnosis("偏头痛");
         response.setTreatmentPlan("布洛芬口服");
 
         assertEquals("头痛三天", response.getChiefComplaint());
         assertEquals("三天前无明显诱因出现头痛", response.getPresentIllness());
         assertEquals("高血压五年", response.getPastHistory());
-        assertEquals("偏头痛", response.getDiagnosis());
+        assertEquals("偏头痛", response.getPreliminaryDiagnosis());
         assertEquals("布洛芬口服", response.getTreatmentPlan());
     }
 }

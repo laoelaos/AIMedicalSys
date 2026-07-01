@@ -24,6 +24,12 @@ jwt:
   secret: dGVzdC1zZWNyZXQta2V5LWZvci1pbnRlZ3JhdGlvbi10ZXN0cy1taW4tMzI=
   expiration: 86400
 
+# AI mock - 集成测试上下文需要 MockAiService / MockAdminController
+# (两者均标注 @ConditionalOnProperty ai.mock.enabled=true)
+ai:
+  mock:
+    enabled: true
+
 # 日志配置
 logging:
   level:
