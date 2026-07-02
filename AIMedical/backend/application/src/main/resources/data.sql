@@ -38,6 +38,21 @@ MERGE INTO post_function (post_id, function_id) KEY(post_id, function_id) VALUES
 (2, 1), (2, 2), (2, 3), (2, 4),
 (3, 1);
 
+-- 重置自增计数器，避免后续业务 INSERT 主键冲突
+-- 各表当前最大 ID：sys_role=3, sys_post=3, sys_function=8, sys_user=3
+ALTER TABLE sys_role ALTER COLUMN id RESTART WITH 4;
+ALTER TABLE sys_post ALTER COLUMN id RESTART WITH 4;
+ALTER TABLE sys_function ALTER COLUMN id RESTART WITH 9;
+ALTER TABLE sys_user ALTER COLUMN id RESTART WITH 4;
+
+-- Phase3 种子数据：医生档案（doctor_profile）
+INSERT INTO doctor_profile (id, user_id, real_name, title, department, deleted, created_at, updated_at) VALUES
+(1, 2, '张医生', '副主任医师', '内科', false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+
+-- 重置 doctor_profile 自增计数器，避免后续业务 INSERT 主键冲突
+ALTER TABLE doctor_profile ALTER COLUMN id RESTART WITH 2;
+
+-- Phase2 种子数据：患者档案、过敏史、慢病史、挂号、导诊记录
 MERGE INTO patient_profile (id, user_id, real_name, gender, phone, emergency_contact, avatar_url, deleted, created_at, updated_at) KEY(id) VALUES
 (1, 3, '李明', 'MALE', '13800138003', '王芳 13700000001', NULL, false, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 

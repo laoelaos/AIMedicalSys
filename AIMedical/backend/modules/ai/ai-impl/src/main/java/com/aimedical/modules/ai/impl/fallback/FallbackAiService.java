@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import com.aimedical.modules.ai.api.AiResult;
@@ -39,6 +40,25 @@ import com.aimedical.modules.ai.api.dto.schedule.ScheduleResponse;
 import com.aimedical.modules.ai.api.dto.triage.TriageRequest;
 import com.aimedical.modules.ai.api.dto.triage.TriageResponse;
 
+/**
+ * AI 服务降级包装实现。
+ *
+ * <p>采用 {@code @Primary} + 委托模式：注入所有非自身的 {@link AiService} 实现，
+ * 取第一个作为主委托；调用后经 {@link DegradationStrategy} 链判定是否降级。
+ *
+ * <p>设计说明（T11）：
+ * <ul>
+ *   <li>{@code @Primary} 确保 DoctorAiServiceImpl 注入的是本类而非具体实现，
+ *       形成双重锁定降级（本类策略判定 + DoctorAiServiceImpl 兜底捕获）。</li>
+ *   <li>后续引入真实 AI 实现时，只需新增 {@code @Service} AiService Bean，
+ *       本类自动将其纳入 delegates，无需修改 DoctorAiServiceImpl。</li>
+ *   <li>当前 delegates 仅取 {@code get(0)}，多实现并存时的路由策略待扩展。</li>
+ * </ul>
+ *
+ * @author AIMedical Team
+ * @version 1.0.0
+ */
+@Primary
 @Service
 public class FallbackAiService implements AiService {
 

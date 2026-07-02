@@ -51,8 +51,14 @@ class TokenStoreTest {
     @Test
     void shouldGenerateNonEmptyToString() {
         TokenStore entity = new TokenStore();
+        entity.setUserId(1001L);
         entity.setToken("my-token");
-        assertTrue(entity.toString().contains("my-token"));
+        entity.setTokenType("Bearer");
+        // toString 应包含非敏感字段
+        assertTrue(entity.toString().contains("1001"));
+        assertTrue(entity.toString().contains("Bearer"));
+        // toString 不应泄露敏感 token（安全要求：@ToString 排除 token/refreshToken）
+        assertFalse(entity.toString().contains("my-token"));
     }
 
     @Test

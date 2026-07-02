@@ -18,6 +18,11 @@ vi.mock('axios', () => {
         }),
       },
     },
+    defaults: {
+      headers: {
+        common: {} as Record<string, string>,
+      },
+    },
     get: vi.fn(() => Promise.resolve({ data: { code: 'SUCCESS', data: null } })),
     post: vi.fn(() => Promise.resolve({ data: { code: 'SUCCESS', data: null } })),
     put: vi.fn(() => Promise.resolve({ data: { code: 'SUCCESS', data: null } })),
@@ -37,7 +42,9 @@ beforeEach(() => {
 })
 
 describe('Success interceptor', () => {
-  it('unwraps SUCCESS response to body.data', () => {
+  // 拦截器在 SUCCESS 时将 response.data 替换为 body.data，并返回完整 AxiosResponse。
+  // 上层 apiGet/apiPost 通过 response.data 获取解包后的业务数据。
+  it('replaces response.data with body.data on SUCCESS and returns full response', () => {
     const handler = captured.success!
     const mockResponse = { data: { code: 'SUCCESS', data: { id: 1 } } }
     const result = handler(mockResponse)
@@ -45,14 +52,14 @@ describe('Success interceptor', () => {
     expect(result).toEqual({ id: 1 })
   })
 
-  it('unwraps nested data from SUCCESS response', () => {
+  it('replaces response.data with nested body.data on SUCCESS', () => {
     const handler = captured.success!
     const mockResponse = { data: { code: 'SUCCESS', data: { nested: 'value' } } }
     const result = handler(mockResponse)
     expect(result).toEqual({ nested: 'value' })
   })
 
-  it('unwraps array data from SUCCESS response', () => {
+  it('replaces response.data with array body.data on SUCCESS', () => {
     const handler = captured.success!
     const mockResponse = { data: { code: 'SUCCESS', data: ['a', 'b'] } }
     const result = handler(mockResponse)

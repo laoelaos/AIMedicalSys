@@ -21,7 +21,7 @@ public class LoggingSecurityAuditLogger implements SecurityAuditLogger {
             sb.append("timestamp=").append(ISO_FORMATTER.format(Instant.ofEpochMilli(event.timestamp())));
             sb.append(" eventType=").append(event.eventType());
             sb.append(" userId=").append(event.userId());
-            sb.append(" username=").append(event.username());
+            sb.append(" username=").append(maskUsername(event.username()));
             sb.append(" clientIp=").append(event.clientIp());
             sb.append(" success=").append(event.success());
             if (event.failureReason() != null) {
@@ -35,7 +35,21 @@ public class LoggingSecurityAuditLogger implements SecurityAuditLogger {
             }
             AUDIT_LOG.info(sb.toString());
         } catch (Exception e) {
-            log.warn("Audit log write failed: {}", e.getMessage());
+            log.warn("Audit log write failed", e);
         }
+    }
+
+    /**
+     * 对用户名做脱敏：11 位手机号掩码为前 3 + **** + 后 4，其余保持原值。
+     * 避免患者手机号明文写入审计日志。
+     */
+    private String maskUsername(String username) {
+        if (username == null) {
+            return null;
+        }
+        if (username.matches("\\d{11}")) {
+            return username.substring(0, 3) + "****" + username.substring(7);
+        }
+        return username;
     }
 }

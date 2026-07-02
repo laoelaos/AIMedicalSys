@@ -40,4 +40,8 @@ public class Result<T> {
     public static <T> Result<T> fail(ErrorCode errorCode) {
         return fail(errorCode.getCode(), errorCode.getMessage());
     }
+
+    public static <T> Result<T> fail(ErrorCode errorCode, String message) {
+        return fail(errorCode.getCode(), message);
+    }
 }

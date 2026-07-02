@@ -28,6 +28,8 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -68,6 +70,7 @@ public class AuthServiceImpl implements AuthService {
     private final TokenBlacklist tokenBlacklist;
     private final LoginAttemptTracker loginAttemptTracker;
     private final SecurityAuditLogger securityAuditLogger;
+    private final AuthServiceImpl self;
 
     private final ConcurrentHashMap<Long, Deque<Long>> refreshTimestamps = new ConcurrentHashMap<>();
 
@@ -82,7 +85,8 @@ public class AuthServiceImpl implements AuthService {
             RateLimitGuard rateLimitGuard,
             TokenBlacklist tokenBlacklist,
             LoginAttemptTracker loginAttemptTracker,
-            SecurityAuditLogger securityAuditLogger) {
+            SecurityAuditLogger securityAuditLogger,
+            @Autowired @Lazy AuthServiceImpl self) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
@@ -94,6 +98,7 @@ public class AuthServiceImpl implements AuthService {
         this.tokenBlacklist = tokenBlacklist;
         this.loginAttemptTracker = loginAttemptTracker;
         this.securityAuditLogger = securityAuditLogger;
+        this.self = self;
     }
 
     @Override
@@ -187,8 +192,26 @@ public class AuthServiceImpl implements AuthService {
     // ── Patient-facing methods ──────────────────────────────────────────
 
     @Override
-    @Transactional
     public TokenResponse register(RegisterRequest request) {
+        // DB 操作在独立事务中完成（self 代理调用，@Transactional 生效）
+        User user = self.registerUser(request);
+        // JWT 生成移出事务边界，避免 CPU 密集的签名操作拉长数据库事务持锁时间
+        String accessToken = jwtTokenProvider.generateAccessToken(
+                user.getId(), user.getUsername(), user.getUserType().getCode());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(
+                user.getId(), user.getUsername(), user.getUserType().getCode(), user.getTokenVersion());
+        return new TokenResponse(accessToken, refreshToken, jwtTokenProvider.getAccessTokenExpirationMs());
+    }
+
+    /**
+     * 患者注册的数据库操作（用户+角色保存），独立事务保证原子性。
+     * <p>需通过 self 代理调用以使 @Transactional 生效（同类自调用会绕过代理）。
+     *
+     * @param request 注册请求
+     * @return 已持久化的用户实体
+     */
+    @Transactional
+    public User registerUser(RegisterRequest request) {
         if (userRepository.findByUsername(request.getPhone()).isPresent()) {
             throw new BusinessException(AuthErrorCode.AUTH_MOBILE_EXISTS);
         }
@@ -215,12 +238,7 @@ public class AuthServiceImpl implements AuthService {
             user.setRoles(new java.util.HashSet<>(java.util.Set.of(patientRoleOpt.get())));
         }
         userRepository.save(user);
-
-        String accessToken = jwtTokenProvider.generateAccessToken(
-                user.getId(), user.getUsername(), user.getUserType().getCode());
-        String refreshToken = jwtTokenProvider.generateRefreshToken(
-                user.getId(), user.getUsername(), user.getUserType().getCode(), user.getTokenVersion());
-        return new TokenResponse(accessToken, refreshToken, jwtTokenProvider.getAccessTokenExpirationMs());
+        return user;
     }
 
     @Override
@@ -419,6 +437,7 @@ public class AuthServiceImpl implements AuthService {
             }
             return request.getRemoteAddr();
         } catch (Exception e) {
+            log.warn("获取客户端 IP 失败: {}", e.getMessage());
             return "unknown";
         }
     }

@@ -8,6 +8,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -18,6 +20,7 @@ import java.util.UUID;
 @Component
 public class JwtTokenProvider {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);
     private static final long ACCESS_TOKEN_EXPIRATION_MS = 900_000L;
     private static final long REFRESH_TOKEN_EXPIRATION_MS = 604_800_000L;
 
@@ -100,7 +103,17 @@ public class JwtTokenProvider {
                 }
             }
             return claims;
-        } catch (ExpiredJwtException | SignatureException | MalformedJwtException | IllegalArgumentException e) {
+        } catch (ExpiredJwtException e) {
+            log.warn("JWT 令牌已过期: {}", e.getMessage());
+            return null;
+        } catch (SignatureException e) {
+            log.warn("JWT 签名验证失败，可能存在伪造令牌攻击: {}", e.getMessage());
+            return null;
+        } catch (MalformedJwtException e) {
+            log.warn("JWT 令牌格式错误: {}", e.getMessage());
+            return null;
+        } catch (IllegalArgumentException e) {
+            log.warn("JWT 令牌参数非法: {}", e.getMessage());
             return null;
         }
     }
@@ -123,6 +136,7 @@ public class JwtTokenProvider {
                     .parseSignedClaims(token);
             return jws.getPayload().get("jti", String.class);
         } catch (Exception e) {
+            log.warn("JWT 提取 jti 失败: {}", e.getMessage());
             return null;
         }
     }

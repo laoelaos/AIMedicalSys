@@ -6,6 +6,13 @@ import { useMenuStore } from '../stores/menu'
  * 路由配置
  *
  * 定义医生端应用的路由结构和导航守卫。
+ *
+ * <p>Phase 3 新增静态业务路由：
+ * - 包A 诊疗闭环：/queue、/patient/:patientId/*（信息卡、病情录入、病历列表/详情/表单、处方表单）
+ * - 包B AI 入口：/ai/*（诊断、检查、开方、审核、病历生成）
+ *
+ * <p>注意路由顺序：静态字面量路径（如 .../medical-records/new）须排在动态参数路径
+ * （如 .../medical-records/:id）之前，否则 "new" 会被当作 :id 匹配。
  */
 const routes: RouteRecordRaw[] = [
   {
@@ -28,6 +35,88 @@ const routes: RouteRecordRaw[] = [
         path: '/dashboard',
         name: 'Dashboard',
         component: () => import('../views/Dashboard.vue'),
+        meta: { requiresAuth: true },
+      },
+      // ---- 包A：诊疗闭环 ----
+      {
+        path: '/queue',
+        name: 'ConsultationQueue',
+        component: () => import('../views/ConsultationQueue.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/patient/:patientId',
+        name: 'PatientInfo',
+        component: () => import('../views/PatientInfo.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/patient/:patientId/condition',
+        name: 'ConditionEntry',
+        component: () => import('../views/ConditionEntry.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/patient/:patientId/medical-records',
+        name: 'MedicalRecordList',
+        component: () => import('../views/MedicalRecordList.vue'),
+        meta: { requiresAuth: true },
+      },
+      // "new" 必须在 ":id" 之前
+      {
+        path: '/patient/:patientId/medical-records/new',
+        name: 'MedicalRecordForm',
+        component: () => import('../views/MedicalRecordForm.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/patient/:patientId/medical-records/:recordId',
+        name: 'MedicalRecordDetail',
+        component: () => import('../views/MedicalRecordDetail.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        // 编辑已有病历草稿：使用独立命名路由与 path param，避免"new 实际是编辑"的语义混乱
+        path: '/patient/:patientId/medical-records/:recordId/edit',
+        name: 'MedicalRecordEdit',
+        component: () => import('../views/MedicalRecordForm.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/patient/:patientId/prescriptions/new',
+        name: 'PrescriptionForm',
+        component: () => import('../views/PrescriptionForm.vue'),
+        meta: { requiresAuth: true },
+      },
+      // ---- 包B：AI 入口 ----
+      {
+        path: '/ai/diagnosis',
+        name: 'AiDiagnosis',
+        component: () => import('../views/ai/AiDiagnosis.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/ai/examination',
+        name: 'AiExamination',
+        component: () => import('../views/ai/AiExamination.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/ai/prescription-assist',
+        name: 'AiPrescriptionAssist',
+        component: () => import('../views/ai/AiPrescriptionAssist.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/ai/prescription-audit',
+        name: 'AiPrescriptionAudit',
+        component: () => import('../views/ai/AiPrescriptionAudit.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/ai/medical-record-gen',
+        name: 'AiMedicalRecordGen',
+        component: () => import('../views/ai/AiMedicalRecordGen.vue'),
         meta: { requiresAuth: true },
       },
     ],

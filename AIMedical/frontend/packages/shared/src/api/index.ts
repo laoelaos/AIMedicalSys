@@ -1,138 +1,21 @@
-import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
-import type { ApiResult, BusinessError, LoginRequest, TokenResponse, TokenRefreshResponse, UserInfo, MenuItem, TriageRequest, TriageResponse, TriageDepartment, TriageDoctor, ConsultRequest, ConsultResponse, AppointmentSlot, RegistrationRequest, RegistrationRecord, CancelResult, ExamCategory, ExamItem, ReportRecord, MedicalRecordRecord, PrescriptionRecord, PaymentRecord, TriageHistoryRecord } from '../types'
+import type { BusinessError, LoginRequest, LoginResponse, UserInfo, MenuItem, TokenResponse, TokenRefreshResponse, RegisterRequest, CurrentUserResponse, TriageRequest, TriageResponse, TriageDepartment, TriageDoctor, ConsultRequest, ConsultResponse, AppointmentSlot, RegistrationRequest, RegistrationRecord, CancelResult, ExamCategory, ExamItem, ReportRecord, MedicalRecordRecord, PrescriptionRecord, PaymentRecord, TriageHistoryRecord } from '../types'
+import { apiGet, apiPost, apiPut, apiDelete } from './client'
 import { getAccessToken, setTokens, clearTokens, getRefreshToken } from '../utils'
 
-const apiClient = axios.create({
-  baseURL: '/api',
-  timeout: 30000,
-  headers: { 'Content-Type': 'application/json' },
-})
-
-// Request interceptor: attach JWT token
-apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = getAccessToken()
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
-
-// Response interceptor: unwrap Result<T>, handle errors
-// Note: we intentionally unwrap AxiosResponse → data for ergonomic API wrappers.
-// Axios strict interceptor typing disagrees with this pattern, so we assert.
-apiClient.interceptors.response.use(
-  ((response: AxiosResponse<ApiResult<unknown>>): unknown => {
-    const body = response.data as ApiResult<unknown>
-    if (body.code !== 'SUCCESS') {
-      return { code: body.code, message: body.message ?? '', isBusinessError: true as const } as BusinessError
-    }
-    return body.data
-  }) as Parameters<typeof apiClient.interceptors.response.use>[0],
-  async (error: { response?: AxiosResponse; config?: InternalAxiosRequestConfig & { _retry?: boolean }; code?: string; message?: string }) => {
-    if (error.response === undefined) {
-      return { code: 'NETWORK_ERROR' as const, message: '网络不可达，请检查网络连接', isBusinessError: true as const } as BusinessError
-    }
-
-    // Try refresh token on 401 (only once)
-    if (error.response.status === 401 && error.config && !error.config._retry) {
-      const refreshToken = getRefreshToken()
-      if (refreshToken) {
-        error.config._retry = true
-        try {
-          const refreshResponse = await axios.post<ApiResult<{ access_token: string; refresh_token: string }>>(
-            '/api/auth/refresh',
-            { refresh_token: refreshToken },
-            { headers: { Authorization: `Bearer ${refreshToken}` } }
-          )
-          const refreshBody = refreshResponse.data
-          if (refreshBody.code === 'SUCCESS' && refreshBody.data) {
-            setTokens(refreshBody.data.access_token, refreshBody.data.refresh_token)
-            // Notify all Pinia stores that tokens were refreshed
-            window.dispatchEvent(new CustomEvent('aimedical:tokens-refreshed', {
-              detail: { access_token: refreshBody.data.access_token }
-            }))
-            if (error.config.headers) {
-              error.config.headers.Authorization = `Bearer ${refreshBody.data.access_token}`
-            }
-            return apiClient(error.config)
-          }
-        } catch {
-          // Refresh failed, clear tokens and redirect to login
-        }
-      }
-      clearTokens()
-      return { code: 'UNAUTHORIZED' as const, message: '登录已过期，请重新登录', isBusinessError: true as const } as BusinessError
-    }
-
-    const requestUrl = error.config?.url ?? 'unknown'
-    const status = error.response.status
-    console.warn('[api] HTTP error for', requestUrl, 'status:', status)
-    if (status === 401) {
-      return { code: 'UNAUTHORIZED' as const, message: '登录已过期，请重新登录', isBusinessError: true as const } as BusinessError
-    }
-    if (status === 403) {
-      return { code: 'FORBIDDEN' as const, message: '无权限访问', isBusinessError: true as const } as BusinessError
-    }
-
-    // Backend business error body (GlobalExceptionHandler returns Result JSON)
-    const body = error.response.data as ApiResult<unknown> | undefined
-    if (body && body.code) {
-      return { code: body.code, message: body.message ?? `请求失败（${status}）`, isBusinessError: true as const } as BusinessError
-    }
-    return { code: 'HTTP_ERROR' as const, message: `请求失败（${status}）`, isBusinessError: true as const } as BusinessError
-  },
-)
-
-// ==================== API Wrappers (try-catch pattern) ====================
-
-export async function apiGet<T>(url: string, config?: AxiosRequestConfig): Promise<T | BusinessError> {
-  try {
-    return await apiClient.get(url, config) as T
-  } catch {
-    return { code: 'NETWORK_ERROR', message: '网络不可达，请检查网络连接', isBusinessError: true as const } as BusinessError
-  }
-}
-
-export async function apiPost<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T | BusinessError> {
-  try {
-    return await apiClient.post(url, data, config) as T
-  } catch {
-    return { code: 'NETWORK_ERROR', message: '网络不可达，请检查网络连接', isBusinessError: true as const } as BusinessError
-  }
-}
-
-export async function apiPut<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T | BusinessError> {
-  try {
-    return await apiClient.put(url, data, config) as T
-  } catch {
-    return { code: 'NETWORK_ERROR', message: '网络不可达，请检查网络连接', isBusinessError: true as const } as BusinessError
-  }
-}
-
-export async function apiDelete<T>(url: string, config?: AxiosRequestConfig): Promise<T | BusinessError> {
-  try {
-    return await apiClient.delete(url, config) as T
-  } catch {
-    return { code: 'NETWORK_ERROR', message: '网络不可达，请检查网络连接', isBusinessError: true as const } as BusinessError
-  }
-}
-
-export { apiClient }
+// 重新导出 axios 客户端与底层请求函数（供外部直接使用）
+export { apiClient, apiGet, apiPost, apiPut, apiDelete, setAuthToken, clearAuthToken } from './client'
 
 // ==================== Auth API (Patient-centric, fork) ====================
-
-import type { RegisterRequest, CurrentUserResponse } from '../types'
-import { setTokens as saveTokens } from '../utils'
 
 export async function loginApi(req: LoginRequest): Promise<TokenResponse | BusinessError> {
   const result = await apiPost<TokenResponse>('/patient/login', req)
   if (result && !(result as BusinessError).isBusinessError) {
     const token = result as TokenResponse
     if (!token.access_token || !token.refresh_token) {
-      console.error('[loginApi] token missing in response:', token)
+      console.error('[loginApi] token missing in response: access_token or refresh_token is empty')
       return { code: 'AUTH_TOKEN_MISSING' as const, message: '服务器返回异常', isBusinessError: true as const } as BusinessError
     }
-    saveTokens(token.access_token, token.refresh_token)
+    setTokens(token.access_token, token.refresh_token)
   } else if (result && (result as BusinessError).isBusinessError) {
     console.error('[loginApi] login returned business error:', (result as BusinessError).code, (result as BusinessError).message)
   }
@@ -143,7 +26,7 @@ export async function registerApi(req: RegisterRequest): Promise<TokenResponse |
   const result = await apiPost<TokenResponse>('/patient/register', req)
   if (result && !(result as BusinessError).isBusinessError) {
     const token = result as TokenResponse
-    saveTokens(token.access_token, token.refresh_token)
+    setTokens(token.access_token, token.refresh_token)
   }
   return result
 }
@@ -235,22 +118,6 @@ export async function deleteMedication(id: number): Promise<void | BusinessError
   return apiDelete<void>(`/patient/health-record/medications/${id}`)
 }
 
-// ==================== Upstream: Token Helpers ====================
-
-/**
- * 设置认证令牌
- */
-export function setAuthToken(token: string): void {
-  apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`
-}
-
-/**
- * 清除认证令牌
- */
-export function clearAuthToken(): void {
-  delete apiClient.defaults.headers.common['Authorization']
-}
-
 // ==================== Upstream: Doctor/Admin Auth & Menu API ====================
 
 import type { DoctorLoginRequest } from '../types'
@@ -322,6 +189,9 @@ export const menuApi = {
     return apiGet<MenuItem[]>('/menu/all')
   },
 }
+
+// 医生端 API
+export { doctorApi } from './doctor'
 
 /**
  * AI 智能导诊 API
