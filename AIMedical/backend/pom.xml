@@ -47,7 +47,7 @@
         <jacoco.version>0.8.12</jacoco.version>
         <!-- 父 pom 无源码, 默认跳过 jacoco prepare-agent 与 check; 子模块覆盖为 false 启用 -->
         <jacoco.skip>true</jacoco.skip>
-        <jacoco.skip.check>true</jacoco.skip.check>
+        <jacoco.skip.check>false</jacoco.skip.check>
         <!-- 覆盖 Spring Boot 3.2.5 默认的 Lombok 1.18.30；
              1.18.30 不支持 JDK 26（运行环境），导致 @Getter/@Data 等注解处理失效。
              1.18.46 新增 JDK 26 支持 (#4019)。 -->

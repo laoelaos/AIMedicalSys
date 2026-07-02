@@ -8,6 +8,7 @@ spring:
     hibernate:
       ddl-auto: create-drop
     open-in-view: false
+    defer-datasource-initialization: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
@@ -15,7 +16,8 @@ spring:
     show-sql: false
   sql:
     init:
-      mode: never
+      mode: always
+      data-locations: classpath:data.sql
 
 jwt:
   secret: dGVzdC1zZWNyZXQta2V5LWZvci1pbnRlZ3JhdGlvbi10ZXN0cy1taW4tMzI=

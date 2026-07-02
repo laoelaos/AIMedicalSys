@@ -2,34 +2,19 @@ package com.aimedical.modules.ai.api.dto.triage;
 
 public class RecommendedDepartment {
 
-    private String departmentName;
     private String departmentId;
+    private String departmentName;
     private float score;
 
     public RecommendedDepartment() {
     }
 
-    public String getDepartmentName() {
-        return departmentName;
-    }
+    public String getDepartmentId() { return departmentId; }
+    public void setDepartmentId(String v) { this.departmentId = v; }
 
-    public void setDepartmentName(String departmentName) {
-        this.departmentName = departmentName;
-    }
+    public String getDepartmentName() { return departmentName; }
+    public void setDepartmentName(String v) { this.departmentName = v; }
 
-    public String getDepartmentId() {
-        return departmentId;
-    }
-
-    public void setDepartmentId(String departmentId) {
-        this.departmentId = departmentId;
-    }
-
-    public float getScore() {
-        return score;
-    }
-
-    public void setScore(float score) {
-        this.score = score;
-    }
+    public float getScore() { return score; }
+    public void setScore(float v) { this.score = v; }
 }

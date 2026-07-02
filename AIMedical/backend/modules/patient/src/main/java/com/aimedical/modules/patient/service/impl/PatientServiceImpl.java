@@ -99,8 +99,15 @@ public class PatientServiceImpl implements PatientService {
         CurrentUserResponse currentUser = authService.getCurrentUser();
         PatientEntity patient = patientRepository.findByUserId(currentUser.getUserId())
                 .orElseThrow(() -> new BusinessException(PatientErrorCode.PATIENT_NOT_FOUND));
-        UserDto userDto = userQueryService.findById(patient.getUserId());
-        return Result.success(PatientConverter.toDto(patient, userDto.getEmail(), userDto.getAge()));
+        try {
+            UserDto userDto = userQueryService.findById(patient.getUserId());
+            return Result.success(PatientConverter.toDto(patient,
+                    userDto != null ? userDto.getEmail() : null,
+                    userDto != null ? userDto.getAge() : null));
+        } catch (BusinessException e) {
+            log.warn("Failed to load user data for patient profile, returning profile without user details", e);
+            return Result.success(PatientConverter.toDto(patient, null, null));
+        }
     }
 
     @Override
@@ -115,8 +122,13 @@ public class PatientServiceImpl implements PatientService {
             userQueryService.updateUserFields(currentUser.getUserId(), request.getEmail(), request.getAge());
         }
         patientRepository.save(patient);
-        UserDto userDto = userQueryService.findById(patient.getUserId());
-        return Result.success(PatientConverter.toDto(patient, userDto.getEmail(), userDto.getAge()));
+        try {
+            UserDto userDto = userQueryService.findById(patient.getUserId());
+            return Result.success(PatientConverter.toDto(patient, userDto.getEmail(), userDto.getAge()));
+        } catch (BusinessException e) {
+            log.warn("Failed to load user data after profile update", e);
+            return Result.success(PatientConverter.toDto(patient, null, null));
+        }
     }
 
 

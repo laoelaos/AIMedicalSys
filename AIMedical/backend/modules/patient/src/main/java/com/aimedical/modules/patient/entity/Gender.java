@@ -1,11 +1,7 @@
 package com.aimedical.modules.patient.entity;
 
 import com.aimedical.common.base.BaseEnum;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
-@Getter
-@AllArgsConstructor
 public enum Gender implements BaseEnum {
 
     MALE("MALE", "男"),
@@ -15,9 +11,17 @@ public enum Gender implements BaseEnum {
     private final String code;
     private final String desc;
 
-    /**
-     * Parse gender from Chinese label, enum code, or enum name. Returns UNKNOWN on null/unrecognized input.
-     */
+    Gender(String code, String desc) {
+        this.code = code;
+        this.desc = desc;
+    }
+
+    @Override
+    public String getCode() { return code; }
+
+    @Override
+    public String getDesc() { return desc; }
+
     public static Gender fromLabel(String label) {
         if (label == null) return UNKNOWN;
         return switch (label.trim()) {

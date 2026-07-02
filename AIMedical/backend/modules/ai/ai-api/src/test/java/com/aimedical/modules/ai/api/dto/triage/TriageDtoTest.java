@@ -25,7 +25,7 @@ class TriageDtoTest {
     @Test
     void shouldCreateTriageResponseWithDefaultConstructor() {
         TriageResponse response = new TriageResponse();
-        assertNull(response.getRecommendedDepartments());
+        assertNull(response.getDepartments());
         assertNull(response.getReason());
     }
 
@@ -34,8 +34,8 @@ class TriageDtoTest {
         TriageResponse response = new TriageResponse();
         List<RecommendedDepartment> depts = new ArrayList<>();
         depts.add(new RecommendedDepartment());
-        response.setRecommendedDepartments(depts);
-        assertEquals(1, response.getRecommendedDepartments().size());
+        response.setDepartments(depts);
+        assertEquals(1, response.getDepartments().size());
     }
 
     @Test
@@ -71,12 +71,12 @@ class TriageDtoTest {
         depts.add(ent);
 
         TriageResponse response = new TriageResponse();
-        response.setRecommendedDepartments(depts);
+        response.setDepartments(depts);
         response.setReason("根据主诉头痛，建议优先就诊神经内科");
 
-        assertEquals(2, response.getRecommendedDepartments().size());
-        assertEquals("神经内科", response.getRecommendedDepartments().get(0).getDepartmentName());
-        assertEquals("耳鼻喉科", response.getRecommendedDepartments().get(1).getDepartmentName());
+        assertEquals(2, response.getDepartments().size());
+        assertEquals("神经内科", response.getDepartments().get(0).getDepartmentName());
+        assertEquals("耳鼻喉科", response.getDepartments().get(1).getDepartmentName());
         assertEquals("根据主诉头痛，建议优先就诊神经内科", response.getReason());
     }
 

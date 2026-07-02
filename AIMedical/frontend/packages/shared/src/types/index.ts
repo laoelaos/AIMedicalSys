@@ -497,3 +497,189 @@ export interface HealthRecordSummary {
   surgery_histories: SurgeryHistoryRecord[]
   medication_histories: MedicationHistoryRecord[]
 }
+
+// ============ AI 智能导诊 ============
+
+export interface TriageRequest {
+  chief_complaint: string
+  session_id?: string
+  additional_responses?: string[]
+}
+
+export interface TriageResponse {
+  session_id: string
+  question?: string
+  is_complete: boolean
+  is_degraded?: boolean
+  departments?: TriageDepartment[]
+  doctors?: TriageDoctor[]
+  reason?: string
+}
+
+export interface TriageDepartment {
+  department_id: number
+  department_name: string
+  score: number
+}
+
+export interface TriageDoctor {
+  doctor_id: number
+  doctor_name: string
+  available_slot_count: number
+  score: number
+}
+
+// ============ AI 病情咨询 ============
+
+export interface ConsultRequest {
+  question: string
+  session_id?: string
+}
+
+export interface ConsultResponse {
+  answer: string
+  related_questions?: string[]
+  disclaimer_required: boolean
+  session_id?: string
+}
+
+// ============ 智能挂号 ============
+
+export interface AppointmentRequest {
+  doctor_id: number
+  doctor_name: string
+  department_name?: string
+}
+
+export interface AppointmentSlot {
+  slot_id: number
+  time_slot: string
+  available: boolean
+}
+
+// ============ 线上挂号 ============
+
+export type RegistrationType = 'OUTPATIENT' | 'EXAMINATION'
+
+export interface RegistrationRequest {
+  registration_type: RegistrationType
+  doctor_id?: number
+  doctor_name?: string
+  department_id?: number
+  department_name?: string
+  time_slot_id?: number
+  time_slot?: string
+  exam_item_id?: number
+  exam_item_name?: string
+  exam_category?: string
+}
+
+export interface RegistrationRecord {
+  id: number
+  registration_type: RegistrationType
+  doctor_name?: string
+  department_name?: string
+  exam_item_name?: string
+  time_slot: string
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'DISPENSED'
+  created_at: string
+  can_cancel: boolean
+}
+
+export interface CancelResult {
+  success: boolean
+  message: string
+  refund_amount?: number
+  over_window?: boolean
+}
+
+export interface ExamCategory {
+  id: number
+  name: string
+}
+
+export interface ExamItem {
+  id: number
+  name: string
+  category: string
+  price: number
+}
+
+// ============ 报告/病历/处方/缴费查询 ============
+
+export interface ReportRecord {
+  id: number
+  type: '检查' | '检验'
+  name: string
+  exam_date: string
+  report_date: string
+  doctor_name?: string
+  department_name?: string
+  status: '已完成' | '待审核'
+  summary?: string
+  details?: ReportDetail[]
+}
+
+export interface ReportDetail {
+  item: string
+  result: string
+  reference_range?: string
+  flag?: '↑' | '↓' | ''
+  unit?: string
+}
+
+export interface MedicalRecordRecord {
+  id: number
+  visit_date: string
+  department_name: string
+  doctor_name: string
+  chief_complaint: string
+  diagnosis: string
+  advice: string
+}
+
+export interface PrescriptionRecord {
+  id: number
+  doctor_name: string
+  department_name: string
+  diagnosis: string
+  issue_date: string
+  status: '待审核' | '已审核' | '已发药'
+  ai_review_summary?: string
+  medications: PrescriptionMedication[]
+}
+
+export interface PrescriptionMedication {
+  drug_name: string
+  dosage: string
+  frequency: string
+  duration: string
+  quantity: number
+  price: number
+}
+
+export interface PaymentRecord {
+  id: number
+  project_name: string
+  visit_date?: string
+  amount: number
+  status: '已缴费' | '待缴费' | '已退费'
+  payment_date?: string
+  category: '挂号' | '检查' | '检验' | '药费' | '其他'
+}
+
+// ============ 分诊记录 ============
+
+export interface TriageHistoryRecord {
+  id: number
+  patient_id: number
+  chief_complaint: string
+  session_id: string
+  recommended_departments: string
+  recommended_doctors: string
+  is_degraded: boolean
+  rule_version: string
+  rule_set_id: string
+  matched_rules: string
+  created_at: string
+}

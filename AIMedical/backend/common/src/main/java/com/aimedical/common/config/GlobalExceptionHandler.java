@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.stream.Collectors;
 
@@ -54,34 +55,7 @@ public class GlobalExceptionHandler {
      * @return 对应的HTTP状态码
      */
     private HttpStatus resolveHttpStatus(ErrorCode errorCode) {
-        String code = errorCode.getCode();
-        if (GlobalErrorCode.UNAUTHORIZED.getCode().equals(code)) {
-            return HttpStatus.UNAUTHORIZED;
-        }
-        if (GlobalErrorCode.FORBIDDEN.getCode().equals(code)) {
-            return HttpStatus.FORBIDDEN;
-        }
-        if (GlobalErrorCode.NOT_FOUND.getCode().equals(code)) {
-            return HttpStatus.NOT_FOUND;
-        }
-        if (GlobalErrorCode.PARAM_INVALID.getCode().equals(code)) {
-            return HttpStatus.BAD_REQUEST;
-        }
-        if (GlobalErrorCode.SYSTEM_ERROR.getCode().equals(code)) {
-            return HttpStatus.INTERNAL_SERVER_ERROR;
-        }
-        if (GlobalErrorCode.ACCOUNT_LOCKED.getCode().equals(code)) {
-            return HttpStatus.LOCKED;
-        }
-        if (GlobalErrorCode.RATE_LIMITED.getCode().equals(code)
-                || GlobalErrorCode.RATE_LIMITED_GLOBAL.getCode().equals(code)) {
-            return HttpStatus.TOO_MANY_REQUESTS;
-        }
-        if (GlobalErrorCode.TOKEN_REFRESH_FAILED.getCode().equals(code)) {
-            return HttpStatus.UNAUTHORIZED;
-        }
-        // 其他业务错误码默认返回400
-        return HttpStatus.BAD_REQUEST;
+        return errorCode.getHttpStatus();
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -136,6 +110,13 @@ public class GlobalExceptionHandler {
                 .body(Result.fail(GlobalErrorCode.SYSTEM_ERROR));
     }
 
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Result<Void>> handleNoResourceFound(NoResourceFoundException e) {
+        log.warn("No resource found: {}", e.getResourcePath());
+        return ResponseEntity.status(404)
+                .body(Result.fail(GlobalErrorCode.NOT_FOUND));
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Result<Void>> handleAccessDenied(AccessDeniedException e) {
         log.warn("Access denied: {}", e.getMessage());
@@ -145,40 +126,29 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<Result<Void>> handleMissingParam(MissingServletRequestParameterException e) {
-        log.warn("Missing required parameter: {}", e.getParameterName());
+        log.warn("Missing parameter: {}", e.getParameterName());
         return ResponseEntity.badRequest()
                 .body(Result.fail(GlobalErrorCode.PARAM_INVALID.getCode(),
                         "缺少必需参数: " + e.getParameterName()));
     }
 
-    /**
-     * 处理 JPA 乐观锁冲突（@Version 并发更新失败），返回 409 Conflict。
-     *
-     * <p>触发场景：叫号/接诊并发状态变更（ConsultationQueueEntity @Version）、
-     * 病历/处方并发修改等。
-     */
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     public ResponseEntity<Result<Void>> handleOptimisticLock(ObjectOptimisticLockingFailureException e) {
-        log.warn("Optimistic locking conflict: {}", e.getMessage());
+        log.warn("Optimistic lock failure: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(Result.fail(GlobalErrorCode.CONFLICT.getCode(), "数据已被他人更新，请刷新后重试"));
+                .body(Result.fail(GlobalErrorCode.CONFLICT));
     }
 
-    /**
-     * 处理数据完整性约束冲突（唯一索引/外键约束），返回 409 Conflict。
-     *
-     * <p>触发场景：并发创建病历草稿命中 (patient_id, doctor_id, DRAFT) 唯一索引等。
-     */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Result<Void>> handleDataIntegrityViolation(DataIntegrityViolationException e) {
-        log.warn("Data integrity violation: {}", e.getMostSpecificCause().getMessage());
+        log.warn("Data integrity violation: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(Result.fail(GlobalErrorCode.CONFLICT.getCode(), "操作冲突，数据已存在或被约束拒绝"));
+                .body(Result.fail(GlobalErrorCode.CONFLICT));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Result<Void>> handleException(Exception e) {
-        log.error("System exception: {} - {}", e.getClass().getName(), e.getMessage(), e);
+        log.error("System exception", e);
         return ResponseEntity.status(500)
                 .body(Result.fail(GlobalErrorCode.SYSTEM_ERROR));
     }
