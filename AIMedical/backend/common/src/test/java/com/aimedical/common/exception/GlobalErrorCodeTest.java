@@ -8,7 +8,7 @@ class GlobalErrorCodeTest {
 
     @Test
     void shouldHaveExpectedConstants() {
-        assertEquals(26, GlobalErrorCode.values().length);
+        assertEquals(27, GlobalErrorCode.values().length);
         assertNotNull(GlobalErrorCode.valueOf("SUCCESS"));
         assertNotNull(GlobalErrorCode.valueOf("SYSTEM_ERROR"));
         assertNotNull(GlobalErrorCode.valueOf("PARAM_INVALID"));
@@ -29,6 +29,7 @@ class GlobalErrorCodeTest {
         assertNotNull(GlobalErrorCode.valueOf("PASSWORD_CHANGE_REQUIRED"));
         assertNotNull(GlobalErrorCode.valueOf("CHILDREN_EXIST"));
         assertNotNull(GlobalErrorCode.valueOf("PASSWORD_MISMATCH"));
+        assertNotNull(GlobalErrorCode.valueOf("DUPLICATE"));
         assertNotNull(GlobalErrorCode.valueOf("REGISTRATION_STATUS_INVALID"));
         assertNotNull(GlobalErrorCode.valueOf("REGISTRATION_CANCEL_FORBIDDEN"));
         assertNotNull(GlobalErrorCode.valueOf("ORDER_STATUS_INVALID"));
@@ -143,6 +144,12 @@ class GlobalErrorCodeTest {
     void passwordMismatchShouldReturnCorrectCodeAndMessage() {
         assertEquals("PASSWORD_MISMATCH", GlobalErrorCode.PASSWORD_MISMATCH.getCode());
         assertEquals("旧密码不正确", GlobalErrorCode.PASSWORD_MISMATCH.getMessage());
+    }
+
+    @Test
+    void duplicateShouldReturnCorrectCodeAndMessage() {
+        assertEquals("DUPLICATE", GlobalErrorCode.DUPLICATE.getCode());
+        assertEquals("重复提交", GlobalErrorCode.DUPLICATE.getMessage());
     }
 
     @Test

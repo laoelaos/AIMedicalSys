@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/patient")
 @Tag(name = "患者端", description = "患者注册、登录、个人中心、健康档案")
-@PreAuthorize("hasRole('PATIENT')")
 public class PatientController {
 
     private final PatientService patientService;

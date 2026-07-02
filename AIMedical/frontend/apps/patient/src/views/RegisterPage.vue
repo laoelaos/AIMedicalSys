@@ -109,7 +109,7 @@ async function handleRegister() {
       ElMessage.success('注册成功')
       // Fetch profile immediately so ProfilePage has data on arrival
       await auth.fetchProfile()
-      router.push('/profile')
+      router.push('/home')
     }
   } catch (e) {
     ElMessage.error('网络异常，请稍后重试')

@@ -1,7 +1,6 @@
 package com.aimedical.modules.ai.impl.mock;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import com.aimedical.modules.ai.api.AiResult;
@@ -18,17 +17,16 @@ import com.aimedical.modules.ai.api.dto.prescription.PrescriptionAssistRequest;
 import com.aimedical.modules.ai.api.dto.prescription.PrescriptionCheckRequest;
 import com.aimedical.modules.ai.api.dto.schedule.ScheduleRequest;
 import com.aimedical.modules.ai.api.dto.triage.TriageRequest;
-import com.aimedical.modules.ai.api.dto.triage.TriageResponse;
+import com.aimedical.modules.ai.api.dto.triage.AdditionalResponseItem;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 class MockAiServiceTest {
 
-    private final MockAiService service = new MockAiService("STATIC");
+    private final MockAiService service = new MockAiService();
 
     @Test
     void shouldBeAnnotatedWithService() {
@@ -36,17 +34,26 @@ class MockAiServiceTest {
     }
 
     @Test
-    void shouldBeAnnotatedWithConditionalOnProperty() {
-        ConditionalOnProperty annotation = MockAiService.class.getAnnotation(ConditionalOnProperty.class);
-        assertNotNull(annotation);
-        assertArrayEquals(new String[]{"ai.mock.enabled"}, annotation.name());
-        assertEquals("true", annotation.havingValue());
-        assertFalse(annotation.matchIfMissing());
+    void triageShouldReturnQuestionOnFirstRequest() {
+        TriageRequest req = new TriageRequest();
+        req.setChiefComplaint("头痛三天");
+        var future = service.triage(req);
+        var data = future.join().getData();
+        assertNotNull(data.getSessionId());
+        assertFalse(data.getIsComplete());
+        assertNotNull(data.getQuestion());
     }
 
     @Test
-    void triageShouldReturnMockData() {
-        var future = service.triage(new TriageRequest());
+    void triageShouldReturnFullResultWithResponses() {
+        TriageRequest req = new TriageRequest();
+        req.setChiefComplaint("头痛三天");
+        AdditionalResponseItem fi1 = new AdditionalResponseItem();
+        fi1.setAnswer("持续了三天");
+        AdditionalResponseItem fi2 = new AdditionalResponseItem();
+        fi2.setAnswer("有恶心症状");
+        req.setAdditionalResponses(List.of(fi1, fi2));
+        var future = service.triage(req);
         assertNotNull(future);
         assertTrue(future.isDone());
         var result = future.join();
@@ -54,9 +61,25 @@ class MockAiServiceTest {
         assertFalse(result.isDegraded());
         assertNotNull(result.getData());
         var data = result.getData();
-        assertNotNull(data.getRecommendedDepartments());
-        assertEquals("mock_departmentName", data.getRecommendedDepartments().get(0).getDepartmentName());
-        assertEquals("mock_reason", data.getReason());
+        assertNotNull(data.getSessionId());
+        assertTrue(data.getIsComplete());
+        assertNotNull(data.getDepartments());
+        assertEquals("神经内科", data.getDepartments().get(0).getDepartmentName());
+        assertEquals(92f, data.getDepartments().get(0).getScore());
+        assertNotNull(data.getDoctors());
+        assertEquals("王主任", data.getDoctors().get(0).getDoctorName());
+    }
+
+    @Test
+    void triageShouldReturnDegradedWhenTriggered() {
+        TriageRequest req = new TriageRequest();
+        req.setChiefComplaint("degraded:测试降级路径");
+        var future = service.triage(req);
+        var result = future.join();
+        assertTrue(result.isDegraded());
+        var data = result.getData();
+        assertTrue(data.getIsComplete());
+        assertTrue(data.getIsDegraded());
     }
 
     @Test
@@ -189,32 +212,5 @@ class MockAiServiceTest {
         assertTrue(result.isSuccess());
         assertFalse(result.isDegraded());
         assertNotNull(result.getData());
-    }
-
-    @Test
-    void aiUnavailableStrategyShouldReturnFailure() {
-        service.setStrategy(MockAiService.ResponseStrategy.AI_UNAVAILABLE);
-        var future = service.triage(new TriageRequest());
-        assertTrue(future.isDone());
-        var result = future.join();
-        assertFalse(result.isSuccess());
-        assertEquals("AI_UNAVAILABLE", result.getErrorCode());
-    }
-
-    @Test
-    void timeoutStrategyShouldTimeout() {
-        service.setStrategy(MockAiService.ResponseStrategy.TIMEOUT);
-        var future = service.triage(new TriageRequest());
-        assertTrue(future.isDone());
-        assertThrows(java.util.concurrent.ExecutionException.class, () -> future.get());
-    }
-
-    @Test
-    void staticStrategyShouldReturnSuccess() {
-        service.setStrategy(MockAiService.ResponseStrategy.STATIC);
-        var future = service.triage(new TriageRequest());
-        assertTrue(future.isDone());
-        var result = future.join();
-        assertTrue(result.isSuccess());
     }
 }

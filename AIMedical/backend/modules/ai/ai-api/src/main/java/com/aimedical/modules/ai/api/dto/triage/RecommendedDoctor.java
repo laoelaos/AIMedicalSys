@@ -4,50 +4,26 @@ public class RecommendedDoctor {
 
     private String doctorId;
     private String doctorName;
-    private String departmentId;
-    private int availableSlotCount;
+    private Integer availableSlotCount = 0;
     private float score;
 
     public RecommendedDoctor() {
     }
 
-    public String getDoctorId() {
-        return doctorId;
-    }
+    public String getDoctorId() { return doctorId; }
+    public void setDoctorId(String v) { this.doctorId = v; }
 
-    public void setDoctorId(String doctorId) {
-        this.doctorId = doctorId;
-    }
+    public String getDoctorName() { return doctorName; }
+    public void setDoctorName(String v) { this.doctorName = v; }
 
-    public String getDoctorName() {
-        return doctorName;
-    }
+    public Integer getAvailableSlotCount() { return availableSlotCount; }
+    public void setAvailableSlotCount(Integer v) { this.availableSlotCount = v; }
 
-    public void setDoctorName(String doctorName) {
-        this.doctorName = doctorName;
-    }
+    public float getScore() { return score; }
+    public void setScore(float v) { this.score = v; }
 
-    public String getDepartmentId() {
-        return departmentId;
-    }
-
-    public void setDepartmentId(String departmentId) {
-        this.departmentId = departmentId;
-    }
-
-    public int getAvailableSlotCount() {
-        return availableSlotCount;
-    }
-
-    public void setAvailableSlotCount(int availableSlotCount) {
-        this.availableSlotCount = availableSlotCount;
-    }
-
-    public float getScore() {
-        return score;
-    }
-
-    public void setScore(float score) {
-        this.score = score;
-    }
+    // Upstream compatibility
+    private String departmentId;
+    public String getDepartmentId() { return departmentId; }
+    public void setDepartmentId(String v) { this.departmentId = v; }
 }

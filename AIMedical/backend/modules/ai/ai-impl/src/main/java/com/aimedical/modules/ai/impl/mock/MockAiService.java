@@ -2,10 +2,8 @@ package com.aimedical.modules.ai.impl.mock;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeoutException;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.aimedical.modules.ai.api.AiResult;
@@ -35,109 +33,122 @@ import com.aimedical.modules.ai.api.dto.prescription.PrescriptionCheckResponse;
 import com.aimedical.modules.ai.api.dto.schedule.ScheduleRequest;
 import com.aimedical.modules.ai.api.dto.schedule.ScheduleResponse;
 import com.aimedical.modules.ai.api.dto.triage.RecommendedDepartment;
+import com.aimedical.modules.ai.api.dto.triage.RecommendedDoctor;
 import com.aimedical.modules.ai.api.dto.triage.TriageRequest;
 import com.aimedical.modules.ai.api.dto.triage.TriageResponse;
+import java.util.UUID;
 
 @Service
-@ConditionalOnProperty(name = "ai.mock.enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(name = "ai.mock.enabled", havingValue = "true", matchIfMissing = true)
 public class MockAiService implements AiService {
 
     public enum ResponseStrategy {
-        STATIC, AI_UNAVAILABLE, TIMEOUT
+        NORMAL, DECORATED, FALLBACK, STATIC, AI_UNAVAILABLE, TIMEOUT
     }
 
-    private volatile ResponseStrategy currentStrategy;
+    private ResponseStrategy strategy = ResponseStrategy.NORMAL;
 
-    public MockAiService(@Value("${ai.mock.response-strategy:STATIC}") String strategy) {
-        this.currentStrategy = ResponseStrategy.valueOf(strategy);
-    }
+    public MockAiService() {}
+    public MockAiService(String strategyName) { this.strategy = ResponseStrategy.valueOf(strategyName); }
 
-    void setStrategy(ResponseStrategy strategy) {
-        this.currentStrategy = strategy;
-    }
-
-    ResponseStrategy getStrategy() {
-        return currentStrategy;
-    }
-
-    private <T> CompletableFuture<AiResult<T>> respond(T data) {
-        switch (currentStrategy) {
-            case AI_UNAVAILABLE:
-                return CompletableFuture.completedFuture(AiResult.failure("AI_UNAVAILABLE"));
-            case TIMEOUT:
-                return CompletableFuture.failedFuture(new TimeoutException("Mock timeout"));
-            default:
-                return CompletableFuture.completedFuture(AiResult.success(data));
-        }
-    }
+    public ResponseStrategy getStrategy() { return strategy; }
+    public void setStrategy(ResponseStrategy v) { this.strategy = v; }
 
     @Override
     public CompletableFuture<AiResult<TriageResponse>> triage(TriageRequest request) {
-        RecommendedDepartment dept = new RecommendedDepartment();
-        dept.setDepartmentName("mock_departmentName");
         TriageResponse response = new TriageResponse();
-        response.setRecommendedDepartments(List.of(dept));
-        response.setReason("mock_reason");
-        return respond(response);
+        response.setSessionId(request.getSessionId() != null
+                ? request.getSessionId()
+                : UUID.randomUUID().toString());
+
+        if (request.getChiefComplaint() != null
+                && request.getChiefComplaint().startsWith("degraded:")) {
+            response.setComplete(true);
+            response.setDegraded(true);
+            response.setReason("AI 服务繁忙，已降级为常见分诊规则推荐");
+            return CompletableFuture.completedFuture(
+                    new AiResult<>(false, response, null, true, response.getReason()));
+        }
+
+        if (request.getAdditionalResponses() == null || request.getAdditionalResponses().isEmpty()) {
+            response.setComplete(false);
+            response.setQuestion("请问这个症状持续多久了？有没有其他伴随症状？之前是否因此就医或服用过药物？");
+        } else {
+            response.setComplete(true);
+            RecommendedDepartment dept = new RecommendedDepartment();
+            dept.setDepartmentId("1");
+            dept.setDepartmentName("神经内科");
+            dept.setScore(92f);
+            response.setDepartments(List.of(dept));
+
+            RecommendedDoctor doc = new RecommendedDoctor();
+            doc.setDoctorId("101");
+            doc.setDoctorName("王主任");
+            doc.setAvailableSlotCount(5);
+            doc.setScore(95f);
+            response.setDoctors(List.of(doc));
+            response.setReason("根据主诉综合分析，建议优先就诊神经内科以排除相关疾病");
+        }
+        return CompletableFuture.completedFuture(AiResult.success(response));
     }
 
     @Override
     public CompletableFuture<AiResult<DiagnosisResponse>> diagnosis(DiagnosisRequest request) {
-        return respond(new DiagnosisResponse());
+        return CompletableFuture.completedFuture(AiResult.success(new DiagnosisResponse()));
     }
 
     @Override
     public CompletableFuture<AiResult<PrescriptionCheckResponse>> prescriptionCheck(PrescriptionCheckRequest request) {
-        return respond(new PrescriptionCheckResponse());
+        return CompletableFuture.completedFuture(AiResult.success(new PrescriptionCheckResponse()));
     }
 
     @Override
     public CompletableFuture<AiResult<MedicalRecordGenResponse>> generateMedicalRecord(MedicalRecordGenRequest request) {
-        return respond(new MedicalRecordGenResponse());
+        return CompletableFuture.completedFuture(AiResult.success(new MedicalRecordGenResponse()));
     }
 
     @Override
     public CompletableFuture<AiResult<InspectionReportResponse>> analysisReportForInspection(InspectionReportRequest request) {
-        return respond(new InspectionReportResponse());
+        return CompletableFuture.completedFuture(AiResult.success(new InspectionReportResponse()));
     }
 
     @Override
     public CompletableFuture<AiResult<LabTestReportResponse>> analysisReportForLabTest(LabTestReportRequest request) {
-        return respond(new LabTestReportResponse());
+        return CompletableFuture.completedFuture(AiResult.success(new LabTestReportResponse()));
     }
 
     @Override
     public CompletableFuture<AiResult<ImageAnalysisResponse>> imageAnalysis(ImageAnalysisRequest request) {
-        return respond(new ImageAnalysisResponse());
+        return CompletableFuture.completedFuture(AiResult.success(new ImageAnalysisResponse()));
     }
 
     @Override
     public CompletableFuture<AiResult<KbQueryResponse>> knowledgeBaseQuery(KbQueryRequest request) {
-        return respond(new KbQueryResponse());
+        return CompletableFuture.completedFuture(AiResult.success(new KbQueryResponse()));
     }
 
     @Override
     public CompletableFuture<AiResult<ExaminationRecommendResponse>> recommendExamination(ExaminationRecommendRequest request) {
-        return respond(new ExaminationRecommendResponse());
+        return CompletableFuture.completedFuture(AiResult.success(new ExaminationRecommendResponse()));
     }
 
     @Override
     public CompletableFuture<AiResult<PrescriptionAssistResponse>> prescriptionAssist(PrescriptionAssistRequest request) {
-        return respond(new PrescriptionAssistResponse());
+        return CompletableFuture.completedFuture(AiResult.success(new PrescriptionAssistResponse()));
     }
 
     @Override
     public CompletableFuture<AiResult<ExecutionOrderResponse>> recommendExecutionOrder(ExecutionOrderRequest request) {
-        return respond(new ExecutionOrderResponse());
+        return CompletableFuture.completedFuture(AiResult.success(new ExecutionOrderResponse()));
     }
 
     @Override
     public CompletableFuture<AiResult<ScheduleResponse>> schedule(ScheduleRequest request) {
-        return respond(new ScheduleResponse());
+        return CompletableFuture.completedFuture(AiResult.success(new ScheduleResponse()));
     }
 
     @Override
     public CompletableFuture<AiResult<DiscussionConclusionResponse>> discussionConclusion(DiscussionConclusionRequest request) {
-        return respond(new DiscussionConclusionResponse());
+        return CompletableFuture.completedFuture(AiResult.success(new DiscussionConclusionResponse()));
     }
 }
